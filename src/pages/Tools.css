@@ -1,0 +1,72 @@
+.tools-page {
+  padding: 2rem;
+}
+
+.tools-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tools-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.tools-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.tool-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.tool-card.coming-soon {
+  opacity: 0.65;
+}
+
+.tool-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  width: 2.2rem;
+  text-align: center;
+}
+
+.tool-info {
+  flex: 1;
+}
+
+.tool-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.tool-desc {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.tool-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: #f0f0f0;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
