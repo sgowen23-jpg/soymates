@@ -1,0 +1,320 @@
+.leave-page {
+  padding: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.leave-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+
+.leave-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Form ── */
+.leave-form { display: flex; flex-direction: column; gap: 10px; }
+
+.leave-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.leave-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.leave-field.grow { flex: 1; min-width: 160px; }
+
+.leave-field label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.leave-field select,
+.leave-field input[type="date"],
+.leave-field input[type="text"] {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #333;
+  background: #fff;
+  outline: none;
+}
+
+.leave-field select:focus,
+.leave-field input:focus { border-color: #CC0000; }
+
+.leave-add-btn {
+  padding: 7px 18px;
+  background: #CC0000;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+.leave-add-btn:hover:not(:disabled) { background: #a30000; }
+.leave-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.leave-msg {
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  margin: 0;
+}
+.leave-msg.error   { background: #fff0f0; color: #CC0000; border: 1px solid #ffcccc; }
+.leave-msg.success { background: #f0fff4; color: #2e7d32; border: 1px solid #a5d6a7; }
+
+.leave-sql-hint {
+  margin-top: 14px;
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #666;
+}
+
+.leave-sql-hint pre {
+  margin: 8px 0 0;
+  background: #1a1a1a;
+  color: #a8ff78;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+/* ── Calendar ── */
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-nav {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  transition: all 0.12s;
+}
+.cal-nav:hover { background: #f5f5f5; border-color: #CC0000; color: #CC0000; }
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #555;
+  font-weight: 600;
+}
+
+.cal-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day-head {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #999;
+  padding: 4px;
+  text-transform: uppercase;
+}
+
+.cal-day {
+  min-height: 60px;
+  border: 1px solid #f0f0f0;
+  border-radius: 5px;
+  padding: 4px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-day.empty { background: transparent; border-color: transparent; }
+
+.cal-day.today {
+  background: #fff5f5;
+  border-color: #CC0000;
+}
+
+.cal-day-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  line-height: 1;
+}
+
+.cal-day.today .cal-day-num { color: #CC0000; }
+
+.cal-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-entry-chip {
+  display: block;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Leave List ── */
+.leave-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leave-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.leave-row.past { opacity: 0.55; }
+
+.leave-row-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.leave-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.leave-row-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.leave-row-type {
+  font-size: 11px;
+  color: #888;
+}
+
+.leave-row-notes {
+  font-size: 11px;
+  color: #aaa;
+  font-style: italic;
+}
+
+.leave-row-dates {
+  font-size: 12px;
+  color: #555;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.leave-delete {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  color: #bbb;
+  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.leave-delete:hover {
+  background: #fff0f0;
+  border-color: #CC0000;
+  color: #CC0000;
+}
+
+.leave-empty {
+  font-size: 13px;
+  color: #aaa;
+  margin: 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .leave-page { padding: 10px; }
+  .leave-card { padding: 14px; }
+  .leave-form-row { gap: 8px; }
+  .leave-field { min-width: 100%; }
+  .leave-add-btn { width: 100%; }
+  .cal-day { min-height: 44px; }
+  .cal-day-num { font-size: 10px; }
+  .leave-row-dates { display: none; }
+}

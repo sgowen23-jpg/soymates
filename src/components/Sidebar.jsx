@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'Client', icon: '🤝' },
   { label: 'Tools', icon: '🔧' },
   { label: 'Data Upload', icon: '📤' },
+  { label: 'Leave Calendar', icon: '📅' },
 ]
 
 const ADMIN_ITEMS = [
