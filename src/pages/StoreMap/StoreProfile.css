@@ -17,6 +17,13 @@
   right: 0;
 }
 
+@media (max-width: 480px) {
+  .store-profile {
+    width: 100%;
+    right: -100%;
+  }
+}
+
 .sp-header {
   color: #fff;
   padding: 14px 16px 12px;
