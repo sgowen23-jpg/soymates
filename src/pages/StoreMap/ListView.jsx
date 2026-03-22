@@ -18,7 +18,7 @@ function getStoreStats(name) {
 
 const ALL_CHAINS = [...new Set(STORES.map(s => s.chain))].sort()
 
-export default function ListView({ onStoreClick, stateFilter }) {
+export default function ListView({ onStoreClick, filters }) {
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
   const [sortCol, setSortCol] = useState('name')
@@ -32,10 +32,11 @@ export default function ListView({ onStoreClick, stateFilter }) {
         s.suburb.toLowerCase().includes(q) ||
         s.state.toLowerCase().includes(q)
       const matchChain = !chainFilter || s.chain === chainFilter
-      const matchState = !stateFilter || stateFilter === 'All' || s.state === stateFilter
-      return matchSearch && matchChain && matchState
+      const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
+      const matchRep = !filters?.rep || filters.rep === 'All' || s.rep === filters.rep
+      return matchSearch && matchChain && matchState && matchRep
     })
-  }, [search, chainFilter, stateFilter])
+  }, [search, chainFilter, filters])
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
