@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: 'Perfect Store', icon: '⭐' },
   { label: 'Client', icon: '🤝' },
   { label: 'Tools', icon: '🔧' },
+  { label: 'Data Upload', icon: '📤' },
 ]
 
 const ADMIN_ITEMS = [

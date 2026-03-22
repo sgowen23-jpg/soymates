@@ -5,6 +5,7 @@ import StoreMap from './StoreMap'
 import Distribution from './Distribution'
 import Tools from './Tools'
 import Admin from './Admin'
+import DataUpload from './DataUpload'
 import './Dashboard.css'
 
 const PLACEHOLDER_PAGES = ['Targets', 'MSO Pipeline', 'Perfect Store', 'Client']
@@ -46,6 +47,7 @@ export default function Dashboard() {
         {activePage === 'Distribution' && <Distribution />}
         {activePage === 'Tools' && <Tools />}
         {activePage === 'Admin' && <Admin />}
+        {activePage === 'Data Upload' && <DataUpload />}
         {PLACEHOLDER_PAGES.includes(activePage) && (
           <div className="placeholder-page">
             <h2>{activePage}</h2>
