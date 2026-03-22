@@ -1,29 +1,73 @@
 .sidebar {
-  width: 220px;
   height: 100vh;
   background: #1a2e1a;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: width 0.2s ease;
+  overflow: hidden;
+  z-index: 200;
+}
+
+.sidebar.open  { width: 220px; }
+.sidebar.closed { width: 48px; }
+
+/* Mobile: sidebar overlays */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+  }
+  .sidebar.closed { width: 0; }
+}
+
+/* Hamburger button */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 2px;
+  transition: background 0.12s;
+}
+
+.hamburger:hover span {
+  background: #fff;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 1.25rem 1rem 1rem;
+  padding: 1rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 56px;
 }
 
 .sidebar-logo-icon {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
 }
 
 .sidebar-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .sidebar-nav {
@@ -31,6 +75,7 @@
   flex-direction: column;
   padding: 0.75rem 0;
   flex: 1;
+  overflow-y: auto;
 }
 
 .sidebar-link {
@@ -39,16 +84,15 @@
   gap: 0.65rem;
   padding: 0.65rem 1rem;
   color: rgba(255, 255, 255, 0.65);
-  text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
   transition: background 0.12s, color 0.12s;
-  border-radius: 0;
   background: none;
   border: none;
   width: 100%;
   text-align: left;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .sidebar-link:hover {

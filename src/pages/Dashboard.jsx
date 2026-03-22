@@ -9,11 +9,36 @@ const PLACEHOLDER_PAGES = ['Distribution', 'Targets', 'MSO Pipeline', 'Perfect S
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Store Map')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  function handleNavigate(page) {
+    setActivePage(page)
+    // On mobile, close sidebar after navigating
+    if (window.innerWidth < 768) setSidebarOpen(false)
+  }
 
   return (
     <div className="app-layout">
-      <Sidebar active={activePage} onNavigate={setActivePage} />
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <Sidebar
+        active={activePage}
+        onNavigate={handleNavigate}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(o => !o)}
+      />
+
       <main className="main-content">
+        {/* Hamburger shown when sidebar is closed */}
+        {!sidebarOpen && (
+          <button className="hamburger-floating" onClick={() => setSidebarOpen(true)}>
+            <span /><span /><span />
+          </button>
+        )}
+
         {activePage === 'Store Map' && <StoreMap />}
         {activePage === 'Tools' && <Tools />}
         {activePage === 'Admin' && <Admin />}
