@@ -162,7 +162,7 @@ export default function LeaveCalendar() {
       return { ...b, days, monthDay }
     })
     .filter(Boolean)
-    .filter(b => b.days <= 60)
+    .filter(b => b.days <= 30)
     .sort((a, b) => a.days - b.days)
 
   // ── Leave lists ────────────────────────────────────────────────────────────
@@ -209,39 +209,6 @@ export default function LeaveCalendar() {
           {error   && <p className="leave-msg error">{error}</p>}
           {success && <p className="leave-msg success">{success}</p>}
         </form>
-      </div>
-
-      {/* ── Add Birthday ── */}
-      <div className="leave-card">
-        <h2 className="leave-card-title">🎂 Birthdays</h2>
-        <form className="leave-form" onSubmit={handleAddBirthday}>
-          <div className="leave-form-row">
-            <div className="leave-field">
-              <label>Rep</label>
-              <select value={bdForm.rep_name} onChange={e => setBdForm(f => ({ ...f, rep_name: e.target.value }))}>
-                {REPS.map(r => <option key={r}>{r}</option>)}
-              </select>
-            </div>
-            <div className="leave-field">
-              <label>Birthday</label>
-              <input type="date" value={bdForm.birthday} onChange={e => setBdForm(f => ({ ...f, birthday: e.target.value }))} required />
-            </div>
-            <button type="submit" className="leave-add-btn" disabled={bdSaving}>{bdSaving ? 'Saving…' : 'Save'}</button>
-          </div>
-        </form>
-
-        {birthdays.length > 0 && (
-          <div className="bd-list">
-            {birthdays.map(b => (
-              <div key={b.id} className="bd-row">
-                <span className="bd-dot" style={{ background: REP_COLORS[b.rep_name] }} />
-                <span className="bd-name">{b.rep_name}</span>
-                <span className="bd-date">🎂 {b.birthday ? parseDateLocal(b.birthday).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' }) : '—'}</span>
-                <button className="leave-delete" onClick={() => handleDeleteBirthday(b.id)}>✕</button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── Calendar ── */}
@@ -307,7 +274,7 @@ export default function LeaveCalendar() {
         </div>
       </div>
 
-      {/* ── Upcoming Birthdays ── */}
+      {/* ── Upcoming Birthdays (next 30 days) ── */}
       {upcomingBirthdays.length > 0 && (
         <div className="leave-card">
           <h2 className="leave-card-title">🎂 Upcoming Birthdays</h2>
