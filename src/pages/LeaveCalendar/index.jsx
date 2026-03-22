@@ -104,8 +104,14 @@ export default function LeaveCalendar() {
   // 0=Sun pad to Mon-start
   const startPad = (firstDay.getDay() + 6) % 7
 
+  function isWeekend(day) {
+    const dow = new Date(year, month, day).getDay() // 0=Sun, 6=Sat
+    return dow === 0 || dow === 6
+  }
+
   function getEntriesForDay(day) {
     const ds = toDateStr(new Date(year, month, day))
+    if (isWeekend(day)) return [] // never show chips on weekends
     return entries.filter(e => e.start_date <= ds && e.end_date >= ds)
   }
 
@@ -158,20 +164,6 @@ export default function LeaveCalendar() {
           {success && <p className="leave-msg success">{success}</p>}
         </form>
 
-        <div className="leave-sql-hint">
-          <strong>First time?</strong> Run this in Supabase SQL Editor:
-          <pre>{`create table leave_entries (
-  id         bigserial primary key,
-  rep_name   text not null,
-  start_date date not null,
-  end_date   date not null,
-  leave_type text default 'Annual Leave',
-  notes      text,
-  created_at timestamptz default now()
-);
-alter table leave_entries enable row level security;
-create policy "Allow all" on leave_entries for all using (true);`}</pre>
-        </div>
       </div>
 
       {/* ── Calendar View ── */}
@@ -211,9 +203,13 @@ create policy "Allow all" on leave_entries for all using (true);`}</pre>
                       key={e.id}
                       className="cal-entry-chip"
                       style={{ background: REP_COLORS[e.rep_name] }}
-                      title={`${e.rep_name} — ${e.leave_type}${e.notes ? ': ' + e.notes : ''}`}
                     >
                       {e.rep_name.split(' ')[0]}
+                      <span className="chip-tooltip">
+                        <strong>{e.rep_name}</strong>
+                        <span>{e.leave_type}{e.notes ? ` — ${e.notes}` : ''}</span>
+                        <span>{fmt(e.start_date)}{e.start_date !== e.end_date ? ` → ${fmt(e.end_date)}` : ''}</span>
+                      </span>
                     </span>
                   ))}
                 </div>

@@ -211,14 +211,61 @@
 
 .cal-entry-chip {
   display: block;
+  position: relative;
   color: #fff;
   font-size: 9px;
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 3px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.chip-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 0;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  padding: 7px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  z-index: 100;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.chip-tooltip strong {
+  font-size: 12px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.chip-tooltip span {
+  display: block;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+.chip-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  border: 5px solid transparent;
+  border-top-color: #1a1a1a;
+}
+
+.cal-entry-chip:hover .chip-tooltip {
+  display: flex;
 }
 
 /* ── Leave List ── */
