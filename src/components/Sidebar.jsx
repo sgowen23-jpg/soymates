@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
+  { label: 'Home', icon: '🏠' },
   { label: 'Store Map', icon: '🗺️' },
   { label: 'Distribution', icon: '📦' },
   { label: 'Targets', icon: '🎯' },

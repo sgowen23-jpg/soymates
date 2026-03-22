@@ -19,14 +19,14 @@ function getStoreStats(name) {
 
 const ALL_CHAINS = [...new Set(STORES.map(s => s.chain))].sort()
 
-export default function ListView({ onStoreClick, filters }) {
+export default function ListView({ onStoreClick, filters, hideSearch }) {
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
   const [sortCol, setSortCol] = useState('name')
   const [sortAsc, setSortAsc] = useState(true)
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase()
+    const q = (search || filters?.search || '').toLowerCase()
     return STORES.filter(s => {
       const matchSearch = !q ||
         s.name.toLowerCase().includes(q) ||
@@ -70,12 +70,14 @@ export default function ListView({ onStoreClick, filters }) {
   return (
     <div className="list-view">
       <div className="list-toolbar">
-        <StoreSearchInput
-          value={search}
-          onChange={setSearch}
-          onSelect={store => setSearch(store.name)}
-          placeholder="Search store, suburb…"
-        />
+        {!hideSearch && (
+          <StoreSearchInput
+            value={search}
+            onChange={setSearch}
+            onSelect={store => setSearch(store.name)}
+            placeholder="Search store, suburb…"
+          />
+        )}
         <div className="chain-filters">
           <button
             className={`chain-btn ${!chainFilter ? 'active' : ''}`}

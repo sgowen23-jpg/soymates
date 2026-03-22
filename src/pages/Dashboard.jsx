@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Sidebar from '../components/Sidebar'
+import Home from './Home'
 import StoreMap from './StoreMap'
 import Distribution from './Distribution'
 import Tools from './Tools'
@@ -9,7 +10,7 @@ import './Dashboard.css'
 const PLACEHOLDER_PAGES = ['Targets', 'MSO Pipeline', 'Perfect Store', 'Client']
 
 export default function Dashboard() {
-  const [activePage, setActivePage] = useState('Store Map')
+  const [activePage, setActivePage] = useState('Home')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   function handleNavigate(page) {
@@ -40,6 +41,7 @@ export default function Dashboard() {
           </button>
         )}
 
+        {activePage === 'Home' && <Home onNavigate={handleNavigate} />}
         {activePage === 'Store Map' && <StoreMap />}
         {activePage === 'Distribution' && <Distribution />}
         {activePage === 'Tools' && <Tools />}

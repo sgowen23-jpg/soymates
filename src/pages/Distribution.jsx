@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ListView from './StoreMap/ListView'
 import StoreProfile from './StoreMap/StoreProfile'
+import StoreSearchInput from '../components/StoreSearchInput'
 import './Distribution.css'
 
 const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
@@ -10,12 +11,18 @@ export default function Distribution() {
   const [selectedStore, setSelectedStore] = useState(null)
   const [state, setState] = useState('All')
   const [rep, setRep] = useState('All')
+  const [search, setSearch] = useState('')
 
-  const filters = { state, rep }
+  const filters = { state, rep, search }
 
   return (
     <div className="distribution-page">
       <div className="distribution-toolbar">
+        <StoreSearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search store…"
+        />
         <select className="filter-select" value={state} onChange={e => setState(e.target.value)}>
           {STATES.map(s => <option key={s}>{s}</option>)}
         </select>
@@ -26,7 +33,7 @@ export default function Distribution() {
       </div>
 
       <div className="distribution-content">
-        <ListView onStoreClick={s => setSelectedStore(s)} filters={filters} />
+        <ListView onStoreClick={s => setSelectedStore(s)} filters={filters} hideSearch />
       </div>
 
       <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} />

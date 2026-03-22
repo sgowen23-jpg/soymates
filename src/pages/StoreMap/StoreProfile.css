@@ -20,7 +20,14 @@
 @media (max-width: 480px) {
   .store-profile {
     width: 100%;
-    right: -100%;
+    left: 0;
+    right: auto;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .store-profile.open {
+    transform: translateX(0);
+    right: auto;
   }
 }
 
