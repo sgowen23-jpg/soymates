@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { STORES } from '../../data/stores'
 import { BNB_DATA } from '../../data/bnbData'
 import { chainColor } from './chainColors'
+import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
 function getStoreStats(name) {
@@ -69,12 +70,11 @@ export default function ListView({ onStoreClick, filters }) {
   return (
     <div className="list-view">
       <div className="list-toolbar">
-        <input
-          className="list-search"
-          type="search"
-          placeholder="Search store, suburb, state…"
+        <StoreSearchInput
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={setSearch}
+          onSelect={store => setSearch(store.name)}
+          placeholder="Search store, suburb…"
         />
         <div className="chain-filters">
           <button

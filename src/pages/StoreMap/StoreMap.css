@@ -43,21 +43,6 @@
   border-color: #1a4d2e;
 }
 
-.store-search {
-  padding: 5px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 12px;
-  color: #333;
-  outline: none;
-  width: 180px;
-}
-
-.store-search:focus {
-  border-color: #1a4d2e;
-}
-
 .storemap-content {
   flex: 1;
   overflow: hidden;

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MapView from './MapView'
 import StoreProfile from './StoreProfile'
+import StoreSearchInput from '../../components/StoreSearchInput'
 import './StoreMap.css'
 
 const CLIENTS = ['All', 'Vitasoy']
@@ -29,12 +30,10 @@ export default function StoreMap() {
           <select className="filter-select" value={rep} onChange={e => setRep(e.target.value)}>
             {REPS.map(r => <option key={r}>{r}</option>)}
           </select>
-          <input
-            className="store-search"
-            type="text"
-            placeholder="Search store…"
+          <StoreSearchInput
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={setSearch}
+            placeholder="Search store…"
           />
         </div>
 
