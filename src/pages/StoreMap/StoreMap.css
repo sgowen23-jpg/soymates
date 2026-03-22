@@ -53,6 +53,35 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.state-filters {
+  display: flex;
+  gap: 4px;
+}
+
+.state-btn {
+  padding: 4px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.state-btn:hover {
+  border-color: #1a4d2e;
+  color: #1a4d2e;
+}
+
+.state-btn.active {
+  background: #1a4d2e;
+  border-color: #1a4d2e;
+  color: #fff;
+  font-weight: 600;
+}
+
 .storemap-content {
   flex: 1;
   overflow: hidden;

@@ -1,11 +1,11 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api'
 import { STORES } from '../../data/stores'
 import { BNB_DATA } from '../../data/bnbData'
 import { chainColor } from './chainColors'
 
 const MAP_LIBRARIES = ['marker']
-const MAP_CENTER = { lat: -33.8688, lng: 151.2093 } // Sydney default
+const MAP_CENTER = { lat: -33.8688, lng: 151.2093 }
 
 function gapCount(name) {
   const data = BNB_DATA[name]
@@ -13,7 +13,7 @@ function gapCount(name) {
   return Object.values(data.products).filter(p => p.dis === 0).length
 }
 
-export default function MapView({ onStoreClick }) {
+export default function MapView({ onStoreClick, stateFilter }) {
   const mapRef = useRef(null)
   const markersRef = useRef([])
 
@@ -22,19 +22,14 @@ export default function MapView({ onStoreClick }) {
     libraries: MAP_LIBRARIES,
   })
 
-  const onLoad = useCallback((map) => {
-    mapRef.current = map
-    addMarkers(map)
-  }, [])
-
-  function addMarkers(map) {
-    // Clear old markers
+  function addMarkers(map, filter) {
     markersRef.current.forEach(m => m.setMap(null))
     markersRef.current = []
 
+    const filtered = filter === 'All' ? STORES : STORES.filter(s => s.state === filter)
     const bounds = new window.google.maps.LatLngBounds()
 
-    STORES.forEach(store => {
+    filtered.forEach(store => {
       const gaps = gapCount(store.name)
       const color = chainColor(store.chain)
       const size = gaps > 3 ? 10 : 8
@@ -58,8 +53,17 @@ export default function MapView({ onStoreClick }) {
       bounds.extend({ lat: store.lat, lng: store.lng })
     })
 
-    map.fitBounds(bounds)
+    if (filtered.length > 0) map.fitBounds(bounds)
   }
+
+  const onLoad = useCallback((map) => {
+    mapRef.current = map
+    addMarkers(map, stateFilter)
+  }, [])
+
+  useEffect(() => {
+    if (mapRef.current) addMarkers(mapRef.current, stateFilter)
+  }, [stateFilter])
 
   if (loadError) return <div className="map-error">Failed to load Google Maps</div>
   if (!isLoaded) return <div className="map-loading">Loading map…</div>
