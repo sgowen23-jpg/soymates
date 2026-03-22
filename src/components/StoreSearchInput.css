@@ -22,6 +22,7 @@
   top: calc(100% + 4px);
   left: 0;
   width: 260px;
+  max-width: calc(100vw - 24px);
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -30,6 +31,17 @@
   margin: 0;
   padding: 4px 0;
   z-index: 999;
+}
+
+@media (max-width: 480px) {
+  .store-search-input {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .store-search-wrap {
+    flex: 1;
+  }
 }
 
 .store-suggestion-item {

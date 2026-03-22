@@ -34,8 +34,13 @@
 .chain-filters {
   display: flex;
   gap: 4px;
-  flex-wrap: wrap;
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+
+.chain-filters::-webkit-scrollbar { display: none; }
 
 .chain-btn {
   padding: 5px 10px;
@@ -46,6 +51,8 @@
   font-size: 12px;
   transition: all 0.12s;
   color: #444;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chain-btn:hover {
@@ -148,4 +155,27 @@
 .rep-cell {
   font-size: 12px;
   color: #777;
+}
+
+@media (max-width: 480px) {
+  .list-toolbar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  /* Hide Region and Rep columns — too wide for phone */
+  .store-table th:nth-child(4),
+  .store-table td:nth-child(4),
+  .store-table th:nth-child(6),
+  .store-table td:nth-child(6) {
+    display: none;
+  }
+
+  .store-table th,
+  .store-table td {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .list-count { display: none; }
 }

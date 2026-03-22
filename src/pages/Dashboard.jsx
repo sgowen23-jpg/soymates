@@ -32,7 +32,7 @@ export default function Dashboard() {
         onToggle={() => setSidebarOpen(o => !o)}
       />
 
-      <main className="main-content">
+      <main className={`main-content${!sidebarOpen ? ' sidebar-closed' : ''}`}>
         {/* Hamburger shown when sidebar is closed */}
         {!sidebarOpen && (
           <button className="hamburger-floating" onClick={() => setSidebarOpen(true)}>
