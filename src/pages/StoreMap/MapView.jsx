@@ -21,9 +21,10 @@ function applyFilters(filters) {
   })
 }
 
-export default function MapView({ onStoreClick, filters }) {
+export default function MapView({ onStoreClick, filters, search }) {
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const searchMarkerRef = useRef(null)
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
@@ -64,6 +65,36 @@ export default function MapView({ onStoreClick, filters }) {
     if (filtered.length > 0) map.fitBounds(bounds)
   }
 
+  function applySearch(map, search) {
+    // Clear previous search marker
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.setMap(null)
+      searchMarkerRef.current = null
+    }
+
+    if (!search.trim()) return
+
+    const term = search.trim().toLowerCase()
+    const match = STORES.find(s => s.name.toLowerCase().includes(term))
+    if (!match) return
+
+    // Dim all regular markers, highlight match
+    markersRef.current.forEach(m => {
+      const isMatch = m.getTitle().toLowerCase().includes(term)
+      m.setIcon({
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: isMatch ? 12 : 6,
+        fillColor: isMatch ? '#ff6b35' : '#aaa',
+        fillOpacity: isMatch ? 1 : 0.4,
+        strokeColor: '#fff',
+        strokeWeight: isMatch ? 2.5 : 1,
+      })
+    })
+
+    map.panTo({ lat: match.lat, lng: match.lng })
+    map.setZoom(14)
+  }
+
   const onLoad = useCallback((map) => {
     mapRef.current = map
     addMarkers(map, filters)
@@ -72,6 +103,10 @@ export default function MapView({ onStoreClick, filters }) {
   useEffect(() => {
     if (mapRef.current) addMarkers(mapRef.current, filters)
   }, [filters.state, filters.rep, filters.client])
+
+  useEffect(() => {
+    if (mapRef.current) applySearch(mapRef.current, search)
+  }, [search])
 
   if (loadError) return <div className="map-error">Failed to load Google Maps</div>
   if (!isLoaded) return <div className="map-loading">Loading map…</div>

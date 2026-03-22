@@ -22,36 +22,6 @@
   margin-left: auto;
 }
 
-.view-tabs {
-  display: flex;
-  gap: 2px;
-  background: #f0f0f0;
-  border-radius: 6px;
-  padding: 2px;
-}
-
-.view-tab {
-  padding: 5px 14px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 500;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-
-.view-tab:hover {
-  color: #333;
-}
-
-.view-tab.active {
-  background: #fff;
-  color: #1a4d2e;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
 
 .filter-dropdowns {
   display: flex;
@@ -70,6 +40,21 @@
 }
 
 .filter-select:focus {
+  border-color: #1a4d2e;
+}
+
+.store-search {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+  width: 180px;
+}
+
+.store-search:focus {
   border-color: #1a4d2e;
 }
 
