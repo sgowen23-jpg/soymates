@@ -29,7 +29,19 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
         </button>
         {isOpen && (
           <>
-            <span className="sidebar-logo-icon">🌱</span>
+            <span className="sidebar-logo-icon">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="14" cy="14" r="13" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="1.5"/>
+                {/* Centre stem */}
+                <line x1="14" y1="22" x2="14" y2="11" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                {/* Left leaf */}
+                <path d="M14 16 C11 14 9 11 10 8 C11 8 13 10 14 13" fill="white"/>
+                {/* Right leaf */}
+                <path d="M14 14 C17 12 19 9 18 6 C17 6 15 8 14 11" fill="white"/>
+                {/* Top leaf */}
+                <path d="M14 11 C13 8 13.5 5 14 4 C14.5 5 15 8 14 11" fill="white"/>
+              </svg>
+            </span>
             <span className="sidebar-title">Soymates</span>
           </>
         )}

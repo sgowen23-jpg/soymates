@@ -26,7 +26,7 @@
 }
 
 .home-cycle-badge {
-  background: #1a4d2e;
+  background: #CC0000;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
@@ -149,14 +149,14 @@
 }
 
 .cycle-week.done {
-  background: #1a4d2e;
+  background: #1a2b5e;
   color: #fff;
 }
 
 .cycle-week.current {
-  background: #6abf69;
+  background: #CC0000;
   color: #fff;
-  box-shadow: 0 0 0 2px #1a4d2e;
+  box-shadow: 0 0 0 2px #1a2b5e;
 }
 
 .cycle-bar-wrap {
@@ -168,7 +168,7 @@
 
 .cycle-bar-fill {
   height: 100%;
-  background: #1a4d2e;
+  background: #CC0000;
   border-radius: 4px;
   transition: width 0.5s ease;
 }
@@ -202,8 +202,8 @@
 }
 
 .pie-card:hover {
-  border-color: #1a4d2e;
-  background: #f5f9f5;
+  border-color: #CC0000;
+  background: #fff5f5;
 }
 
 .pie-label {
@@ -262,8 +262,8 @@
 }
 
 .target-card:hover {
-  border-color: #1a4d2e;
-  background: #f5f9f5;
+  border-color: #CC0000;
+  background: #fff5f5;
 }
 
 .target-label {
@@ -280,7 +280,7 @@
   color: #1a1a1a;
 }
 
-.target-current { color: #1a4d2e; }
+.target-current { color: #CC0000; }
 .target-sep     { color: #ccc; }
 .target-goal    { color: #999; font-weight: 500; }
 
@@ -293,7 +293,7 @@
 
 .target-bar-fill {
   height: 100%;
-  background: #1a4d2e;
+  background: #CC0000;
   border-radius: 3px;
 }
 

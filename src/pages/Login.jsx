@@ -22,7 +22,16 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-logo">
-          <span className="login-logo-icon">🌱</span>
+          <div className="login-logo-icon">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="28" cy="28" r="28" fill="#CC0000"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="2"/>
+              <line x1="28" y1="44" x2="28" y2="22" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M28 32 C22 28 18 22 20 16 C22 16 26 20 28 26" fill="white"/>
+              <path d="M28 28 C34 24 38 18 36 12 C34 12 30 16 28 22" fill="white"/>
+              <path d="M28 22 C26 16 27 10 28 8 C29 10 30 16 28 22" fill="white"/>
+            </svg>
+          </div>
           <h1>Soymates</h1>
           <p>Field Sales Portal</p>
         </div>

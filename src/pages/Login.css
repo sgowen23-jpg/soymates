@@ -13,6 +13,7 @@
   width: 100%;
   max-width: 380px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  border-top: 5px solid #1a2b5e;
 }
 
 .login-logo {
@@ -21,7 +22,9 @@
 }
 
 .login-logo-icon {
-  font-size: 2.5rem;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 .login-logo h1 {
@@ -67,7 +70,7 @@
 }
 
 .field input:focus {
-  border-color: #2e7d32;
+  border-color: #CC0000;
 }
 
 .login-error {
@@ -82,7 +85,7 @@
 .login-btn {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: #2e7d32;
+  background: #CC0000;
   color: white;
   border: none;
   border-radius: 8px;
@@ -93,7 +96,7 @@
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #1b5e20;
+  background: #a30000;
 }
 
 .login-btn:disabled {
