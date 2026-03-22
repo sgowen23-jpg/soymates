@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
 import './Home.css'
 
 // Cycle 1 starts March 30, 2026
@@ -42,12 +43,6 @@ const PIE_DATA = [
   },
 ]
 
-const TARGETS = [
-  { label: 'Distribution',   current: 72,  target: 85,  unit: '%' },
-  { label: 'Calls Completed', current: 134, target: 200, unit: '' },
-  { label: 'New Listings',   current: 18,  target: 30,  unit: '' },
-  { label: 'Perfect Store',  current: 24,  target: 40,  unit: '' },
-]
 
 function toDateStr(d) {
   const y = d.getFullYear()
@@ -178,7 +173,7 @@ export default function Home({ onNavigate }) {
 
       {/* Cycle Progress */}
       <section className="home-section">
-        <h2 className="home-section-title">Cycle Progress — Cycle 1</h2>
+        <h2 className="home-section-title">Cycle Progress — Cycle {CYCLE_NUMBER}</h2>
         <div className="cycle-progress-wrap">
           <div className="cycle-weeks">
             {Array.from({ length: CYCLE_WEEKS }, (_, i) => i + 1).map(w => (
@@ -223,28 +218,51 @@ export default function Home({ onNavigate }) {
       {/* Targets */}
       <section className="home-section">
         <h2 className="home-section-title">
-          Targets Summary
+          Distribution Targets — Cycle {CYCLE_NUMBER}
           <span className="home-section-hint"> — click to view details</span>
         </h2>
-        <div className="targets-grid">
-          {TARGETS.map(t => {
-            const pct = Math.min(100, Math.round((t.current / t.target) * 100))
-            return (
-              <button key={t.label} className="target-card" onClick={() => onNavigate('Targets')} title="View Targets">
-                <div className="target-label">{t.label}</div>
+        {(() => {
+          const overall = getOverallSummary()
+          return (
+            <>
+              {/* Overall bar */}
+              <button className="target-card target-card-overall" onClick={() => onNavigate('Targets')}>
+                <div className="target-label">Overall Distribution</div>
                 <div className="target-values">
-                  <span className="target-current">{t.current}{t.unit}</span>
+                  <span className="target-current">{overall.current.toLocaleString()}</span>
                   <span className="target-sep"> / </span>
-                  <span className="target-goal">{t.target}{t.unit}</span>
+                  <span className="target-goal">{overall.total.toLocaleString()} pts</span>
                 </div>
                 <div className="target-bar-wrap">
-                  <div className="target-bar-fill" style={{ width: `${pct}%` }} />
+                  <div className="target-bar-fill" style={{ width: `${overall.pct}%`, background: overall.pct >= 85 ? '#16a085' : overall.pct >= 65 ? '#e67e22' : '#CC0000' }} />
                 </div>
-                <div className="target-pct">{pct}%</div>
+                <div className="target-pct" style={{ color: overall.pct >= 85 ? '#16a085' : overall.pct >= 65 ? '#e67e22' : '#CC0000' }}>{overall.pct}%</div>
               </button>
-            )
-          })}
-        </div>
+
+              {/* Per-category grid */}
+              <div className="targets-grid" style={{ marginTop: 10 }}>
+                {CATEGORIES.map(cat => {
+                  const s = getCategorySummary(cat)
+                  const col = s.pct >= 85 ? '#16a085' : s.pct >= 65 ? '#e67e22' : '#CC0000'
+                  return (
+                    <button key={cat} className="target-card" onClick={() => onNavigate('Targets')}>
+                      <div className="target-label">{cat}</div>
+                      <div className="target-values">
+                        <span className="target-current">{s.current.toLocaleString()}</span>
+                        <span className="target-sep"> / </span>
+                        <span className="target-goal">{s.total.toLocaleString()}</span>
+                      </div>
+                      <div className="target-bar-wrap">
+                        <div className="target-bar-fill" style={{ width: `${s.pct}%`, background: col }} />
+                      </div>
+                      <div className="target-pct" style={{ color: col }}>{s.pct}%</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )
+        })()}
       </section>
     </div>
   )

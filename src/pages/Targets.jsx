@@ -1,15 +1,6 @@
 import { useState } from 'react'
+import { CYCLE_NUMBER as CYCLE, CATEGORIES, TARGET_REPS as REPS, DATA, getCategorySummary } from '../data/targets'
 import './Targets.css'
-
-const CYCLE = 4
-
-const REPS = [
-  'Ashleigh Tasdarian',
-  'David Kerr',
-  'Dipen Surani',
-  'Sam Gowen',
-  'Shane Vandewardt',
-]
 
 const REP_COLORS = {
   'Ashleigh Tasdarian': '#1a2b5e',
@@ -17,39 +8,6 @@ const REP_COLORS = {
   'Dipen Surani':       '#8e44ad',
   'Sam Gowen':          '#16a085',
   'Shane Vandewardt':   '#CC0000',
-}
-
-const CATEGORIES = ['UHT Core', 'UHT Non Core', 'Chilled', 'Yoghurt']
-
-const DATA = {
-  'UHT Core': {
-    'Shane Vandewardt':   { stores: 172, current: 1269, gap: 107, baseline: 1203 },
-    'Sam Gowen':          { stores: 130, current: 983,  gap: 57,  baseline: 897  },
-    'Ashleigh Tasdarian': { stores: 166, current: 1129, gap: 199, baseline: 1055 },
-    'David Kerr':         { stores: 175, current: 1276, gap: 124, baseline: 1225 },
-    'Dipen Surani':       { stores: 134, current: 1029, gap: 43,  baseline: 978  },
-  },
-  'UHT Non Core': {
-    'Shane Vandewardt':   { stores: 172, current: 636, gap: 224, baseline: 595 },
-    'Sam Gowen':          { stores: 130, current: 522, gap: 128, baseline: 468 },
-    'Ashleigh Tasdarian': { stores: 166, current: 489, gap: 341, baseline: 430 },
-    'David Kerr':         { stores: 175, current: 671, gap: 204, baseline: 623 },
-    'Dipen Surani':       { stores: 134, current: 538, gap: 132, baseline: 491 },
-  },
-  'Chilled': {
-    'Shane Vandewardt':   { stores: 172, current: 1354, gap: 1054, baseline: 1341 },
-    'Sam Gowen':          { stores: 130, current: 1195, gap: 625,  baseline: 1072 },
-    'Ashleigh Tasdarian': { stores: 166, current: 973,  gap: 1351, baseline: 842  },
-    'David Kerr':         { stores: 175, current: 1223, gap: 1227, baseline: 1120 },
-    'Dipen Surani':       { stores: 134, current: 1022, gap: 854,  baseline: 937  },
-  },
-  'Yoghurt': {
-    'Shane Vandewardt':   { stores: 172, current: 287, gap: 1089, baseline: 280 },
-    'Sam Gowen':          { stores: 130, current: 392, gap: 648,  baseline: 393 },
-    'Ashleigh Tasdarian': { stores: 166, current: 218, gap: 1110, baseline: 212 },
-    'David Kerr':         { stores: 175, current: 227, gap: 1173, baseline: 255 },
-    'Dipen Surani':       { stores: 134, current: 74,  gap: 998,  baseline: 95  },
-  },
 }
 
 function pct(current, gap) {
@@ -64,13 +22,8 @@ function getColor(p) {
 }
 
 function CategorySummaryCard({ category, onClick, active }) {
-  const totals = REPS.reduce((acc, rep) => {
-    const d = DATA[category][rep]
-    acc.current += d.current
-    acc.gap += d.gap
-    return acc
-  }, { current: 0, gap: 0 })
-  const p = pct(totals.current, totals.gap)
+  const totals = getCategorySummary(category)
+  const p = totals.pct
   return (
     <div className={`tgt-cat-card${active ? ' active' : ''}`} onClick={onClick}>
       <div className="tgt-cat-name">{category}</div>
@@ -78,7 +31,7 @@ function CategorySummaryCard({ category, onClick, active }) {
       <div className="tgt-bar-wrap">
         <div className="tgt-bar-fill" style={{ width: p + '%', background: getColor(p) }} />
       </div>
-      <div className="tgt-cat-sub">{totals.current.toLocaleString()} / {(totals.current + totals.gap).toLocaleString()} pts</div>
+      <div className="tgt-cat-sub">{totals.current.toLocaleString()} / {totals.total.toLocaleString()} pts</div>
     </div>
   )
 }
