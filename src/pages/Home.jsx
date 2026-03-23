@@ -221,48 +221,37 @@ export default function Home({ onNavigate }) {
           Distribution Targets — Cycle {CYCLE_NUMBER}
           <span className="home-section-hint"> — click to view details</span>
         </h2>
-        {(() => {
-          const overall = getOverallSummary()
-          return (
-            <>
-              {/* Overall bar */}
-              <button className="target-card target-card-overall" onClick={() => onNavigate('Targets')}>
-                <div className="target-label">Overall Distribution</div>
-                <div className="target-values">
-                  <span className="target-current">{overall.current.toLocaleString()}</span>
-                  <span className="target-sep"> / </span>
-                  <span className="target-goal">{overall.total.toLocaleString()} pts</span>
+        <div className="pie-row">
+          {CATEGORIES.map(cat => {
+            const s   = getCategorySummary(cat)
+            const col = s.pct >= 85 ? '#16a085' : s.pct >= 65 ? '#e67e22' : '#CC0000'
+            return (
+              <button key={cat} className="pie-card" onClick={() => onNavigate('Targets')} title="View Targets">
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <PieChart
+                    segments={[
+                      { value: s.pct,       color: col      },
+                      { value: 100 - s.pct, color: '#eee'   },
+                    ]}
+                    size={90}
+                  />
+                  <div className="pie-center-label">{s.pct}%</div>
                 </div>
-                <div className="target-bar-wrap">
-                  <div className="target-bar-fill" style={{ width: `${overall.pct}%`, background: overall.pct >= 85 ? '#16a085' : overall.pct >= 65 ? '#e67e22' : '#CC0000' }} />
+                <div className="pie-label">{cat}</div>
+                <div className="pie-legend">
+                  <div className="pie-legend-item">
+                    <span className="pie-legend-dot" style={{ background: col }} />
+                    <span>Achieved {s.current.toLocaleString()}</span>
+                  </div>
+                  <div className="pie-legend-item">
+                    <span className="pie-legend-dot" style={{ background: '#eee', border: '1px solid #ddd' }} />
+                    <span>Gap {s.gap.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="target-pct" style={{ color: overall.pct >= 85 ? '#16a085' : overall.pct >= 65 ? '#e67e22' : '#CC0000' }}>{overall.pct}%</div>
               </button>
-
-              {/* Per-category grid */}
-              <div className="targets-grid" style={{ marginTop: 10 }}>
-                {CATEGORIES.map(cat => {
-                  const s = getCategorySummary(cat)
-                  const col = s.pct >= 85 ? '#16a085' : s.pct >= 65 ? '#e67e22' : '#CC0000'
-                  return (
-                    <button key={cat} className="target-card" onClick={() => onNavigate('Targets')}>
-                      <div className="target-label">{cat}</div>
-                      <div className="target-values">
-                        <span className="target-current">{s.current.toLocaleString()}</span>
-                        <span className="target-sep"> / </span>
-                        <span className="target-goal">{s.total.toLocaleString()}</span>
-                      </div>
-                      <div className="target-bar-wrap">
-                        <div className="target-bar-fill" style={{ width: `${s.pct}%`, background: col }} />
-                      </div>
-                      <div className="target-pct" style={{ color: col }}>{s.pct}%</div>
-                    </button>
-                  )
-                })}
-              </div>
-            </>
-          )
-        })()}
+            )
+          })}
+        </div>
       </section>
     </div>
   )

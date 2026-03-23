@@ -269,6 +269,18 @@
   flex-shrink: 0;
 }
 
+.pie-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a1a;
+  pointer-events: none;
+  line-height: 1;
+}
+
 /* Targets */
 .targets-grid {
   display: grid;
