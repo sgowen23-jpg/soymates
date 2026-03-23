@@ -34,7 +34,7 @@ const PIE_DATA = [
     ],
   },
   {
-    label: 'Califia',
+    label: 'Yoghurt',
     segments: [
       { label: 'Listed', value: 40, color: '#1a2b5e' },
       { label: 'Gap',    value: 35, color: '#CC0000' },
