@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { label: 'Tools', icon: '🔧' },
   { label: 'Data Upload', icon: '📤' },
   { label: 'Leave Calendar', icon: '📅' },
+  { label: 'Chat bot', icon: '💬', soon: true },
+  { label: 'Download', icon: '⬇️', soon: true },
 ]
 
 const ADMIN_ITEMS = [
@@ -60,6 +62,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
               >
                 <span className="sidebar-icon">{item.icon}</span>
                 {item.label}
+                {item.soon && <span className="sidebar-soon">soon</span>}
               </button>
             ))}
 
