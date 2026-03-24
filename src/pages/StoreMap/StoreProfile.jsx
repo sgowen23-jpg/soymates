@@ -1,30 +1,50 @@
-import { useEffect } from 'react'
-import { BNB_DATA } from '../../data/bnbData'
+import { useEffect, useState } from 'react'
+import { supabase } from '../../lib/supabase'
 import { PROD_CATEGORIES } from '../../data/prodCategories'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
-function getStoreData(name) {
-  return BNB_DATA[name] || null
-}
+export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
+  const [productData, setProductData] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-export default function StoreProfile({ store, onClose }) {
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const data = store ? getStoreData(store.name) : null
+  useEffect(() => {
+    if (!store) { setProductData(null); return }
+    async function fetchData() {
+      setLoading(true)
+      setProductData(null)
+      const table = bnbPeriod === '26wk' ? 'bnb_26wk' : 'bnb_13wk'
+      const [distRes, bnbRes] = await Promise.all([
+        supabase.from('store_distribution').select('product, ranging').eq('store_id', store.id),
+        supabase.from(table).select('product, gap').eq('store_id', store.id),
+      ])
+      const bnbMap = {}
+      bnbRes.data?.forEach(r => { bnbMap[r.product] = r.gap })
 
-  let gaps = [], nbt = [], good = []
-  if (data?.products) {
-    for (const [k, p] of Object.entries(data.products)) {
-      if (p.dis === 0)      gaps.push(k)
-      else if (p.bnb === 0) nbt.push(k)
-      else                  good.push(k)
+      const gaps = [], nbt = [], good = []
+      distRes.data?.forEach(r => {
+        if (r.ranging === 0) {
+          gaps.push(r.product)
+        } else {
+          if (bnbMap[r.product] === 1) nbt.push(r.product)
+          else good.push(r.product)
+        }
+      })
+      setProductData({ gaps, nbt, good })
+      setLoading(false)
     }
-  }
+    fetchData()
+  }, [store, bnbPeriod])
+
+  const gaps = productData?.gaps || []
+  const nbt  = productData?.nbt  || []
+  const good = productData?.good || []
 
   return (
     <div className={`store-profile ${store ? 'open' : ''}`}>
@@ -37,11 +57,13 @@ export default function StoreProfile({ store, onClose }) {
             <div className="sp-meta">
               <span>{store.chain}</span>
               <span>{store.state} · {store.region}</span>
-              {data?.rep && <span>Rep: {data.rep}</span>}
+              {store.rep && <span>Rep: {store.rep}</span>}
             </div>
           </div>
 
-          {data ? (
+          {loading ? (
+            <div className="sp-no-data">Loading…</div>
+          ) : productData ? (
             <>
               <div className="sp-stats">
                 <div className="sp-stat gap">
@@ -60,12 +82,12 @@ export default function StoreProfile({ store, onClose }) {
 
               <div className="sp-body">
                 <ProfileSection title="🔴 Not Ranged" items={gaps} type="gap" />
-                <ProfileSection title="🟡 Not Bought (13wk)" items={nbt} type="nbt" />
+                <ProfileSection title={`🟡 Not Bought (${bnbPeriod})`} items={nbt} type="nbt" />
                 <ProfileSection title="🟢 Ranged & Buying" items={good} type="good" />
               </div>
             </>
           ) : (
-            <div className="sp-no-data">No BnB data for this store.</div>
+            <div className="sp-no-data">No distribution data for this store.</div>
           )}
         </>
       )}
@@ -76,13 +98,11 @@ export default function StoreProfile({ store, onClose }) {
 function ProfileSection({ title, items, type }) {
   if (!items.length) return null
 
-  // Group by product category
   const byCategory = []
   for (const [cat, skus] of Object.entries(PROD_CATEGORIES)) {
     const catItems = items.filter(k => skus.includes(k))
     if (catItems.length) byCategory.push({ cat, items: catItems })
   }
-  // Uncategorised
   const allCatSkus = Object.values(PROD_CATEGORIES).flat()
   const uncategorised = items.filter(k => !allCatSkus.includes(k))
   if (uncategorised.length) byCategory.push({ cat: 'Other', items: uncategorised })

@@ -1,29 +1,37 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { STORES } from '../../data/stores'
-import { BNB_DATA } from '../../data/bnbData'
+import { supabase } from '../../lib/supabase'
 import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
-function getStoreStats(name) {
-  const data = BNB_DATA[name]
-  if (!data?.products) return { gaps: '-', nbt: '-', listed: '-' }
-  let gaps = 0, nbt = 0, listed = 0
-  for (const p of Object.values(data.products)) {
-    if (p.dis === 0)      gaps++
-    else if (p.bnb === 0) nbt++
-    else                  listed++
-  }
-  return { gaps, nbt, listed }
-}
-
 const ALL_CHAINS = [...new Set(STORES.map(s => s.chain))].sort()
 
-export default function ListView({ onStoreClick, filters, hideSearch }) {
+export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod }) {
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
   const [sortCol, setSortCol] = useState('name')
   const [sortAsc, setSortAsc] = useState(true)
+  const [gapMap, setGapMap] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchGaps() {
+      setLoading(true)
+      const { data } = await supabase
+        .from('store_distribution')
+        .select('store_id, ranging')
+      const map = {}
+      data?.forEach(r => {
+        const id = String(r.store_id)
+        if (map[id] === undefined) map[id] = 0
+        if (r.ranging === 0) map[id]++
+      })
+      setGapMap(map)
+      setLoading(false)
+    }
+    fetchGaps()
+  }, [])
 
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()
@@ -43,10 +51,8 @@ export default function ListView({ onStoreClick, filters, hideSearch }) {
     return [...filtered].sort((a, b) => {
       let va, vb
       if (sortCol === 'gaps') {
-        va = getStoreStats(a.name).gaps
-        vb = getStoreStats(b.name).gaps
-        if (va === '-') va = -1
-        if (vb === '-') vb = -1
+        va = gapMap[a.id] ?? -1
+        vb = gapMap[b.id] ?? -1
       } else {
         va = (a[sortCol] || '').toString().toLowerCase()
         vb = (b[sortCol] || '').toString().toLowerCase()
@@ -55,7 +61,7 @@ export default function ListView({ onStoreClick, filters, hideSearch }) {
       if (va > vb) return sortAsc ? 1 : -1
       return 0
     })
-  }, [filtered, sortCol, sortAsc])
+  }, [filtered, sortCol, sortAsc, gapMap])
 
   function toggleSort(col) {
     if (sortCol === col) setSortAsc(a => !a)
@@ -109,7 +115,7 @@ export default function ListView({ onStoreClick, filters, hideSearch }) {
           </thead>
           <tbody>
             {sorted.map(store => {
-              const stats = getStoreStats(store.name)
+              const gaps = gapMap[store.id]
               return (
                 <tr key={store.id} onClick={() => onStoreClick(store)}>
                   <td>
@@ -125,10 +131,12 @@ export default function ListView({ onStoreClick, filters, hideSearch }) {
                   <td>{store.state}</td>
                   <td>{store.region}</td>
                   <td>
-                    {stats.gaps === '-' ? (
+                    {loading ? (
+                      <span className="gap-pill grey">…</span>
+                    ) : gaps === undefined ? (
                       <span className="gap-pill grey">—</span>
-                    ) : stats.gaps > 0 ? (
-                      <span className="gap-pill red">{stats.gaps} gaps</span>
+                    ) : gaps > 0 ? (
+                      <span className="gap-pill red">{gaps} gaps</span>
                     ) : (
                       <span className="gap-pill green">✓</span>
                     )}

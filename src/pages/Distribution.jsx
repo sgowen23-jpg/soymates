@@ -12,6 +12,7 @@ export default function Distribution() {
   const [state, setState] = useState('All')
   const [rep, setRep] = useState('All')
   const [search, setSearch] = useState('')
+  const [bnbPeriod, setBnbPeriod] = useState('13wk')
 
   const filters = { state, rep, search }
 
@@ -29,14 +30,24 @@ export default function Distribution() {
         <select className="filter-select" value={rep} onChange={e => setRep(e.target.value)}>
           {REPS.map(r => <option key={r}>{r}</option>)}
         </select>
+        <div className="bnb-toggle">
+          <button
+            className={`bnb-btn ${bnbPeriod === '13wk' ? 'active' : ''}`}
+            onClick={() => setBnbPeriod('13wk')}
+          >13 Wk</button>
+          <button
+            className={`bnb-btn ${bnbPeriod === '26wk' ? 'active' : ''}`}
+            onClick={() => setBnbPeriod('26wk')}
+          >26 Wk</button>
+        </div>
         <span className="distribution-title">Distribution</span>
       </div>
 
       <div className="distribution-content">
-        <ListView onStoreClick={s => setSelectedStore(s)} filters={filters} hideSearch />
+        <ListView onStoreClick={s => setSelectedStore(s)} filters={filters} hideSearch bnbPeriod={bnbPeriod} />
       </div>
 
-      <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} />
+      <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} bnbPeriod={bnbPeriod} />
     </div>
   )
 }
