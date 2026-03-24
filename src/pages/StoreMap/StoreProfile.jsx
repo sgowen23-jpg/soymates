@@ -4,6 +4,11 @@ import { PROD_CATEGORIES } from '../../data/prodCategories'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
+// Strip leading asterisk from product names (raw data uses * prefix for core range)
+function clean(name) {
+  return name.replace(/^\*\s*/, '').trim()
+}
+
 export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
   const [productData, setProductData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -25,15 +30,16 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
         supabase.from(table).select('product, gap').eq('store_id', store.id),
       ])
       const bnbMap = {}
-      bnbRes.data?.forEach(r => { bnbMap[r.product] = r.gap })
+      bnbRes.data?.forEach(r => { bnbMap[clean(r.product)] = r.gap })
 
       const gaps = [], nbt = [], good = []
       distRes.data?.forEach(r => {
+        const name = clean(r.product)
         if (r.ranging === 0) {
-          gaps.push(r.product)
+          gaps.push(name)
         } else {
-          if (bnbMap[r.product] === 1) nbt.push(r.product)
-          else good.push(r.product)
+          if (bnbMap[name] === 1) nbt.push(name)
+          else good.push(name)
         }
       })
       setProductData({ gaps, nbt, good })
