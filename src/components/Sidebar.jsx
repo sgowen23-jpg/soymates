@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'Targets', icon: '🎯' },
   { label: 'MSO Pipeline', icon: '📋' },
   { label: 'Perfect Store', icon: '⭐' },
+  { label: 'Cycle Planner', icon: '📆' },
   { label: 'Data Upload', icon: '📤' },
   { label: 'Leave Calendar', icon: '📅' },
   { label: 'Chat bot', icon: '💬', soon: true },

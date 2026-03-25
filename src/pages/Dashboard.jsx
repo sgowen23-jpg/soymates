@@ -10,6 +10,7 @@ import LeaveCalendar from './LeaveCalendar'
 import Targets from './Targets'
 import MSOPipeline from './MSOPipeline'
 import PerfectStore from './PerfectStore'
+import CyclePlanner from './CyclePlanner'
 import './Dashboard.css'
 
 const PLACEHOLDER_PAGES = []
@@ -56,6 +57,7 @@ export default function Dashboard() {
         {activePage === 'Targets' && <Targets />}
         {activePage === 'MSO Pipeline' && <MSOPipeline />}
         {activePage === 'Perfect Store' && <PerfectStore />}
+        {activePage === 'Cycle Planner' && <CyclePlanner />}
         {PLACEHOLDER_PAGES.includes(activePage) && (
           <div className="placeholder-page">
             <h2>{activePage}</h2>
