@@ -216,62 +216,67 @@ function StrategyChange({ from: f, to: t }) {
 }
 
 // ─── Comparison view ──────────────────────────────────────────────────────────
-function ComparisonView({ c3, c4, search }) {
-  const [sortKey, setSortKey] = useState('total_ranging')
-  const [sortDir, setSortDir] = useState('desc')
-  const [page, setPage] = useState(0)
+function ComparisonView({ c3, c4 }) {
+  const [sortKey, setSortKey]   = useState('total_ranging')
+  const [sortDir, setSortDir]   = useState('desc')
+  const [page, setPage]         = useState(0)
+  const [search, setSearch]     = useState('')
+  const [stateF, setStateF]     = useState('All States')
+  const [msoF, setMsoF]         = useState('All')
   const PAGE_SIZE = 50
 
   const rows = useMemo(() => {
     const map = {}
-    c3.forEach(s => { map[s.store_id] = { ...s, c3: s } })
+    c3.forEach(s => { map[s.store_id] = { c3: s } })
     c4.forEach(s => {
-      if (!map[s.store_id]) map[s.store_id] = { ...s, c3: null }
+      if (!map[s.store_id]) map[s.store_id] = { c3: null }
       map[s.store_id].c4 = s
     })
     return Object.values(map)
       .filter(r => r.c3 && r.c4)
       .map(r => ({
-        store_id:     r.store_id,
-        store_name:   r.c4.store_name,
-        state:        r.c4.state,
-        strategy_c3:  r.c3.strategy_c4,
-        strategy_c4:  r.c4.strategy_c4,
+        store_id:      r.store_id,
+        store_name:    r.c4.store_name,
+        state:         r.c4.state,
+        mso:           r.c4.mso,
+        strategy_c3:   r.c3.strategy_c4,
+        strategy_c4:   r.c4.strategy_c4,
         total_ranging: (r.c4.total_ranging ?? 0) - (r.c3.total_ranging ?? 0),
-        uht_core:     (r.c4.uht_core ?? 0) - (r.c3.uht_core ?? 0),
-        uht_noncore:  (r.c4.uht_noncore ?? 0) - (r.c3.uht_noncore ?? 0),
-        chilled:      (r.c4.chilled ?? 0) - (r.c3.chilled ?? 0),
-        rtd:          (r.c4.rtd ?? 0) - (r.c3.rtd ?? 0),
-        yoghurt:      (r.c4.yoghurt ?? 0) - (r.c3.yoghurt ?? 0),
-        vitasoy_rank: r.c4.vitasoy_rank,
+        uht_core:      (r.c4.uht_core ?? 0)      - (r.c3.uht_core ?? 0),
+        uht_noncore:   (r.c4.uht_noncore ?? 0)   - (r.c3.uht_noncore ?? 0),
+        chilled:       (r.c4.chilled ?? 0)        - (r.c3.chilled ?? 0),
+        rtd:           (r.c4.rtd ?? 0)            - (r.c3.rtd ?? 0),
+        yoghurt:       (r.c4.yoghurt ?? 0)        - (r.c3.yoghurt ?? 0),
+        vitasoy_rank:  r.c4.vitasoy_rank,
       }))
   }, [c3, c4])
 
+  const msos = useMemo(() => ['All', ...Array.from(new Set(rows.map(r => r.mso).filter(Boolean))).sort()], [rows])
+
+  useEffect(() => setPage(0), [search, stateF, msoF])
+
   const filtered = useMemo(() => {
     let list = rows
-    if (search) {
-      const q = search.toLowerCase()
-      list = list.filter(r => (r.store_name || '').toLowerCase().includes(q))
-    }
+    if (stateF !== 'All States') list = list.filter(r => r.state === stateF)
+    if (msoF !== 'All') list = list.filter(r => r.mso === msoF)
+    if (search) { const q = search.toLowerCase(); list = list.filter(r => (r.store_name || '').toLowerCase().includes(q) || (r.mso || '').toLowerCase().includes(q)) }
     return [...list].sort((a, b) => {
       let av = a[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity)
       let bv = b[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity)
       if (typeof av === 'string') av = av.toLowerCase()
       if (typeof bv === 'string') bv = bv.toLowerCase()
-      if (av < bv) return sortDir === 'asc' ? -1 : 1
-      if (av > bv) return sortDir === 'asc' ? 1 : -1
-      return 0
+      return av < bv ? (sortDir === 'asc' ? -1 : 1) : av > bv ? (sortDir === 'asc' ? 1 : -1) : 0
     })
-  }, [rows, search, sortKey, sortDir])
+  }, [rows, search, stateF, msoF, sortKey, sortDir])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const pageRows   = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   function SortH({ col, label }) {
     const active = sortKey === col
     return (
       <th className={`ps-th sortable ${active ? 'sorted' : ''}`}
-          onClick={() => { if (sortKey === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortKey(col); setSortDir('desc') } setPage(0) }}>
+          onClick={() => { setSortKey(col); setSortDir(active ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'); setPage(0) }}>
         {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
       </th>
     )
@@ -286,22 +291,25 @@ function ComparisonView({ c3, c4, search }) {
     <>
       {/* Summary chips */}
       <div className="ps-compare-summary">
-        <div className="ps-compare-chip ps-compare-pos">
-          <div className="ps-compare-chip-num">+{improved}</div>
-          <div className="ps-compare-chip-lbl">Improved</div>
-        </div>
-        <div className="ps-compare-chip ps-compare-neg">
-          <div className="ps-compare-chip-num">{declined}</div>
-          <div className="ps-compare-chip-lbl">Declined</div>
-        </div>
-        <div className="ps-compare-chip">
-          <div className="ps-compare-chip-num">{unchanged}</div>
-          <div className="ps-compare-chip-lbl">Unchanged</div>
-        </div>
-        <div className="ps-compare-chip ps-compare-avg">
-          <div className="ps-compare-chip-num">{avgDelta > 0 ? '+' : ''}{avgDelta}</div>
-          <div className="ps-compare-chip-lbl">Avg Δ Ranging</div>
-        </div>
+        <div className="ps-compare-chip ps-compare-pos"><div className="ps-compare-chip-num">+{improved}</div><div className="ps-compare-chip-lbl">Improved</div></div>
+        <div className="ps-compare-chip ps-compare-neg"><div className="ps-compare-chip-num">{declined}</div><div className="ps-compare-chip-lbl">Declined</div></div>
+        <div className="ps-compare-chip"><div className="ps-compare-chip-num">{unchanged}</div><div className="ps-compare-chip-lbl">Unchanged</div></div>
+        <div className="ps-compare-chip ps-compare-avg"><div className="ps-compare-chip-num">{avgDelta > 0 ? '+' : ''}{avgDelta}</div><div className="ps-compare-chip-lbl">Avg Δ Ranging</div></div>
+      </div>
+
+      {/* Filters */}
+      <div className="ps-filters">
+        <input className="ps-search" placeholder="🔍 Search store or MSO…" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="ps-select" value={stateF} onChange={e => setStateF(e.target.value)}>
+          {STATES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select className="ps-select" value={msoF} onChange={e => setMsoF(e.target.value)}>
+          {msos.map(m => <option key={m}>{m}</option>)}
+        </select>
+        {(search || stateF !== 'All States' || msoF !== 'All') && (
+          <button className="ps-clear-btn" onClick={() => { setSearch(''); setStateF('All States'); setMsoF('All') }}>Clear</button>
+        )}
+        <span className="ps-result-count">{filtered.length} stores</span>
       </div>
 
       <div className="ps-table-wrap">
@@ -310,14 +318,14 @@ function ComparisonView({ c3, c4, search }) {
             <tr>
               <SortH col="store_name" label="Store" />
               <SortH col="state" label="State" />
+              <SortH col="mso" label="MSO" />
               <th className="ps-th">Strategy Change</th>
               <SortH col="total_ranging" label="Total Δ" />
               <SortH col="uht_core" label="UHT Core" />
-              <SortH col="uht_noncore" label="UHT Non-Core" />
+              <SortH col="uht_noncore" label="Non-Core" />
               <SortH col="chilled" label="Chilled" />
               <SortH col="rtd" label="RTD" />
               <SortH col="yoghurt" label="Yoghurt" />
-              <SortH col="vitasoy_rank" label="VS Rank" />
             </tr>
           </thead>
           <tbody>
@@ -325,6 +333,7 @@ function ComparisonView({ c3, c4, search }) {
               <tr key={r.store_id} className="ps-row">
                 <td className="ps-store-name">{r.store_name}</td>
                 <td className="ps-state">{STATE_SHORT[r.state] || r.state}</td>
+                <td className="ps-banner">{r.mso || '—'}</td>
                 <td><StrategyChange from={r.strategy_c3} to={r.strategy_c4} /></td>
                 <td><DeltaCell val={r.total_ranging} /></td>
                 <td><DeltaCell val={r.uht_core} /></td>
@@ -332,11 +341,11 @@ function ComparisonView({ c3, c4, search }) {
                 <td><DeltaCell val={r.chilled} /></td>
                 <td><DeltaCell val={r.rtd} /></td>
                 <td><DeltaCell val={r.yoghurt} /></td>
-                <td className="ps-rank">{r.vitasoy_rank ? `#${r.vitasoy_rank}` : '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && <div className="ps-empty">No stores match your filters</div>}
         {totalPages > 1 && (
           <div className="ps-pagination">
             <button className="ps-page-btn" onClick={() => setPage(0)} disabled={page === 0}>«</button>
@@ -507,15 +516,7 @@ export default function PerfectStore() {
       </div>
 
       {/* ── Comparison view ── */}
-      {isCompare && (
-        <>
-          <div className="ps-filters">
-            <input className="ps-search" placeholder="🔍 Search store…" value={search} onChange={e => setSearch(e.target.value)} />
-            <span className="ps-result-count">{stores.length} stores</span>
-          </div>
-          <ComparisonView c3={c3Stores} c4={stores} search={search} />
-        </>
-      )}
+      {isCompare && <ComparisonView c3={c3Stores} c4={stores} />}
 
       {/* ── Single cycle view ── */}
       {!isCompare && <>
