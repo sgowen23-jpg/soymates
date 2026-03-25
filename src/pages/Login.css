@@ -24,7 +24,15 @@
 .login-logo-icon {
   display: flex;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.login-vitasoy-logo {
+  width: 160px;
+  height: auto;
+  background: #CC0000;
+  border-radius: 12px;
+  padding: 14px 20px;
 }
 
 .login-logo h1 {

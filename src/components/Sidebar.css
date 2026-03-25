@@ -58,8 +58,11 @@
   min-height: 56px;
 }
 
-.sidebar-logo-icon {
-  font-size: 1.3rem;
+.sidebar-vitasoy-logo {
+  height: 22px;
+  width: auto;
+  opacity: 0.95;
+  flex-shrink: 0;
 }
 
 .sidebar-title {
