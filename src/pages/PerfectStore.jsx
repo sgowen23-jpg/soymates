@@ -379,6 +379,13 @@ function ComparisonView({ c3, c4 }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PerfectStore() {
+  // Make main-content scrollable while this page is mounted
+  useEffect(() => {
+    const mc = document.querySelector('.main-content')
+    if (mc) mc.style.overflowY = 'auto'
+    return () => { if (mc) mc.style.overflowY = '' }
+  }, [])
+
   const [stores, setStores]         = useState([])
   const [c3Stores, setC3Stores]     = useState([])
   const [loading, setLoading]       = useState(true)

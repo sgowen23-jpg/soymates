@@ -1,11 +1,9 @@
 .ps-page {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 100%;
   box-sizing: border-box;
 }
 
