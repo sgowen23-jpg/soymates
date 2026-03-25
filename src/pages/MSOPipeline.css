@@ -1,0 +1,323 @@
+.mso-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.mso-header {
+  margin-bottom: 24px;
+}
+.mso-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2b5e;
+  margin: 0 0 4px;
+}
+.mso-sub {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Stat cards */
+.mso-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.mso-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+}
+.mso-stat-open { border-left: 4px solid #e67e22; }
+.mso-stat-won  { border-left: 4px solid #16a085; }
+.mso-stat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2b5e;
+}
+.mso-stat-lbl {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Filters */
+.mso-filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.mso-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mso-filter-lbl {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+.mso-filter-btn {
+  padding: 5px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #374151;
+}
+.mso-filter-btn:hover { background: #f3f4f6; }
+.mso-filter-btn.active {
+  background: #1a2b5e;
+  color: #fff;
+  border-color: #1a2b5e;
+}
+
+/* Body layout */
+.mso-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.mso-body.with-panel {
+  grid-template-columns: 1fr 380px;
+}
+
+/* Table */
+.mso-table-wrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mso-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.mso-table thead th {
+  background: #f8f9fa;
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e5e7eb;
+}
+.mso-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #374151;
+}
+.mso-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.mso-row:hover { background: #f9fafb; }
+.mso-row.selected { background: #eff6ff; }
+.mso-row:last-child td { border-bottom: none; }
+
+.mso-mso-name { font-weight: 600; color: #1a2b5e; }
+.mso-value { font-weight: 600; }
+.mso-owner { font-size: 0.82rem; color: #666; }
+
+/* Stage badge */
+.mso-stage-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mso-fy-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  background: #f3f4f6;
+  color: #555;
+  font-weight: 600;
+}
+
+/* Detail panel */
+.mso-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.mso-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 18px;
+  background: #1a2b5e;
+  color: #fff;
+}
+.mso-panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: #fff;
+}
+.mso-panel-meta {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.75);
+}
+.mso-panel-close {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mso-panel-close:hover { background: rgba(255,255,255,0.25); }
+
+/* Panel details */
+.mso-panel-details {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.mso-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f8f8f8;
+}
+.mso-detail-row:last-child { border-bottom: none; }
+.mso-detail-lbl {
+  color: #888;
+  font-weight: 500;
+}
+.mso-detail-val {
+  font-weight: 700;
+  color: #1a2b5e;
+}
+
+/* Notes */
+.mso-panel-notes {
+  padding: 12px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.84rem;
+}
+.mso-next-steps { background: #f8fff8; }
+.mso-notes-lbl {
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mso-panel-notes p { margin: 0; color: #374151; line-height: 1.5; }
+
+/* Products */
+.mso-panel-products {
+  padding: 14px 18px;
+}
+.mso-products-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1a2b5e;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mso-cat-block { margin-bottom: 14px; }
+.mso-cat-header {
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.mso-product-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: #f8f9fa;
+  margin-bottom: 3px;
+}
+.mso-product-name { flex: 1; color: #374151; }
+.mso-product-gap {
+  background: #fee2e2;
+  color: #CC0000;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mso-product-gsv {
+  color: #16a085;
+  font-weight: 600;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.mso-gsv-total {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #16a085;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .mso-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .mso-body.with-panel {
+    grid-template-columns: 1fr;
+  }
+  .mso-panel {
+    position: static;
+    max-height: none;
+  }
+  .mso-table thead th:nth-child(4),
+  .mso-table tbody td:nth-child(4),
+  .mso-table thead th:nth-child(8),
+  .mso-table tbody td:nth-child(8) {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .mso-page { padding: 16px; }
+  .mso-stats { grid-template-columns: repeat(2, 1fr); }
+  .mso-table thead th:nth-child(3),
+  .mso-table tbody td:nth-child(3),
+  .mso-table thead th:nth-child(7),
+  .mso-table tbody td:nth-child(7) {
+    display: none;
+  }
+}

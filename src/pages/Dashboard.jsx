@@ -8,9 +8,10 @@ import Admin from './Admin'
 import DataUpload from './DataUpload'
 import LeaveCalendar from './LeaveCalendar'
 import Targets from './Targets'
+import MSOPipeline from './MSOPipeline'
 import './Dashboard.css'
 
-const PLACEHOLDER_PAGES = ['MSO Pipeline', 'Perfect Store', 'Client']
+const PLACEHOLDER_PAGES = ['Perfect Store', 'Client']
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Home')
@@ -52,6 +53,7 @@ export default function Dashboard() {
         {activePage === 'Data Upload' && <DataUpload />}
         {activePage === 'Leave Calendar' && <LeaveCalendar />}
         {activePage === 'Targets' && <Targets />}
+        {activePage === 'MSO Pipeline' && <MSOPipeline />}
         {PLACEHOLDER_PAGES.includes(activePage) && (
           <div className="placeholder-page">
             <h2>{activePage}</h2>
