@@ -181,9 +181,180 @@ function StorePanel({ store, onClose }) {
   )
 }
 
+// ─── View options (add future cycles here) ───────────────────────────────────
+const VIEW_OPTIONS = [
+  { value: '4',       label: 'Cycle 4' },
+  { value: '3',       label: 'Cycle 3' },
+  { value: 'c3-c4',  label: 'C3 → C4 Comparison' },
+]
+
+// ─── Comparison delta row ─────────────────────────────────────────────────────
+function DeltaCell({ val }) {
+  if (val == null || val === 0) return <span className="ps-delta ps-delta-zero">—</span>
+  return (
+    <span className={`ps-delta ${val > 0 ? 'ps-delta-pos' : 'ps-delta-neg'}`}>
+      {val > 0 ? '+' : ''}{val}
+    </span>
+  )
+}
+
+function StrategyChange({ from: f, to: t }) {
+  const fm = strategyMeta(f), tm = strategyMeta(t)
+  const TIER_ORDER = { 'PERFECT STORE': 0, 'GROW': 1, 'DEVELOP': 2, 'EXPAND': 3, 'CLOSED': 4 }
+  const fOrder = TIER_ORDER[Object.keys(TIER_ORDER).find(k => (f || '').toUpperCase().includes(k)) || 'EXPAND'] ?? 3
+  const tOrder = TIER_ORDER[Object.keys(TIER_ORDER).find(k => (t || '').toUpperCase().includes(k)) || 'EXPAND'] ?? 3
+  const improved = tOrder < fOrder, declined = tOrder > fOrder
+  return (
+    <div className="ps-strat-change">
+      <span className="ps-strat-tag" style={{ background: fm.bg, color: fm.color, borderColor: fm.color, fontSize: '0.68rem' }}>{f || '—'}</span>
+      <span className={`ps-strat-arrow ${improved ? 'improved' : declined ? 'declined' : ''}`}>
+        {improved ? '↑' : declined ? '↓' : '→'}
+      </span>
+      <span className="ps-strat-tag" style={{ background: tm.bg, color: tm.color, borderColor: tm.color, fontSize: '0.68rem' }}>{t || '—'}</span>
+    </div>
+  )
+}
+
+// ─── Comparison view ──────────────────────────────────────────────────────────
+function ComparisonView({ c3, c4, search }) {
+  const [sortKey, setSortKey] = useState('total_ranging')
+  const [sortDir, setSortDir] = useState('desc')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 50
+
+  const rows = useMemo(() => {
+    const map = {}
+    c3.forEach(s => { map[s.store_id] = { ...s, c3: s } })
+    c4.forEach(s => {
+      if (!map[s.store_id]) map[s.store_id] = { ...s, c3: null }
+      map[s.store_id].c4 = s
+    })
+    return Object.values(map)
+      .filter(r => r.c3 && r.c4)
+      .map(r => ({
+        store_id:     r.store_id,
+        store_name:   r.c4.store_name,
+        state:        r.c4.state,
+        strategy_c3:  r.c3.strategy_c4,
+        strategy_c4:  r.c4.strategy_c4,
+        total_ranging: (r.c4.total_ranging ?? 0) - (r.c3.total_ranging ?? 0),
+        uht_core:     (r.c4.uht_core ?? 0) - (r.c3.uht_core ?? 0),
+        uht_noncore:  (r.c4.uht_noncore ?? 0) - (r.c3.uht_noncore ?? 0),
+        chilled:      (r.c4.chilled ?? 0) - (r.c3.chilled ?? 0),
+        rtd:          (r.c4.rtd ?? 0) - (r.c3.rtd ?? 0),
+        yoghurt:      (r.c4.yoghurt ?? 0) - (r.c3.yoghurt ?? 0),
+        vitasoy_rank: r.c4.vitasoy_rank,
+      }))
+  }, [c3, c4])
+
+  const filtered = useMemo(() => {
+    let list = rows
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter(r => (r.store_name || '').toLowerCase().includes(q))
+    }
+    return [...list].sort((a, b) => {
+      let av = a[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity)
+      let bv = b[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity)
+      if (typeof av === 'string') av = av.toLowerCase()
+      if (typeof bv === 'string') bv = bv.toLowerCase()
+      if (av < bv) return sortDir === 'asc' ? -1 : 1
+      if (av > bv) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [rows, search, sortKey, sortDir])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  function SortH({ col, label }) {
+    const active = sortKey === col
+    return (
+      <th className={`ps-th sortable ${active ? 'sorted' : ''}`}
+          onClick={() => { if (sortKey === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortKey(col); setSortDir('desc') } setPage(0) }}>
+        {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+      </th>
+    )
+  }
+
+  const improved  = rows.filter(r => r.total_ranging > 0).length
+  const declined  = rows.filter(r => r.total_ranging < 0).length
+  const unchanged = rows.filter(r => r.total_ranging === 0).length
+  const avgDelta  = rows.length ? (rows.reduce((s, r) => s + r.total_ranging, 0) / rows.length).toFixed(1) : 0
+
+  return (
+    <>
+      {/* Summary chips */}
+      <div className="ps-compare-summary">
+        <div className="ps-compare-chip ps-compare-pos">
+          <div className="ps-compare-chip-num">+{improved}</div>
+          <div className="ps-compare-chip-lbl">Improved</div>
+        </div>
+        <div className="ps-compare-chip ps-compare-neg">
+          <div className="ps-compare-chip-num">{declined}</div>
+          <div className="ps-compare-chip-lbl">Declined</div>
+        </div>
+        <div className="ps-compare-chip">
+          <div className="ps-compare-chip-num">{unchanged}</div>
+          <div className="ps-compare-chip-lbl">Unchanged</div>
+        </div>
+        <div className="ps-compare-chip ps-compare-avg">
+          <div className="ps-compare-chip-num">{avgDelta > 0 ? '+' : ''}{avgDelta}</div>
+          <div className="ps-compare-chip-lbl">Avg Δ Ranging</div>
+        </div>
+      </div>
+
+      <div className="ps-table-wrap">
+        <table className="ps-table">
+          <thead>
+            <tr>
+              <SortH col="store_name" label="Store" />
+              <SortH col="state" label="State" />
+              <th className="ps-th">Strategy Change</th>
+              <SortH col="total_ranging" label="Total Δ" />
+              <SortH col="uht_core" label="UHT Core" />
+              <SortH col="uht_noncore" label="UHT Non-Core" />
+              <SortH col="chilled" label="Chilled" />
+              <SortH col="rtd" label="RTD" />
+              <SortH col="yoghurt" label="Yoghurt" />
+              <SortH col="vitasoy_rank" label="VS Rank" />
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map(r => (
+              <tr key={r.store_id} className="ps-row">
+                <td className="ps-store-name">{r.store_name}</td>
+                <td className="ps-state">{STATE_SHORT[r.state] || r.state}</td>
+                <td><StrategyChange from={r.strategy_c3} to={r.strategy_c4} /></td>
+                <td><DeltaCell val={r.total_ranging} /></td>
+                <td><DeltaCell val={r.uht_core} /></td>
+                <td><DeltaCell val={r.uht_noncore} /></td>
+                <td><DeltaCell val={r.chilled} /></td>
+                <td><DeltaCell val={r.rtd} /></td>
+                <td><DeltaCell val={r.yoghurt} /></td>
+                <td className="ps-rank">{r.vitasoy_rank ? `#${r.vitasoy_rank}` : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {totalPages > 1 && (
+          <div className="ps-pagination">
+            <button className="ps-page-btn" onClick={() => setPage(0)} disabled={page === 0}>«</button>
+            <button className="ps-page-btn" onClick={() => setPage(p => p - 1)} disabled={page === 0}>‹ Prev</button>
+            <span className="ps-page-info">Page {page + 1} of {totalPages} · {filtered.length} stores</span>
+            <button className="ps-page-btn" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1}>Next ›</button>
+            <button className="ps-page-btn" onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PerfectStore() {
   const [stores, setStores]         = useState([])
+  const [c3Stores, setC3Stores]     = useState([])
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState(null)
   const [search, setSearch]         = useState('')
@@ -193,34 +364,42 @@ export default function PerfectStore() {
   const [sortKey, setSortKey]       = useState('vitasoy_rank')
   const [sortDir, setSortDir]       = useState('asc')
   const [page, setPage]             = useState(0)
-  const [cycle, setCycle]           = useState(4)
+  const [view, setView]             = useState('4')
   const PAGE_SIZE = 50
+
+  async function fetchCycle(cycleNum) {
+    let all = [], from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('perfect_store').select('*')
+        .eq('cycle', cycleNum)
+        .order('vitasoy_rank', { ascending: true })
+        .range(from, from + 499)
+      if (error || !data || data.length === 0) break
+      all = [...all, ...data]
+      if (data.length < 500) break
+      from += 500
+    }
+    return all
+  }
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       setSelected(null)
       setPage(0)
-      let all = []
-      let from = 0
-      const BATCH = 500
-      while (true) {
-        const { data, error } = await supabase
-          .from('perfect_store')
-          .select('*')
-          .eq('cycle', cycle)
-          .order('vitasoy_rank', { ascending: true })
-          .range(from, from + BATCH - 1)
-        if (error || !data || data.length === 0) break
-        all = [...all, ...data]
-        if (data.length < BATCH) break
-        from += BATCH
+      if (view === 'c3-c4') {
+        const [c3, c4] = await Promise.all([fetchCycle(3), fetchCycle(4)])
+        setC3Stores(c3)
+        setStores(c4)
+      } else {
+        const data = await fetchCycle(Number(view))
+        setStores(data)
       }
-      setStores(all)
       setLoading(false)
     }
     load()
-  }, [cycle])
+  }, [view])
 
   // Summary stats
   const strategyCounts = useMemo(() => {
@@ -298,6 +477,9 @@ export default function PerfectStore() {
 
   const detail = selected ? stores.find(s => s.id === selected) : null
 
+  const viewLabel = VIEW_OPTIONS.find(o => o.value === view)?.label || ''
+  const isCompare = view === 'c3-c4'
+
   if (loading) return <div className="ps-loading"><div className="ps-spinner" /><p>Loading Perfect Store data…</p></div>
 
   return (
@@ -305,24 +487,38 @@ export default function PerfectStore() {
       {/* Header */}
       <div className="ps-header">
         <div>
-          <h1 className="ps-title">Perfect Store — Cycle {cycle}</h1>
-          <p className="ps-sub">{stores.length} stores · {cycle === 4 ? 'Data to 15 Mar 2026' : 'Data to 6 Dec 2025'}</p>
+          <h1 className="ps-title">Perfect Store {isCompare ? '— C3 → C4' : `— ${viewLabel}`}</h1>
+          <p className="ps-sub">
+            {isCompare ? `${stores.length} stores compared` : `${stores.length} stores · ${view === '4' ? 'Data to 15 Mar 2026' : 'Data to 6 Dec 2025'}`}
+          </p>
         </div>
-        <div className="ps-cycle-switcher">
-          <span className="ps-cycle-switcher-label">Cycle</span>
-          <div className="ps-cycle-tabs">
-            {[3, 4].map(c => (
-              <button
-                key={c}
-                className={`ps-cycle-tab ${cycle === c ? 'active' : ''}`}
-                onClick={() => setCycle(c)}
-              >
-                C{c}
-              </button>
+        <div className="ps-view-dropdown-wrap">
+          <label className="ps-view-label">View</label>
+          <select
+            className="ps-view-select"
+            value={view}
+            onChange={e => setView(e.target.value)}
+          >
+            {VIEW_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
-          </div>
+          </select>
         </div>
       </div>
+
+      {/* ── Comparison view ── */}
+      {isCompare && (
+        <>
+          <div className="ps-filters">
+            <input className="ps-search" placeholder="🔍 Search store…" value={search} onChange={e => setSearch(e.target.value)} />
+            <span className="ps-result-count">{stores.length} stores</span>
+          </div>
+          <ComparisonView c3={c3Stores} c4={stores} search={search} />
+        </>
+      )}
+
+      {/* ── Single cycle view ── */}
+      {!isCompare && <>
 
       {/* Strategy tier cards */}
       <div className="ps-strategy-row">
@@ -456,6 +652,8 @@ export default function PerfectStore() {
 
         {detail && <StorePanel store={detail} onClose={() => setSelected(null)} />}
       </div>
+
+      </>}  {/* end single-cycle view */}
     </div>
   )
 }
