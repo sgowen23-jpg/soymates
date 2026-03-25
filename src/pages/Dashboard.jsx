@@ -12,7 +12,7 @@ import MSOPipeline from './MSOPipeline'
 import PerfectStore from './PerfectStore'
 import './Dashboard.css'
 
-const PLACEHOLDER_PAGES = ['Client']
+const PLACEHOLDER_PAGES = []
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Home')
