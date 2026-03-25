@@ -192,6 +192,8 @@ export default function PerfectStore() {
   const [bannerFilter, setBannerFilter] = useState('All')
   const [sortKey, setSortKey]       = useState('vitasoy_rank')
   const [sortDir, setSortDir]       = useState('asc')
+  const [page, setPage]             = useState(0)
+  const PAGE_SIZE = 50
 
   useEffect(() => {
     async function load() {
@@ -273,7 +275,14 @@ export default function PerfectStore() {
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('asc') }
+    setPage(0)
   }
+
+  // Reset to page 0 when filters change
+  useEffect(() => { setPage(0) }, [search, stateFilter, stratFilter, bannerFilter])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   function SortHead({ col, label }) {
     const active = sortKey === col
@@ -366,7 +375,7 @@ export default function PerfectStore() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(s => {
+              {pageRows.map(s => {
                 const sm = strategyMeta(s.strategy_c4)
                 const trCol = kpiColor(s.total_ranging, 20)
                 return (
@@ -414,6 +423,17 @@ export default function PerfectStore() {
           </table>
           {filtered.length === 0 && (
             <div className="ps-empty">No stores match your filters</div>
+          )}
+          {totalPages > 1 && (
+            <div className="ps-pagination">
+              <button className="ps-page-btn" onClick={() => setPage(0)} disabled={page === 0}>«</button>
+              <button className="ps-page-btn" onClick={() => setPage(p => p - 1)} disabled={page === 0}>‹ Prev</button>
+              <span className="ps-page-info">
+                Page {page + 1} of {totalPages} · {filtered.length} stores
+              </span>
+              <button className="ps-page-btn" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1}>Next ›</button>
+              <button className="ps-page-btn" onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
+            </div>
           )}
         </div>
 

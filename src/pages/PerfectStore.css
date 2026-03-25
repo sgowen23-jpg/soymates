@@ -5,6 +5,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* Loading */
@@ -215,6 +218,33 @@
   text-align: center;
   color: #aaa;
   font-size: 0.9rem;
+}
+
+.ps-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+.ps-page-btn {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: #374151;
+  transition: all 0.1s;
+}
+.ps-page-btn:hover:not(:disabled) { background: #1a2b5e; color: #fff; border-color: #1a2b5e; }
+.ps-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ps-page-info {
+  font-size: 0.82rem;
+  color: #888;
+  padding: 0 8px;
 }
 
 /* ── Detail Panel ── */
