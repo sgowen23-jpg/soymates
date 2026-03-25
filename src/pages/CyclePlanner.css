@@ -12,7 +12,23 @@
 /* ── Header ──────────────────────────────────────────────────────────────────── */
 .cp-header { display: flex; flex-direction: column; gap: 10px; }
 
-.cp-header-row { display: flex; align-items: center; gap: 12px; }
+.cp-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cp-header-actions { display: flex; align-items: center; gap: 12px; }
+
+.cp-export-btn {
+  padding: 8px 16px;
+  background: #1a2b5e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.cp-export-btn:hover { background: #253a7a; }
+.cp-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .cp-title {
   font-size: 22px;

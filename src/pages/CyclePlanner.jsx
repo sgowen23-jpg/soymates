@@ -370,6 +370,117 @@ export default function CyclePlanner() {
     )
   }
 
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+  function exportPDF() {
+    const repSlug = rep.replace(/\s+/g, '')
+    const docTitle = `CyclePlan_${repSlug}_Cycle${cycle}`
+
+    const priorityDot = (storeId) => {
+      const ps = psScores[storeId]
+      if (!ps) return ''
+      const pri = psPriority(ps.total_ranging)
+      const colors = { red: '#CC0000', orange: '#e67e22', green: '#16a085' }
+      return `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${colors[pri] || '#ccc'};margin-right:5px;flex-shrink:0;"></span>`
+    }
+
+    const weeksHTML = weeks.map((week, wi) => {
+      const weekStart = fmtDay(week[0])
+      const weekEnd   = fmtDay(week[4])
+
+      const daysHTML = week.map(date => {
+        const ds = toDS(date)
+        const isLeave = leaveDates.has(ds)
+        const dayNote = notes[ds] || ''
+
+        if (isLeave) {
+          return `<td class="cp-pdf-day">
+            <div class="cp-pdf-day-hd">${fmtDay(date)}</div>
+            <div class="cp-pdf-leave">🏖 On Leave</div>
+          </td>`
+        }
+
+        const filled = Array.from({ length: 8 }, (_, i) => slots[`${ds}_${i}`]).filter(Boolean)
+        const storesHTML = filled.length
+          ? filled.map((sid, idx) => {
+              const store = STORES.find(s => s.id === sid)
+              const name  = store?.name || sid
+              return `<div class="cp-pdf-store">${priorityDot(sid)}<span>${idx + 1}. ${name}</span></div>`
+            }).join('')
+          : `<div class="cp-pdf-empty">No stores planned</div>`
+
+        return `<td class="cp-pdf-day">
+          <div class="cp-pdf-day-hd">${fmtDay(date)}</div>
+          <div class="cp-pdf-stores">${storesHTML}</div>
+          ${dayNote ? `<div class="cp-pdf-notes">${dayNote}</div>` : ''}
+        </td>`
+      }).join('')
+
+      return `
+        <div class="cp-pdf-week">
+          <div class="cp-pdf-week-hd">Week ${wi + 1} &nbsp;·&nbsp; ${weekStart} – ${weekEnd}</div>
+          <table class="cp-pdf-table"><tbody><tr>${daysHTML}</tr></tbody></table>
+        </div>`
+    }).join('')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${docTitle}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1a1a1a; background: white; }
+    .cp-pdf-header { background: #CC0000; color: white; padding: 20px 28px; }
+    .cp-pdf-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .cp-pdf-header p  { font-size: 12px; opacity: 0.85; }
+    .cp-pdf-hb { padding: 14px 28px; background: #f7f7f7; border-bottom: 1px solid #e0e0e0; display: flex; gap: 32px; }
+    .cp-pdf-hb-item label { font-size: 9px; text-transform: uppercase; color: #888; letter-spacing: 0.06em; display: block; }
+    .cp-pdf-hb-item span  { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+    .cp-pdf-body { padding: 20px 28px; display: flex; flex-direction: column; gap: 18px; }
+    .cp-pdf-week { page-break-inside: avoid; }
+    .cp-pdf-week-hd { background: #CC0000; color: white; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 4px 4px 0 0; }
+    .cp-pdf-table { width: 100%; border-collapse: collapse; }
+    .cp-pdf-day { width: 20%; border: 1px solid #e0e0e0; vertical-align: top; padding: 8px; }
+    .cp-pdf-day-hd { font-weight: 700; font-size: 11px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #eee; color: #1a1a1a; }
+    .cp-pdf-stores { display: flex; flex-direction: column; gap: 3px; }
+    .cp-pdf-store { display: flex; align-items: center; font-size: 10.5px; line-height: 1.3; }
+    .cp-pdf-empty { font-size: 10px; color: #ccc; font-style: italic; }
+    .cp-pdf-notes { margin-top: 6px; padding-top: 5px; border-top: 1px dashed #ddd; font-size: 10px; color: #666; font-style: italic; }
+    .cp-pdf-leave { font-size: 10.5px; color: #999; font-style: italic; }
+    .cp-pdf-legend { display: flex; gap: 20px; padding: 10px 28px; font-size: 10px; color: #555; border-top: 1px solid #eee; margin-top: 4px; }
+    .cp-pdf-legend span { display: flex; align-items: center; gap: 5px; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .cp-pdf-week { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cp-pdf-header">
+    <h1>${rep} — Cycle ${cycle} Plan</h1>
+    <p>${CYCLE_STARTS[cycle]} · 12 weeks · Mon–Fri</p>
+  </div>
+  <div class="cp-pdf-hb">
+    <div class="cp-pdf-hb-item"><label>Home Address</label><span>${homeBase.home_address || '—'}</span></div>
+    <div class="cp-pdf-hb-item"><label>Day Start</label><span>${homeBase.start_point || '—'}</span></div>
+    <div class="cp-pdf-hb-item"><label>Day Finish</label><span>${homeBase.finish_point || '—'}</span></div>
+  </div>
+  <div class="cp-pdf-body">${weeksHTML}</div>
+  <div class="cp-pdf-legend">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#CC0000;"></span> Needs attention (&lt;12/28)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e67e22;"></span> Getting close (12–19/28)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a085;"></span> On track (20+/28)</span>
+  </div>
+</body>
+</html>`
+
+    const win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+    win.document.title = docTitle
+    setTimeout(() => { win.focus(); win.print() }, 400)
+  }
+
   // Count filled slots for a week
   function weekFilled(week) {
     return week.reduce((acc, d) => {
@@ -387,7 +498,12 @@ export default function CyclePlanner() {
       <div className="cp-header">
         <div className="cp-header-row">
           <h1 className="cp-title">Cycle Planner</h1>
-          {saving && <span className="cp-autosave">● Saving…</span>}
+          <div className="cp-header-actions">
+            {saving && <span className="cp-autosave">● Saving…</span>}
+            <button className="cp-export-btn" onClick={exportPDF} disabled={loading}>
+              ⬇ Export PDF
+            </button>
+          </div>
         </div>
         <div className="cp-selectors">
           <div className="cp-field">
