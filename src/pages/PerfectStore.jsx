@@ -193,31 +193,34 @@ export default function PerfectStore() {
   const [sortKey, setSortKey]       = useState('vitasoy_rank')
   const [sortDir, setSortDir]       = useState('asc')
   const [page, setPage]             = useState(0)
+  const [cycle, setCycle]           = useState(4)
   const PAGE_SIZE = 50
 
   useEffect(() => {
     async function load() {
       setLoading(true)
-      // Fetch all stores (777 rows – small enough for one call)
+      setSelected(null)
+      setPage(0)
       let all = []
       let from = 0
-      const PAGE = 500
+      const BATCH = 500
       while (true) {
         const { data, error } = await supabase
           .from('perfect_store')
           .select('*')
+          .eq('cycle', cycle)
           .order('vitasoy_rank', { ascending: true })
-          .range(from, from + PAGE - 1)
+          .range(from, from + BATCH - 1)
         if (error || !data || data.length === 0) break
         all = [...all, ...data]
-        if (data.length < PAGE) break
-        from += PAGE
+        if (data.length < BATCH) break
+        from += BATCH
       }
       setStores(all)
       setLoading(false)
     }
     load()
-  }, [])
+  }, [cycle])
 
   // Summary stats
   const strategyCounts = useMemo(() => {
@@ -302,8 +305,22 @@ export default function PerfectStore() {
       {/* Header */}
       <div className="ps-header">
         <div>
-          <h1 className="ps-title">Perfect Store — Cycle 4</h1>
-          <p className="ps-sub">{stores.length} stores · Data to 15 Mar 2026</p>
+          <h1 className="ps-title">Perfect Store — Cycle {cycle}</h1>
+          <p className="ps-sub">{stores.length} stores · {cycle === 4 ? 'Data to 15 Mar 2026' : 'Data to 6 Dec 2025'}</p>
+        </div>
+        <div className="ps-cycle-switcher">
+          <span className="ps-cycle-switcher-label">Cycle</span>
+          <div className="ps-cycle-tabs">
+            {[3, 4].map(c => (
+              <button
+                key={c}
+                className={`ps-cycle-tab ${cycle === c ? 'active' : ''}`}
+                onClick={() => setCycle(c)}
+              >
+                C{c}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

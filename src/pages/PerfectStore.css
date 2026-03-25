@@ -30,6 +30,52 @@
 @keyframes ps-spin { to { transform: rotate(360deg); } }
 
 /* Header */
+.ps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ps-cycle-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+.ps-cycle-switcher-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ps-cycle-tabs {
+  display: flex;
+  gap: 4px;
+}
+.ps-cycle-tab {
+  padding: 6px 18px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #f8f9fa;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+.ps-cycle-tab:hover { background: #e9ecef; }
+.ps-cycle-tab.active {
+  background: #1a2b5e;
+  color: #fff;
+  border-color: #1a2b5e;
+}
+
 .ps-title {
   font-size: 1.6rem;
   font-weight: 700;
