@@ -198,19 +198,26 @@ function DeltaCell({ val }) {
   )
 }
 
+const TIER_ORDER = { 'PERFECT STORE': 0, 'GROW': 1, 'DEVELOP': 2, 'EXPAND': 3, 'CLOSED': 4 }
+function tierOf(s) { return TIER_ORDER[Object.keys(TIER_ORDER).find(k => (s || '').toUpperCase().includes(k)) || 'EXPAND'] ?? 3 }
+
 function StrategyChange({ from: f, to: t }) {
   const fm = strategyMeta(f), tm = strategyMeta(t)
-  const TIER_ORDER = { 'PERFECT STORE': 0, 'GROW': 1, 'DEVELOP': 2, 'EXPAND': 3, 'CLOSED': 4 }
-  const fOrder = TIER_ORDER[Object.keys(TIER_ORDER).find(k => (f || '').toUpperCase().includes(k)) || 'EXPAND'] ?? 3
-  const tOrder = TIER_ORDER[Object.keys(TIER_ORDER).find(k => (t || '').toUpperCase().includes(k)) || 'EXPAND'] ?? 3
-  const improved = tOrder < fOrder, declined = tOrder > fOrder
+  const improved = tierOf(t) < tierOf(f), declined = tierOf(t) > tierOf(f)
+  const same = !improved && !declined
   return (
     <div className="ps-strat-change">
-      <span className="ps-strat-tag" style={{ background: fm.bg, color: fm.color, borderColor: fm.color, fontSize: '0.68rem' }}>{f || '—'}</span>
-      <span className={`ps-strat-arrow ${improved ? 'improved' : declined ? 'declined' : ''}`}>
-        {improved ? '↑' : declined ? '↓' : '→'}
-      </span>
-      <span className="ps-strat-tag" style={{ background: tm.bg, color: tm.color, borderColor: tm.color, fontSize: '0.68rem' }}>{t || '—'}</span>
+      <div className="ps-strat-change-row">
+        <span className="ps-strat-change-cycle">C3</span>
+        <span className="ps-strat-tag" style={{ background: fm.bg, color: fm.color, borderColor: fm.color }}>{f || '—'}</span>
+      </div>
+      <div className={`ps-strat-change-indicator ${improved ? 'improved' : declined ? 'declined' : 'same'}`}>
+        {improved ? '▲ Improved' : declined ? '▼ Declined' : '● No Change'}
+      </div>
+      <div className="ps-strat-change-row">
+        <span className="ps-strat-change-cycle">C4</span>
+        <span className="ps-strat-tag" style={{ background: tm.bg, color: tm.color, borderColor: tm.color }}>{t || '—'}</span>
+      </div>
     </div>
   )
 }
@@ -248,6 +255,8 @@ function ComparisonView({ c3, c4 }) {
         rtd:           (r.c4.rtd ?? 0)            - (r.c3.rtd ?? 0),
         yoghurt:       (r.c4.yoghurt ?? 0)        - (r.c3.yoghurt ?? 0),
         vitasoy_rank:  r.c4.vitasoy_rank,
+        call_fqy_c3:   r.c3.call_fqy_target,
+        call_fqy_c4:   r.c4.call_fqy_target,
       }))
   }, [c3, c4])
 
@@ -326,6 +335,7 @@ function ComparisonView({ c3, c4 }) {
               <SortH col="chilled" label="Chilled" />
               <SortH col="rtd" label="RTD" />
               <SortH col="yoghurt" label="Yoghurt" />
+              <th className="ps-th">Call FQY</th>
             </tr>
           </thead>
           <tbody>
@@ -341,6 +351,13 @@ function ComparisonView({ c3, c4 }) {
                 <td><DeltaCell val={r.chilled} /></td>
                 <td><DeltaCell val={r.rtd} /></td>
                 <td><DeltaCell val={r.yoghurt} /></td>
+                <td>
+                  <div className="ps-fqy-compare">
+                    <span className="ps-fqy-val">{r.call_fqy_c3 ?? '—'}</span>
+                    <span className="ps-fqy-arrow">→</span>
+                    <span className="ps-fqy-val">{r.call_fqy_c4 ?? '—'}</span>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -585,7 +602,7 @@ export default function PerfectStore() {
                 <SortHead col="chilled" label="Chilled" />
                 <SortHead col="yoghurt" label="Yog" />
                 <SortHead col="vitasoy_rank" label="VS Rank" />
-                <th className="ps-th">Calls</th>
+                <SortHead col="call_fqy_target" label="Call FQY" />
               </tr>
             </thead>
             <tbody>
@@ -629,7 +646,7 @@ export default function PerfectStore() {
                       <span style={{ color: kpiColor(s.yoghurt, 1), fontWeight: 600 }}>{s.yoghurt ?? '—'}</span>
                     </td>
                     <td className="ps-rank">{s.vitasoy_rank ? `#${s.vitasoy_rank}` : '—'}</td>
-                    <td className="ps-calls">{s.call_fqy_target ?? '—'}</td>
+                    <td className="ps-calls">{s.call_fqy_target != null ? `${s.call_fqy_target}×` : '—'}</td>
                   </tr>
                 )
               })}

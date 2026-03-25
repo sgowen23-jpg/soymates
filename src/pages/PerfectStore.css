@@ -107,13 +107,45 @@
 /* Strategy change */
 .ps-strat-change {
   display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 140px;
+}
+.ps-strat-change-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ps-strat-change-cycle {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #aaa;
+  width: 18px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.ps-strat-change-indicator {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.ps-strat-change-indicator.improved { color: #16a085; background: #e8f8f5; }
+.ps-strat-change-indicator.declined { color: #CC0000; background: #fdedec; }
+.ps-strat-change-indicator.same     { color: #888;    background: #f4f6f7; }
+
+/* Call FQY compare cell */
+.ps-fqy-compare {
+  display: flex;
   align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
-.ps-strat-arrow { font-weight: 700; font-size: 0.9rem; color: #aaa; }
-.ps-strat-arrow.improved { color: #16a085; }
-.ps-strat-arrow.declined { color: #CC0000; }
+.ps-fqy-val { font-weight: 600; color: #1a2b5e; }
+.ps-fqy-arrow { color: #bbb; font-size: 0.75rem; }
 
 .ps-cycle-switcher {
   display: flex;
