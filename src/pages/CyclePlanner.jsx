@@ -13,11 +13,11 @@ const REPS = [
   'Azra Horell',
 ]
 
-// Cycle start Mondays — adjust as needed
+// Cycle start Mondays
 const CYCLE_STARTS = {
-  1: '2026-01-05',
-  2: '2026-03-30',
-  3: '2026-06-22',
+  1: '2026-03-30',
+  2: '2026-06-22',
+  3: '2026-09-14',
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
