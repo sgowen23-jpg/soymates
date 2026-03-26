@@ -240,6 +240,13 @@
   border-radius: 20px;
   padding: 2px 8px;
 }
+.cp-leave-tag-ph {
+  color: #1a2b5e;
+  background: #e8ecf8;
+}
+.cp-day-pubhol {
+  background: #f5f7fd;
+}
 
 /* Route wrap + app picker menu */
 .cp-route-wrap { position: relative; }

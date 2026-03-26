@@ -11,7 +11,7 @@ export const REPS = [
   'Shane Vandewardt',
 ]
 
-const LEAVE_TYPES = ['Annual Leave', 'Sick Leave', 'RDO', 'Training', 'Regional Trip', 'Other']
+const LEAVE_TYPES = ['Annual Leave', 'Sick Leave', 'RDO', 'Training', 'Regional Trip', 'Public Holiday', 'Other']
 
 export const REP_COLORS = {
   'Azra Horell':        '#CC0000',

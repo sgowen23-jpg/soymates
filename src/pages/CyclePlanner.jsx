@@ -189,7 +189,8 @@ function buildRouteUrls(storeIds, homeBase) {
 }
 
 // ─── Day Card ─────────────────────────────────────────────────────────────────
-function DayCard({ date, psScores, daySlots, dayNotes, isLeave, homeBase, onSlotChange, onNotesChange }) {
+function DayCard({ date, psScores, daySlots, dayNotes, leaveType, homeBase, onSlotChange, onNotesChange }) {
+  const isLeave = !!leaveType
   const ds = toDS(date)
   const [showRouteMenu, setShowRouteMenu] = useState(false)
   const routeRef = useRef(null)
@@ -223,11 +224,14 @@ function DayCard({ date, psScores, daySlots, dayNotes, isLeave, homeBase, onSlot
   const routes   = storeIds.length ? buildRouteUrls(storeIds, homeBase) : null
 
   if (isLeave) {
+    const isPH = leaveType === 'Public Holiday'
     return (
-      <div className="cp-day cp-day-leave">
+      <div className={`cp-day cp-day-leave ${isPH ? 'cp-day-pubhol' : ''}`}>
         <div className="cp-day-hd">
           <span className="cp-day-lbl">{fmtDay(date)}</span>
-          <span className="cp-leave-tag">🏖 On Leave</span>
+          <span className={`cp-leave-tag ${isPH ? 'cp-leave-tag-ph' : ''}`}>
+            {isPH ? '🏛 Public Holiday' : '🏖 On Leave'}
+          </span>
         </div>
       </div>
     )
@@ -305,7 +309,7 @@ export default function CyclePlanner() {
   const [cycle, setCycle]       = useState(2)
   const [rep, setRep]           = useState('Sam Gowen')
   const [psScores, setPsScores] = useState({})
-  const [leaveDates, setLeaveDates] = useState(new Set())
+  const [leaveDates, setLeaveDates] = useState(new Map()) // dateStr → leave_type
   const [slots, setSlots]       = useState({})   // key: "YYYY-MM-DD_i" → store_id
   const [notes, setNotes]       = useState({})   // key: "YYYY-MM-DD" → text
   const [homeBase, setHomeBase] = useState({ home_address: '', start_point: '', finish_point: '' })
@@ -337,23 +341,23 @@ export default function CyclePlanner() {
       })
   }, [])
 
-  // Load leave for rep
+  // Load leave for rep — Map of dateStr → leave_type
   useEffect(() => {
     if (!rep) return
     supabase
       .from('leave_entries')
-      .select('start_date, end_date')
+      .select('start_date, end_date, leave_type')
       .eq('rep_name', rep)
       .then(({ data }) => {
-        const set = new Set()
+        const map = new Map()
         data?.forEach(row => {
           const start = new Date(row.start_date + 'T00:00:00')
           const end   = new Date((row.end_date || row.start_date) + 'T00:00:00')
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            set.add(toDS(d))
+            map.set(toDS(d), row.leave_type || 'Annual Leave')
           }
         })
-        setLeaveDates(set)
+        setLeaveDates(map)
       })
   }, [rep])
 
@@ -671,7 +675,7 @@ export default function CyclePlanner() {
                         psScores={psScores}
                         daySlots={getDaySlots(ds)}
                         dayNotes={notes[ds] || ''}
-                        isLeave={leaveDates.has(ds)}
+                        leaveType={leaveDates.get(ds) || null}
                         homeBase={homeBase}
                         onSlotChange={saveSlot}
                         onNotesChange={saveNotes}
