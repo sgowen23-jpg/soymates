@@ -311,7 +311,7 @@ function DayCard({ date, psScores, daySlots, dayNotes, leaveInfo, homeBase, onSl
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CyclePlanner() {
-  const [cycle, setCycle]       = useState(2)
+  const [cycle, setCycle]       = useState(1)
   const [rep, setRep]           = useState('Sam Gowen')
   const [psScores, setPsScores] = useState({})
   const [leaveDates, setLeaveDates] = useState(new Map()) // dateStr → leave_type
