@@ -161,16 +161,15 @@ function buildRouteUrls(storeIds, homeBase) {
   const destRaw   = homeBase?.finish_point || homeBase?.home_address || ''
 
   // ── Google Maps ──────────────────────────────────────────────────────────
-  // Supports up to 8 waypoints; opening https URL on mobile launches the app
-  const gOrigin = originRaw ? encodeURIComponent(originRaw) : ''
-  const gFinal  = destRaw   ? encodeURIComponent(destRaw)   : encodeURIComponent(addrs[addrs.length - 1])
-  const gMids   = destRaw ? addrs : addrs.slice(0, -1)   // if custom dest, all stores are waypoints
-  const gWps    = gMids.map(a => encodeURIComponent(a)).join('|')
-
-  let google = 'https://www.google.com/maps/dir/?api=1&travelmode=driving'
-  if (gOrigin) google += `&origin=${gOrigin}`
-  google += `&destination=${gFinal}`
-  if (gWps) google += `&waypoints=${gWps}`
+  // Path-based format works in Google Maps app on iOS & Android — the
+  // ?api=1 query-param format drops waypoints when the app intercepts the URL.
+  // Format: /maps/dir/Origin/Stop1/Stop2/.../Destination
+  const googleStops = []
+  if (originRaw) googleStops.push(originRaw)
+  googleStops.push(...addrs)
+  if (destRaw) googleStops.push(destRaw)
+  const google = 'https://www.google.com/maps/dir/' +
+    googleStops.map(s => encodeURIComponent(s)).join('/')
 
   // ── Apple Maps ───────────────────────────────────────────────────────────
   // Multi-stop via repeated daddr= works on iOS 16+ Maps
