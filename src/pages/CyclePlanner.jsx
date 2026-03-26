@@ -179,10 +179,11 @@ function buildRouteUrls(storeIds, homeBase) {
   aDests.forEach(d => { apple += `&daddr=${d}` })
 
   // ── Waze ─────────────────────────────────────────────────────────────────
-  // Waze URL scheme only supports a single destination; navigate to first store
-  // and the rep adds remaining stops inside Waze
+  // waze:// URI scheme launches the app directly on iOS & Android.
+  // https://waze.com/ul opens in browser instead — use the deep link.
+  // Waze only supports single-stop navigation via URL; rep adds more in-app.
   const wFirst = encodeURIComponent(addrs[0])
-  const waze = `https://waze.com/ul?q=${wFirst}&navigate=yes`
+  const waze = `waze://?q=${wFirst}&navigate=yes`
 
   return { google, apple, waze, storeCount: storeObjs.length }
 }
@@ -208,7 +209,13 @@ function DayCard({ date, psScores, daySlots, dayNotes, isLeave, homeBase, onSlot
   }, [showRouteMenu])
 
   function openMap(url) {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    if (url.startsWith('waze://')) {
+      // Custom URI scheme — must use location change, not window.open
+      // (popup blockers block custom schemes in new tabs)
+      window.location.href = url
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
     setShowRouteMenu(false)
   }
 
