@@ -149,33 +149,72 @@ function StoreSelect({ psScores, value, onChange }) {
   )
 }
 
+// ─── Build route URLs for each map app ────────────────────────────────────────
+function buildRouteUrls(storeIds, homeBase) {
+  const storeObjs = storeIds.map(id => STORES.find(s => s.id === id)).filter(Boolean)
+  if (!storeObjs.length) return null
+
+  // Plain text addresses (not encoded yet) for each stop
+  const addrs = storeObjs.map(s => s.address || [s.name, s.suburb, s.state].filter(Boolean).join(', '))
+
+  const originRaw = homeBase?.start_point || homeBase?.home_address || ''
+  const destRaw   = homeBase?.finish_point || homeBase?.home_address || ''
+
+  // ── Google Maps ──────────────────────────────────────────────────────────
+  // Supports up to 8 waypoints; opening https URL on mobile launches the app
+  const gOrigin = originRaw ? encodeURIComponent(originRaw) : ''
+  const gFinal  = destRaw   ? encodeURIComponent(destRaw)   : encodeURIComponent(addrs[addrs.length - 1])
+  const gMids   = destRaw ? addrs : addrs.slice(0, -1)   // if custom dest, all stores are waypoints
+  const gWps    = gMids.map(a => encodeURIComponent(a)).join('|')
+
+  let google = 'https://www.google.com/maps/dir/?api=1&travelmode=driving'
+  if (gOrigin) google += `&origin=${gOrigin}`
+  google += `&destination=${gFinal}`
+  if (gWps) google += `&waypoints=${gWps}`
+
+  // ── Apple Maps ───────────────────────────────────────────────────────────
+  // Multi-stop via repeated daddr= works on iOS 16+ Maps
+  const aOrigin = encodeURIComponent(originRaw || addrs[0])
+  const aDests  = (destRaw ? [...addrs, destRaw] : addrs).map(a => encodeURIComponent(a))
+  let apple = `https://maps.apple.com/?saddr=${aOrigin}&dirflg=d`
+  aDests.forEach(d => { apple += `&daddr=${d}` })
+
+  // ── Waze ─────────────────────────────────────────────────────────────────
+  // Waze URL scheme only supports a single destination; navigate to first store
+  // and the rep adds remaining stops inside Waze
+  const wFirst = encodeURIComponent(addrs[0])
+  const waze = `https://waze.com/ul?q=${wFirst}&navigate=yes`
+
+  return { google, apple, waze, storeCount: storeObjs.length }
+}
+
 // ─── Day Card ─────────────────────────────────────────────────────────────────
 function DayCard({ date, psScores, daySlots, dayNotes, isLeave, homeBase, onSlotChange, onNotesChange }) {
   const ds = toDS(date)
+  const [showRouteMenu, setShowRouteMenu] = useState(false)
+  const routeRef = useRef(null)
 
-  function handleRoute() {
-    const storeIds = Array.from({ length: 8 }, (_, i) => daySlots[i]).filter(Boolean)
-    if (!storeIds.length) { alert('No stores added for this day yet.'); return }
-
-    const storeObjs = storeIds.map(id => STORES.find(s => s.id === id)).filter(Boolean)
-    const waypoints = storeObjs.map(s => encodeURIComponent(s.address || `${s.name}, ${s.state}`))
-
-    const origin = encodeURIComponent(homeBase?.start_point || homeBase?.home_address || '')
-    const dest   = encodeURIComponent(homeBase?.finish_point || homeBase?.home_address || '')
-
-    let url = 'https://www.google.com/maps/dir/?api=1&travelmode=driving'
-    if (origin) url += `&origin=${origin}`
-
-    if (waypoints.length === 1) {
-      url += `&destination=${dest || waypoints[0]}`
-    } else {
-      url += `&destination=${dest || waypoints[waypoints.length - 1]}`
-      const wps = dest ? waypoints : waypoints.slice(0, -1)
-      if (wps.length) url += `&waypoints=${wps.join('|')}`
+  // Close menu on outside tap/click
+  useEffect(() => {
+    if (!showRouteMenu) return
+    function onDown(e) {
+      if (routeRef.current && !routeRef.current.contains(e.target)) setShowRouteMenu(false)
     }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('touchstart', onDown)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown)
+    }
+  }, [showRouteMenu])
 
-    window.open(url, '_blank')
+  function openMap(url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    setShowRouteMenu(false)
   }
+
+  const storeIds = Array.from({ length: 8 }, (_, i) => daySlots[i]).filter(Boolean)
+  const routes   = storeIds.length ? buildRouteUrls(storeIds, homeBase) : null
 
   if (isLeave) {
     return (
@@ -192,7 +231,43 @@ function DayCard({ date, psScores, daySlots, dayNotes, isLeave, homeBase, onSlot
     <div className="cp-day">
       <div className="cp-day-hd">
         <span className="cp-day-lbl">{fmtDay(date)}</span>
-        <button className="cp-route-btn" onClick={handleRoute} type="button">🗺 Route</button>
+
+        {/* Route button + app picker */}
+        <div className="cp-route-wrap" ref={routeRef}>
+          <button
+            className="cp-route-btn"
+            type="button"
+            onClick={() => {
+              if (!routes) { alert('Add at least one store to this day first.'); return }
+              setShowRouteMenu(v => !v)
+            }}
+          >
+            🗺 Route
+          </button>
+
+          {showRouteMenu && routes && (
+            <div className="cp-route-menu">
+              <div className="cp-route-menu-title">{routes.storeCount} stop{routes.storeCount !== 1 ? 's' : ''} — open in</div>
+              <button className="cp-route-app cp-route-google" onClick={() => openMap(routes.google)}>
+                <span className="cp-route-app-icon">🗺</span>
+                <span>Google Maps</span>
+                <span className="cp-route-app-note">all stops</span>
+              </button>
+              <button className="cp-route-app cp-route-apple" onClick={() => openMap(routes.apple)}>
+                <span className="cp-route-app-icon">🍎</span>
+                <span>Apple Maps</span>
+                <span className="cp-route-app-note">all stops</span>
+              </button>
+              <button className="cp-route-app cp-route-waze" onClick={() => openMap(routes.waze)}>
+                <span className="cp-route-app-icon">
+                  <img src="https://www.waze.com/assets/waze-logo.svg" alt="Waze" className="cp-waze-icon" onError={e => { e.target.style.display='none'; e.target.parentNode.textContent='🚗' }} />
+                </span>
+                <span>Waze</span>
+                <span className="cp-route-app-note">first stop</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="cp-slots">
