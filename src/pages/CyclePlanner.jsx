@@ -189,8 +189,9 @@ function buildRouteUrls(storeIds, homeBase) {
 }
 
 // ─── Day Card ─────────────────────────────────────────────────────────────────
-function DayCard({ date, psScores, daySlots, dayNotes, leaveType, homeBase, onSlotChange, onNotesChange }) {
-  const isLeave = !!leaveType
+function DayCard({ date, psScores, daySlots, dayNotes, leaveInfo, homeBase, onSlotChange, onNotesChange }) {
+  const isLeave  = !!leaveInfo
+  const leaveType = leaveInfo?.type || null
   const ds = toDS(date)
   const [showRouteMenu, setShowRouteMenu] = useState(false)
   const routeRef = useRef(null)
@@ -225,6 +226,7 @@ function DayCard({ date, psScores, daySlots, dayNotes, leaveType, homeBase, onSl
 
   if (isLeave) {
     const isPH = leaveType === 'Public Holiday'
+    const leaveName = leaveInfo?.name || ''
     return (
       <div className={`cp-day cp-day-leave ${isPH ? 'cp-day-pubhol' : ''}`}>
         <div className="cp-day-hd">
@@ -233,6 +235,9 @@ function DayCard({ date, psScores, daySlots, dayNotes, leaveType, homeBase, onSl
             {isPH ? '🏛 Public Holiday' : '🏖 On Leave'}
           </span>
         </div>
+        {leaveName ? (
+          <div className="cp-leave-name">{leaveName}</div>
+        ) : null}
       </div>
     )
   }
@@ -341,20 +346,23 @@ export default function CyclePlanner() {
       })
   }, [])
 
-  // Load leave for rep — Map of dateStr → leave_type
+  // Load leave for rep — Map of dateStr → { type, name }
   useEffect(() => {
     if (!rep) return
     supabase
       .from('leave_entries')
-      .select('start_date, end_date, leave_type')
+      .select('start_date, end_date, leave_type, notes')
       .eq('rep_name', rep)
       .then(({ data }) => {
         const map = new Map()
         data?.forEach(row => {
           const start = new Date(row.start_date + 'T00:00:00')
           const end   = new Date((row.end_date || row.start_date) + 'T00:00:00')
+          // Strip state suffix from holiday name e.g. "Good Friday (NSW)" → "Good Friday"
+          const rawName = row.notes || ''
+          const name = rawName.replace(/\s*\([A-Z]{2,3}\)$/, '').trim()
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            map.set(toDS(d), row.leave_type || 'Annual Leave')
+            map.set(toDS(d), { type: row.leave_type || 'Annual Leave', name })
           }
         })
         setLeaveDates(map)
@@ -675,7 +683,7 @@ export default function CyclePlanner() {
                         psScores={psScores}
                         daySlots={getDaySlots(ds)}
                         dayNotes={notes[ds] || ''}
-                        leaveType={leaveDates.get(ds) || null}
+                        leaveInfo={leaveDates.get(ds) || null}
                         homeBase={homeBase}
                         onSlotChange={saveSlot}
                         onNotesChange={saveNotes}

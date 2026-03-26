@@ -247,6 +247,18 @@
 .cp-day-pubhol {
   background: #f5f7fd;
 }
+.cp-leave-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a2b5e;
+  text-align: center;
+  padding: 12px 6px 8px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.cp-day-leave:not(.cp-day-pubhol) .cp-leave-name {
+  color: #888;
+}
 
 /* Route wrap + app picker menu */
 .cp-route-wrap { position: relative; }
