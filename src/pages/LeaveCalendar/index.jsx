@@ -84,8 +84,15 @@ export default function LeaveCalendar() {
 
   async function fetchAll() {
     setLoading(true)
+    // Only fetch leave within a ±1 year window — avoids loading every historical row
+    const yr = new Date().getFullYear()
     const [{ data: leaveData }, { data: bdData }] = await Promise.all([
-      supabase.from('leave_entries').select('*').order('start_date', { ascending: true }),
+      supabase
+        .from('leave_entries')
+        .select('*')
+        .gte('start_date', `${yr - 1}-01-01`)
+        .lte('start_date', `${yr + 1}-12-31`)
+        .order('start_date', { ascending: true }),
       supabase.from('birthdays').select('*').order('rep_name'),
     ])
     setEntries(leaveData || [])

@@ -18,9 +18,23 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   useEffect(() => {
     async function fetchGaps() {
       setLoading(true)
+      // Only fetch distribution data for stores visible under current filters —
+      // avoids a full table scan when a state or rep filter is active
+      const visibleIds = STORES
+        .filter(s => {
+          const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
+          const matchRep   = !filters?.rep   || filters.rep   === 'All' || s.rep   === filters.rep
+          return matchState && matchRep
+        })
+        .map(s => s.id)
+
+      if (!visibleIds.length) { setGapMap({}); setLoading(false); return }
+
       const { data } = await supabase
         .from('store_distribution')
         .select('store_id, ranging')
+        .in('store_id', visibleIds)
+
       const map = {}
       data?.forEach(r => {
         const id = String(r.store_id)
@@ -31,7 +45,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       setLoading(false)
     }
     fetchGaps()
-  }, [])
+  }, [filters?.state, filters?.rep])
 
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()

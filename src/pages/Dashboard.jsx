@@ -1,17 +1,28 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import Sidebar from '../components/Sidebar'
-import Home from './Home'
-import StoreMap from './StoreMap'
-import Distribution from './Distribution'
-import Tools from './Tools'
-import Admin from './Admin'
-import DataUpload from './DataUpload'
-import LeaveCalendar from './LeaveCalendar'
-import Targets from './Targets'
-import MSOPipeline from './MSOPipeline'
-import PerfectStore from './PerfectStore'
-import CyclePlanner from './CyclePlanner'
 import './Dashboard.css'
+
+// Lazy-load every page — they only download when first visited
+const Home         = lazy(() => import('./Home'))
+const StoreMap     = lazy(() => import('./StoreMap'))
+const Distribution = lazy(() => import('./Distribution'))
+const Tools        = lazy(() => import('./Tools'))
+const Admin        = lazy(() => import('./Admin'))
+const DataUpload   = lazy(() => import('./DataUpload'))
+const LeaveCalendar = lazy(() => import('./LeaveCalendar'))
+const Targets      = lazy(() => import('./Targets'))
+const MSOPipeline  = lazy(() => import('./MSOPipeline'))
+const PerfectStore = lazy(() => import('./PerfectStore'))
+const CyclePlanner = lazy(() => import('./CyclePlanner'))
+
+function PageSpinner() {
+  return (
+    <div className="page-spinner">
+      <div className="page-spinner-dot" />
+      <p>Loading…</p>
+    </div>
+  )
+}
 
 const PLACEHOLDER_PAGES = []
 
@@ -47,23 +58,25 @@ export default function Dashboard() {
           </button>
         )}
 
-        {activePage === 'Home' && <Home onNavigate={handleNavigate} />}
-        {activePage === 'Store Map' && <StoreMap />}
-        {activePage === 'Distribution' && <Distribution />}
-        {activePage === 'Tools' && <Tools />}
-        {activePage === 'Admin' && <Admin />}
-        {activePage === 'Data Upload' && <DataUpload />}
-        {activePage === 'Leave Calendar' && <LeaveCalendar />}
-        {activePage === 'Targets' && <Targets />}
-        {activePage === 'MSO Pipeline' && <MSOPipeline />}
-        {activePage === 'Perfect Store' && <PerfectStore />}
-        {activePage === 'Cycle Planner' && <CyclePlanner />}
-        {PLACEHOLDER_PAGES.includes(activePage) && (
-          <div className="placeholder-page">
-            <h2>{activePage}</h2>
-            <p>Coming soon.</p>
-          </div>
-        )}
+        <Suspense fallback={<PageSpinner />}>
+          {activePage === 'Home'          && <Home onNavigate={handleNavigate} />}
+          {activePage === 'Store Map'     && <StoreMap />}
+          {activePage === 'Distribution'  && <Distribution />}
+          {activePage === 'Tools'         && <Tools />}
+          {activePage === 'Admin'         && <Admin />}
+          {activePage === 'Data Upload'   && <DataUpload />}
+          {activePage === 'Leave Calendar'&& <LeaveCalendar />}
+          {activePage === 'Targets'       && <Targets />}
+          {activePage === 'MSO Pipeline'  && <MSOPipeline />}
+          {activePage === 'Perfect Store' && <PerfectStore />}
+          {activePage === 'Cycle Planner' && <CyclePlanner />}
+          {PLACEHOLDER_PAGES.includes(activePage) && (
+            <div className="placeholder-page">
+              <h2>{activePage}</h2>
+              <p>Coming soon.</p>
+            </div>
+          )}
+        </Suspense>
       </main>
     </div>
   )

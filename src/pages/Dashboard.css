@@ -62,6 +62,27 @@
   position: relative;
 }
 
+/* Page lazy-load spinner */
+.page-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 14px;
+  color: #aaa;
+  font-size: 14px;
+}
+.page-spinner-dot {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #CC0000;
+  border-radius: 50%;
+  animation: page-spin 0.75s linear infinite;
+}
+@keyframes page-spin { to { transform: rotate(360deg); } }
+
 .placeholder-page {
   padding: 2rem;
 }
