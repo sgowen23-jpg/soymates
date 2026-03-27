@@ -481,6 +481,392 @@
 .cp-notes:focus { border-color: #CC0000; }
 .cp-notes::placeholder { color: #d5d5d5; }
 
+/* ── Tab Bar ──────────────────────────────────────────────────────────────────── */
+.cp-tab-bar {
+  display: flex;
+  gap: 4px;
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 4px;
+}
+.cp-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.cp-tab:hover { background: #f5f5f5; color: #333; }
+.cp-tab.active { background: #CC0000; color: white; }
+
+/* ── Week template picker + clear ────────────────────────────────────────────── */
+.cp-week-tpl-sel {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.18);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 5px;
+  padding: 3px 7px;
+  cursor: pointer;
+  outline: none;
+  max-width: 150px;
+}
+.cp-week-tpl-sel option { color: #1a1a1a; background: white; }
+
+.cp-week-clear {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 5px;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.cp-week-clear:hover { background: rgba(255,255,255,0.35); }
+
+/* ── Run picker (day) ─────────────────────────────────────────────────────────── */
+.cp-run-picker {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 7px;
+  border: 1px dashed #ddd;
+  border-radius: 5px;
+  background: #fafafa;
+  color: #999;
+  cursor: pointer;
+  outline: none;
+}
+.cp-run-picker:focus { border-color: #CC0000; }
+
+/* ── Applied run banner ───────────────────────────────────────────────────────── */
+.cp-applied-run {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  border: 1.5px solid;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cp-applied-run-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cp-applied-run-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-applied-run-x {
+  font-size: 9px; color: #aaa; border: none; background: none;
+  cursor: pointer; padding: 1px 3px; border-radius: 3px; flex-shrink: 0;
+}
+.cp-applied-run-x:hover { background: rgba(0,0,0,0.08); color: #555; }
+
+.cp-regional-tag {
+  font-size: 9px; font-weight: 700; color: #8e44ad;
+  background: #f5eeff; border-radius: 4px; padding: 1px 5px; flex-shrink: 0;
+}
+
+/* ── Builder Tab ──────────────────────────────────────────────────────────────── */
+.cp-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.cp-builder-section {
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid #e8e8e8;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cp-builder-section-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cp-builder-h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+}
+.cp-builder-hint { font-size: 12px; color: #aaa; margin: 0; }
+.cp-builder-empty { font-size: 13px; color: #bbb; font-style: italic; text-align: center; padding: 20px 0; }
+
+.cp-btn-new {
+  padding: 7px 14px;
+  background: #CC0000;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.cp-btn-new:hover { background: #aa0000; }
+
+.cp-btn-save {
+  padding: 8px 18px;
+  background: #1a2b5e;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cp-btn-save:hover { background: #253b7f; }
+.cp-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cp-btn-cancel {
+  padding: 8px 14px;
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cp-btn-cancel:hover { background: #e0e0e0; }
+
+.cp-btn-edit {
+  padding: 4px 10px;
+  background: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cp-btn-edit:hover { background: #e0e0e0; }
+
+.cp-btn-delete {
+  padding: 4px 10px;
+  background: #fdedec;
+  color: #CC0000;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cp-btn-delete:hover { background: #fcd9d7; }
+
+/* ── Run Form ─────────────────────────────────────────────────────────────────── */
+.cp-run-form {
+  background: #f9f9f9;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cp-run-form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cp-run-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 9px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cp-run-input:focus { border-color: #CC0000; }
+
+.cp-run-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cp-run-colour-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cp-colour-presets {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cp-colour-swatch {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.cp-colour-swatch:hover { transform: scale(1.15); }
+.cp-colour-swatch.active { border-color: #333; transform: scale(1.15); }
+.cp-colour-custom {
+  width: 32px; height: 28px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.cp-run-slots { display: flex; flex-direction: column; gap: 4px; }
+
+.cp-run-form-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+/* ── Run Cards ────────────────────────────────────────────────────────────────── */
+.cp-run-list { display: flex; flex-direction: column; gap: 8px; }
+
+.cp-run-card {
+  border: 1.5px solid #e8e8e8;
+  border-left: 4px solid;
+  border-radius: 9px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: white;
+}
+.cp-run-card-regional { background: #fdf8ff; }
+
+.cp-run-card-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cp-run-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cp-run-card-name { font-size: 14px; font-weight: 700; color: #1a1a1a; flex: 1; }
+.cp-run-card-count { font-size: 11px; color: #aaa; flex-shrink: 0; }
+.cp-run-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.cp-run-card-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.cp-run-store-chip {
+  font-size: 10px;
+  font-weight: 500;
+  color: #555;
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+/* ── Template Form ────────────────────────────────────────────────────────────── */
+.cp-tpl-days { display: flex; flex-direction: column; gap: 6px; }
+.cp-tpl-day-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cp-tpl-day-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  width: 32px;
+  flex-shrink: 0;
+}
+.cp-tpl-day-sel {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 7px;
+  font-size: 13px;
+  outline: none;
+}
+.cp-tpl-day-sel:focus { border-color: #CC0000; }
+.cp-tpl-run-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Template Cards ───────────────────────────────────────────────────────────── */
+.cp-tpl-card {
+  border: 1.5px solid #e8e8e8;
+  border-radius: 9px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: white;
+}
+.cp-tpl-card-name { font-size: 14px; font-weight: 700; color: #1a1a1a; flex: 1; }
+.cp-tpl-card-days { display: flex; gap: 6px; flex-wrap: wrap; }
+.cp-tpl-card-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  flex: 1;
+}
+.cp-tpl-card-day-lbl { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; }
+.cp-tpl-card-run {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 5px;
+  border: 1.5px solid;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+.cp-tpl-card-none { font-size: 11px; color: #ddd; }
+
+/* ── Perfect Cycle placeholder ────────────────────────────────────────────────── */
+.cp-perfect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid #e8e8e8;
+}
+.cp-perfect-inner { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px; }
+.cp-perfect-icon { font-size: 40px; }
+.cp-perfect-h2 { font-size: 20px; font-weight: 800; color: #1a1a1a; margin: 0; }
+.cp-perfect-sub { font-size: 14px; color: #aaa; max-width: 300px; line-height: 1.5; }
+
 /* ── Responsive ───────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .cp-week-grid { grid-template-columns: repeat(3, 1fr); }
