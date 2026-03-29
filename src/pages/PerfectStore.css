@@ -569,3 +569,368 @@
   .ps-kpi-summary { grid-template-columns: repeat(2, 1fr); gap: 0; }
   .ps-kpi-chip:nth-child(2) { border-right: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PS Builder — all new styles prefixed with psb-
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Tab bar */
+.psb-tab-bar {
+  display: flex;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 6px;
+  width: fit-content;
+}
+
+.psb-tab {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.psb-tab:hover { background: #f3f4f6; color: #1a2b5e; }
+
+.psb-tab.active {
+  background: #1a2b5e;
+  color: #fff;
+}
+
+/* Container */
+.psb-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Controls bar */
+.psb-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.psb-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.psb-control-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.psb-select {
+  padding: 7px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8f9fa;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a2b5e;
+  cursor: pointer;
+  outline: none;
+  min-width: 180px;
+}
+
+.psb-select:focus { border-color: #1a2b5e; }
+
+.psb-cycle-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.psb-cycle-tab {
+  padding: 6px 16px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #f8f9fa;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.psb-cycle-tab:hover { background: #e9ecef; }
+
+.psb-cycle-tab.active {
+  background: #1a2b5e;
+  color: #fff;
+  border-color: #1a2b5e;
+}
+
+/* Heading */
+.psb-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.psb-heading-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a2b5e;
+  margin: 0;
+}
+
+.psb-heading-sub {
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
+/* Column headers */
+.psb-col-headers {
+  display: grid;
+  grid-template-columns: 36px 1fr 340px 28px 36px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.psb-col-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.psb-col-metrics span {
+  text-align: center;
+}
+
+/* Slots list */
+.psb-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual slot */
+.psb-slot {
+  display: grid;
+  grid-template-columns: 36px 1fr 340px 28px 36px;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: box-shadow 0.15s;
+}
+
+.psb-slot:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+.psb-slot-num {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #bbb;
+  text-align: center;
+}
+
+.psb-slot-store {
+  min-width: 0;
+}
+
+.psb-slot-selected-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a2b5e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Search within slot */
+.psb-search-wrap {
+  position: relative;
+}
+
+.psb-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  outline: none;
+  box-sizing: border-box;
+  color: #333;
+}
+
+.psb-search-input:focus { border-color: #1a2b5e; }
+
+/* Dropdown */
+.psb-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  z-index: 200;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.psb-dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.psb-dropdown-item:last-child { border-bottom: none; }
+.psb-dropdown-item:hover { background: #eff6ff; }
+
+.psb-dropdown-name {
+  font-size: 0.85rem;
+  color: #1a2b5e;
+  font-weight: 500;
+}
+
+.psb-dropdown-id {
+  font-size: 0.75rem;
+  color: #bbb;
+}
+
+.psb-dropdown-empty {
+  padding: 12px;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.82rem;
+}
+
+/* Metrics columns */
+.psb-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.psb-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.psb-metric-label {
+  font-size: 0.68rem;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.psb-metric-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a2b5e;
+}
+
+.psb-metric-gaps { color: #CC0000; }
+
+/* Status dot */
+.psb-slot-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.psb-status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Clear button */
+.psb-slot-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.psb-clear-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #999;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.psb-clear-btn:hover { background: #fee2e2; color: #CC0000; }
+
+/* Loading */
+.psb-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  justify-content: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Mobile responsive for PS Builder */
+@media (max-width: 768px) {
+  .psb-col-headers { display: none; }
+
+  .psb-slot {
+    grid-template-columns: 28px 1fr 28px 28px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "num store status clear"
+      "num metrics metrics metrics";
+    gap: 6px 8px;
+  }
+
+  .psb-slot-num   { grid-area: num; align-self: start; padding-top: 4px; }
+  .psb-slot-store { grid-area: store; }
+  .psb-metrics    { grid-area: metrics; grid-template-columns: repeat(4, 1fr); }
+  .psb-slot-status { grid-area: status; align-self: start; padding-top: 6px; }
+  .psb-slot-clear  { grid-area: clear; align-self: start; padding-top: 2px; }
+
+  .psb-metric { flex-direction: row; justify-content: space-between; gap: 4px; }
+  .psb-metric-label { font-size: 0.7rem; }
+
+  .psb-controls { gap: 12px; }
+  .psb-select { min-width: 140px; }
+}

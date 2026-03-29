@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import './PerfectStore.css'
 
@@ -21,6 +21,18 @@ const KPI_DEFS = [
 
 const STATES = ['All States', 'New South Wales', 'Queensland', 'South Australia', 'Victoria', 'Western Australia']
 const STATE_SHORT = { 'New South Wales': 'NSW', 'Queensland': 'QLD', 'South Australia': 'SA', 'Victoria': 'VIC', 'Western Australia': 'WA' }
+
+// ─── PS Builder constants ─────────────────────────────────────────────────────
+const PSB_REPS = ['Ashleigh Tasdarian', 'Shane Vandewardt', 'David Kerr', 'Sam Gowen', 'Dipen Surani', 'Azra Horell']
+
+const PS_REP_STATES = {
+  'Sam Gowen':          ['South Australia'],
+  'Dipen Surani':       ['Western Australia'],
+  'Ashleigh Tasdarian': ['New South Wales'],
+  'David Kerr':         ['Queensland'],
+  'Shane Vandewardt':   ['Victoria'],
+  'Azra Horell':        ['Victoria'],
+}
 
 function kpiColor(val, target) {
   if (val == null) return '#ddd'
@@ -377,6 +389,331 @@ function ComparisonView({ c3, c4 }) {
   )
 }
 
+// ─── PS Builder store slot ────────────────────────────────────────────────────
+function StoreSlot({ slotNum, slot, storeList, psData, visitCounts, onSelect, onClear }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen]   = useState(false)
+  const wrapRef           = useRef(null)
+
+  // close dropdown on outside click
+  useEffect(() => {
+    function handler(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = useMemo(() => {
+    if (!query) return storeList.slice(0, 40)
+    const q = query.toLowerCase()
+    return storeList.filter(s => s.store_name.toLowerCase().includes(q)).slice(0, 40)
+  }, [query, storeList])
+
+  const ps = slot?.store_id ? psData[slot.store_id] : null
+
+  const distPct    = ps ? Math.round((ps.total_ranging / 28) * 100) + '%' : '—'
+  const gaps       = ps ? (28 - ps.total_ranging) : '—'
+  const psScore    = ps ? Math.round((ps.total_ranging / 28) * 100) + '%' : '—'
+  const visits     = slot?.store_id ? (visitCounts[slot.store_id] ?? 0) : '—'
+
+  const statusDot = ps
+    ? ps.total_ranging >= 20
+      ? { color: '#16a085', label: 'On track' }
+      : ps.total_ranging >= 12
+        ? { color: '#e67e22', label: 'Developing' }
+        : { color: '#CC0000', label: 'Needs work' }
+    : null
+
+  return (
+    <div className="psb-slot">
+      <div className="psb-slot-num">{slotNum}</div>
+
+      <div className="psb-slot-store" ref={wrapRef}>
+        {slot?.store_name ? (
+          <div className="psb-slot-selected-name">{slot.store_name}</div>
+        ) : (
+          <div className="psb-search-wrap">
+            <input
+              className="psb-search-input"
+              placeholder="Search store…"
+              value={query}
+              onFocus={() => setOpen(true)}
+              onChange={e => { setQuery(e.target.value); setOpen(true) }}
+            />
+            {open && (
+              <div className="psb-dropdown">
+                {filtered.length === 0
+                  ? <div className="psb-dropdown-empty">No stores found</div>
+                  : filtered.map(s => (
+                    <div
+                      key={s.store_id}
+                      className="psb-dropdown-item"
+                      onMouseDown={() => {
+                        onSelect(slotNum, s)
+                        setQuery('')
+                        setOpen(false)
+                      }}
+                    >
+                      <span className="psb-dropdown-name">{s.store_name}</span>
+                      <span className="psb-dropdown-id">#{s.store_id}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Metrics */}
+      <div className="psb-metrics">
+        <div className="psb-metric">
+          <span className="psb-metric-label">Dist %</span>
+          <span className="psb-metric-val">{distPct}</span>
+        </div>
+        <div className="psb-metric">
+          <span className="psb-metric-label">Gaps</span>
+          <span className="psb-metric-val psb-metric-gaps">{gaps}</span>
+        </div>
+        <div className="psb-metric">
+          <span className="psb-metric-label">PS Score</span>
+          <span className="psb-metric-val">{psScore}</span>
+        </div>
+        <div className="psb-metric">
+          <span className="psb-metric-label">Visits</span>
+          <span className="psb-metric-val">{visits}</span>
+        </div>
+      </div>
+
+      {/* Status dot */}
+      <div className="psb-slot-status">
+        {statusDot && (
+          <span
+            className="psb-status-dot"
+            style={{ background: statusDot.color }}
+            title={statusDot.label}
+          />
+        )}
+      </div>
+
+      {/* Clear button */}
+      <div className="psb-slot-clear">
+        {slot?.store_id && (
+          <button className="psb-clear-btn" onClick={() => onClear(slotNum)} title="Remove store">✕</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── PS Builder tab ───────────────────────────────────────────────────────────
+function PSBuilder() {
+  const [rep, setRep]         = useState('Sam Gowen')
+  const [cycle, setCycle]     = useState(3)
+  const [slots, setSlots]     = useState({})       // { slotNum: { store_id, store_name } }
+  const [psData, setPsData]   = useState({})       // { store_id: ps row }
+  const [visitCounts, setVisitCounts] = useState({}) // { store_id: count }
+  const [storeList, setStoreList]     = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const repStates = PS_REP_STATES[rep] || []
+
+  // Load store list for rep's states (from perfect_store cycle=4, read-only)
+  useEffect(() => {
+    async function loadStores() {
+      if (!repStates.length) return
+      let all = [], from = 0
+      while (true) {
+        const { data, error } = await supabase
+          .from('perfect_store')
+          .select('store_id,store_name,state,total_ranging')
+          .eq('cycle', 4)
+          .in('state', repStates)
+          .order('store_name', { ascending: true })
+          .range(from, from + 499)
+        if (error || !data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 500) break
+        from += 500
+      }
+      setStoreList(all)
+    }
+    loadStores()
+  }, [rep])
+
+  // Load saved target stores + ps data + visit counts
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      setSlots({})
+      setPsData({})
+      setVisitCounts({})
+
+      // 1. Load target_stores for this rep+cycle
+      const { data: saved } = await supabase
+        .from('target_stores')
+        .select('slot_num,store_id,store_name')
+        .eq('rep_name', rep)
+        .eq('cycle', cycle)
+
+      const newSlots = {}
+      if (saved) {
+        saved.forEach(r => {
+          newSlots[r.slot_num] = { store_id: r.store_id, store_name: r.store_name }
+        })
+      }
+      setSlots(newSlots)
+
+      // 2. Load PS data for selected stores
+      const storeIds = Object.values(newSlots).map(s => s.store_id).filter(Boolean)
+      if (storeIds.length > 0) {
+        const { data: psRows } = await supabase
+          .from('perfect_store')
+          .select('store_id,total_ranging,uht_core,uht_noncore,chilled,rtd,yoghurt,strategy_c4')
+          .eq('cycle', 4)
+          .in('store_id', storeIds)
+        const psMap = {}
+        if (psRows) psRows.forEach(r => { psMap[r.store_id] = r })
+        setPsData(psMap)
+      }
+
+      // 3. Load visit counts from cycle_planner_slots (read-only)
+      if (storeIds.length > 0) {
+        const { data: visits } = await supabase
+          .from('cycle_planner_slots')
+          .select('store_id')
+          .eq('rep_name', rep)
+          .eq('cycle', cycle)
+          .in('store_id', storeIds)
+        const vcMap = {}
+        if (visits) visits.forEach(v => { vcMap[v.store_id] = (vcMap[v.store_id] || 0) + 1 })
+        setVisitCounts(vcMap)
+      }
+
+      setLoading(false)
+    }
+    load()
+  }, [rep, cycle])
+
+  // When a store is selected for a slot
+  async function handleSelect(slotNum, store) {
+    const newSlots = { ...slots, [slotNum]: { store_id: store.store_id, store_name: store.store_name } }
+    setSlots(newSlots)
+
+    // Upsert to target_stores
+    await supabase.from('target_stores').upsert(
+      { rep_name: rep, cycle, slot_num: slotNum, store_id: store.store_id, store_name: store.store_name, updated_at: new Date().toISOString() },
+      { onConflict: 'rep_name,cycle,slot_num' }
+    )
+
+    // Fetch PS data for this store if not already loaded
+    if (!psData[store.store_id]) {
+      const { data } = await supabase
+        .from('perfect_store')
+        .select('store_id,total_ranging,uht_core,uht_noncore,chilled,rtd,yoghurt,strategy_c4')
+        .eq('cycle', 4)
+        .eq('store_id', store.store_id)
+        .maybeSingle()
+      if (data) setPsData(prev => ({ ...prev, [store.store_id]: data }))
+    }
+
+    // Fetch visit count for this store
+    const { data: visits } = await supabase
+      .from('cycle_planner_slots')
+      .select('store_id')
+      .eq('rep_name', rep)
+      .eq('cycle', cycle)
+      .eq('store_id', store.store_id)
+    setVisitCounts(prev => ({ ...prev, [store.store_id]: visits ? visits.length : 0 }))
+  }
+
+  // When a slot is cleared
+  async function handleClear(slotNum) {
+    const newSlots = { ...slots }
+    delete newSlots[slotNum]
+    setSlots(newSlots)
+
+    await supabase.from('target_stores').upsert(
+      { rep_name: rep, cycle, slot_num: slotNum, store_id: null, store_name: null, updated_at: new Date().toISOString() },
+      { onConflict: 'rep_name,cycle,slot_num' }
+    )
+  }
+
+  const filledCount = Object.values(slots).filter(s => s?.store_id).length
+
+  return (
+    <div className="psb-container">
+      {/* Controls */}
+      <div className="psb-controls">
+        <div className="psb-control-group">
+          <label className="psb-control-label">Rep</label>
+          <select className="psb-select" value={rep} onChange={e => setRep(e.target.value)}>
+            {PSB_REPS.map(r => <option key={r}>{r}</option>)}
+          </select>
+        </div>
+        <div className="psb-control-group">
+          <label className="psb-control-label">Cycle</label>
+          <div className="psb-cycle-tabs">
+            {[1, 2, 3].map(c => (
+              <button
+                key={c}
+                className={`psb-cycle-tab ${cycle === c ? 'active' : ''}`}
+                onClick={() => setCycle(c)}
+              >
+                C{c}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Heading */}
+      <div className="psb-heading">
+        <h2 className="psb-heading-title">My Target Stores — {rep} Cycle {cycle}</h2>
+        <span className="psb-heading-sub">{filledCount} of 10 slots filled</span>
+      </div>
+
+      {/* Column headers */}
+      <div className="psb-col-headers">
+        <div className="psb-col-num">#</div>
+        <div className="psb-col-store">Store</div>
+        <div className="psb-col-metrics">
+          <span>Dist %</span>
+          <span>Gaps</span>
+          <span>PS Score</span>
+          <span>Visits (C{cycle})</span>
+        </div>
+        <div className="psb-col-status"></div>
+        <div className="psb-col-clear"></div>
+      </div>
+
+      {/* Slots */}
+      {loading ? (
+        <div className="psb-loading">
+          <div className="ps-spinner" />
+          <span>Loading…</span>
+        </div>
+      ) : (
+        <div className="psb-slots">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map(slotNum => (
+            <StoreSlot
+              key={slotNum}
+              slotNum={slotNum}
+              slot={slots[slotNum]}
+              storeList={storeList}
+              psData={psData}
+              visitCounts={visitCounts}
+              onSelect={handleSelect}
+              onClear={handleClear}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PerfectStore() {
   // Make main-content scrollable while this page is mounted
@@ -385,6 +722,8 @@ export default function PerfectStore() {
     if (mc) mc.style.overflowY = 'auto'
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
+
+  const [activeTab, setActiveTab] = useState('tracker')
 
   const [stores, setStores]         = useState([])
   const [c3Stores, setC3Stores]     = useState([])
@@ -513,10 +852,30 @@ export default function PerfectStore() {
   const viewLabel = VIEW_OPTIONS.find(o => o.value === view)?.label || ''
   const isCompare = view === 'c3-c4'
 
-  if (loading) return <div className="ps-loading"><div className="ps-spinner" /><p>Loading Perfect Store data…</p></div>
-
   return (
     <div className="ps-page">
+      {/* ── Tab bar ── */}
+      <div className="psb-tab-bar">
+        <button
+          className={`psb-tab ${activeTab === 'tracker' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tracker')}
+        >
+          Store Tracker
+        </button>
+        <button
+          className={`psb-tab ${activeTab === 'builder' ? 'active' : ''}`}
+          onClick={() => setActiveTab('builder')}
+        >
+          PS Builder
+        </button>
+      </div>
+
+      {/* ── PS Builder tab ── */}
+      {activeTab === 'builder' && <PSBuilder />}
+
+      {/* ── Store Tracker tab ── */}
+      {activeTab === 'tracker' && <>
+
       {/* Header */}
       <div className="ps-header">
         <div>
@@ -538,6 +897,10 @@ export default function PerfectStore() {
           </select>
         </div>
       </div>
+
+      {loading && <div className="ps-loading"><div className="ps-spinner" /><p>Loading Perfect Store data…</p></div>}
+
+      {!loading && <>
 
       {/* ── Comparison view ── */}
       {isCompare && <ComparisonView c3={c3Stores} c4={stores} />}
@@ -679,6 +1042,8 @@ export default function PerfectStore() {
       </div>
 
       </>}  {/* end single-cycle view */}
+      </>}  {/* end !loading */}
+      </>}  {/* end tracker tab */}
     </div>
   )
 }
