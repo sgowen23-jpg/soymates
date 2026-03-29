@@ -19,6 +19,31 @@ const CYCLE_STARTS = {
   3: '2026-09-14',
 }
 
+// Which states each rep covers
+const REP_STATES = {
+  'Sam Gowen':          ['SA'],
+  'Dipen Surani':       ['WA'],
+  'Ashleigh Tasdarian': ['NSW'],
+  'David Kerr':         ['QLD'],
+  'Shane Vandewardt':   ['VIC'],
+  'Azra Horell':        ['VIC'],
+}
+
+// Parse FQY target string → visits per 12-wk cycle
+function parseFQY(fqy) {
+  if (!fqy) return 1
+  const m = String(fqy).match(/^(\d+)/)
+  if (m) return parseInt(m[1])
+  if (String(fqy).toLowerCase().includes('alternate')) return 6
+  return 1
+}
+
+const STRATEGY_META = {
+  GROW:    { label: 'Grow',    colour: '#16a085', bg: '#e8f8f5' },
+  DEVELOP: { label: 'Develop', colour: '#e67e22', bg: '#fef5e7' },
+  EXPAND:  { label: 'Expand',  colour: '#CC0000', bg: '#fdedec' },
+}
+
 const MONTHS   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri']
 const DAY_KEYS  = ['mon','tue','wed','thu','fri']
@@ -561,14 +586,225 @@ function BuilderTab({ rep, psScores, dayRuns, weekTemplates, onRunsChange, onTem
   )
 }
 
-// ─── Perfect Cycle Tab (placeholder) ─────────────────────────────────────────
-function PerfectCycleTab() {
+// ─── Perfect Cycle Tab ────────────────────────────────────────────────────────
+function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
+  const [locFilter, setLocFilter] = useState('all')
+
+  // Visit count per store from current planner slots
+  const visitCountMap = useMemo(() => {
+    const map = {}
+    Object.values(slots).forEach(sid => { if (sid) map[sid] = (map[sid] || 0) + 1 })
+    return map
+  }, [slots])
+
+  // Working days in this cycle (excluding leave)
+  const workingDays = useMemo(
+    () => weeks.flat().filter(d => !leaveDates.has(toDS(d))).length,
+    [weeks, leaveDates]
+  )
+
+  // Stores for this rep (filtered by state territory)
+  const repStates = REP_STATES[rep] || []
+  const repStores = useMemo(() => {
+    return Object.entries(psScores)
+      .filter(([, s]) => repStates.includes(s.state))
+      .map(([id, s]) => ({ id, ...s }))
+      .sort((a, b) => (a.store_name || '').localeCompare(b.store_name || ''))
+  }, [psScores, rep])
+
+  // Total visits scheduled
+  const totalVisits = useMemo(
+    () => Object.values(visitCountMap).reduce((a, b) => a + b, 0),
+    [visitCountMap]
+  )
+
+  // Strategy breakdown — visits + targets for rep's stores only
+  const stratData = useMemo(() => {
+    const groups = {}
+    repStores.forEach(s => {
+      const key = (s.strategy_c4 || 'OTHER').toUpperCase()
+      if (!groups[key]) groups[key] = { visits: 0, target: 0, stores: 0 }
+      groups[key].target += parseFQY(s.call_fqy_target)
+      groups[key].stores++
+    })
+    Object.entries(visitCountMap).forEach(([sid, count]) => {
+      const s = psScores[sid]
+      if (!s || !repStates.includes(s.state)) return
+      const key = (s.strategy_c4 || 'OTHER').toUpperCase()
+      if (!groups[key]) groups[key] = { visits: 0, target: 0, stores: 0 }
+      groups[key].visits += count
+    })
+    return groups
+  }, [repStores, visitCountMap, psScores])
+
+  // Stores on track (visits >= FQY target)
+  const { onTrack, needsVisit } = useMemo(() => {
+    let on = 0, need = 0
+    repStores.forEach(s => {
+      const v = visitCountMap[s.id] || 0
+      const t = parseFQY(s.call_fqy_target)
+      v >= t ? on++ : need++
+    })
+    return { onTrack: on, needsVisit: need }
+  }, [repStores, visitCountMap])
+
+  // Filtered + sorted store list
+  const filteredStores = useMemo(() => {
+    let list = repStores
+    if (locFilter !== 'all') {
+      const val = locFilter.charAt(0).toUpperCase() + locFilter.slice(1)
+      list = list.filter(s => (s.location_type || '').toLowerCase().startsWith(locFilter))
+    }
+    // Sort: stores needing visits first, then by name
+    return [...list].sort((a, b) => {
+      const va = visitCountMap[a.id] || 0, ta = parseFQY(a.call_fqy_target)
+      const vb = visitCountMap[b.id] || 0, tb = parseFQY(b.call_fqy_target)
+      const aOk = va >= ta, bOk = vb >= tb
+      if (aOk !== bOk) return aOk ? 1 : -1
+      return (a.store_name || '').localeCompare(b.store_name || '')
+    })
+  }, [repStores, locFilter, visitCountMap])
+
+  const avgPerDay  = workingDays > 0 ? (totalVisits / workingDays).toFixed(1) : '0.0'
+  const avgPerWeek = (totalVisits / 12).toFixed(1)
+
   return (
-    <div className="cp-perfect">
-      <div className="cp-perfect-inner">
-        <div className="cp-perfect-icon">⭐</div>
-        <h2 className="cp-perfect-h2">Perfect Cycle</h2>
-        <p className="cp-perfect-sub">Coming soon — this will show your cycle performance scored against Perfect Store targets.</p>
+    <div className="cp-pc-wrap">
+      <div className="cp-pc-grid">
+
+        {/* ── LEFT: Cycle Summary ── */}
+        <div className="cp-pc-left">
+
+          {/* Total visits */}
+          <div className="cp-pc-card">
+            <div className="cp-pc-card-title">Perfect Store Visits</div>
+            <div className="cp-pc-big-stat">{totalVisits}</div>
+            <div className="cp-pc-big-label">Total visits planned — Cycle {cycle}</div>
+            <div className="cp-pc-divider" />
+            <div className="cp-pc-mini-row">
+              <span>Stores visited</span>
+              <strong>{Object.keys(visitCountMap).filter(sid => repStates.includes(psScores[sid]?.state)).length}</strong>
+            </div>
+            <div className="cp-pc-mini-row">
+              <span>On track</span>
+              <strong className="cp-pc-green">↓ {onTrack}</strong>
+            </div>
+            <div className="cp-pc-mini-row">
+              <span>Needs visits</span>
+              <strong className={needsVisit > 0 ? 'cp-pc-red' : 'cp-pc-green'}>
+                {needsVisit > 0 ? `↑ ${needsVisit}` : `↓ 0`}
+              </strong>
+            </div>
+          </div>
+
+          {/* Strategy breakdown */}
+          <div className="cp-pc-card">
+            <div className="cp-pc-card-title">By Strategy</div>
+            {['GROW', 'DEVELOP', 'EXPAND'].map(strat => {
+              const g = stratData[strat] || { visits: 0, target: 0, stores: 0 }
+              const diff = g.visits - g.target
+              const onTgt = diff >= 0
+              const meta = STRATEGY_META[strat]
+              return (
+                <div key={strat} className="cp-pc-strat-row">
+                  <span className="cp-pc-strat-badge"
+                    style={{ background: meta.bg, color: meta.colour, border: `1px solid ${meta.colour}` }}>
+                    {meta.label}
+                  </span>
+                  <span className="cp-pc-strat-vals">
+                    <span className="cp-pc-strat-count">{g.visits}</span>
+                    <span className="cp-pc-strat-sep">/ {g.target}</span>
+                  </span>
+                  <span className={`cp-pc-arrow ${onTgt ? 'green' : 'red'}`}>
+                    {onTgt ? '↓' : '↑'} {Math.abs(diff)}
+                  </span>
+                </div>
+              )
+            })}
+            <p className="cp-pc-hint">Visits vs FQY targets for {rep.split(' ')[0]}'s {repStates.join('/')} stores</p>
+          </div>
+
+          {/* Call rate */}
+          <div className="cp-pc-card">
+            <div className="cp-pc-card-title">Call Rate Summary</div>
+            <div className="cp-pc-rate-grid">
+              <div className="cp-pc-rate-item">
+                <div className="cp-pc-rate-val">{totalVisits}</div>
+                <div className="cp-pc-rate-lbl">Total calls</div>
+              </div>
+              <div className="cp-pc-rate-item">
+                <div className="cp-pc-rate-val">{avgPerDay}</div>
+                <div className="cp-pc-rate-lbl">Avg per day</div>
+              </div>
+              <div className="cp-pc-rate-item">
+                <div className="cp-pc-rate-val">{avgPerWeek}</div>
+                <div className="cp-pc-rate-lbl">Avg per week</div>
+              </div>
+              <div className="cp-pc-rate-item">
+                <div className="cp-pc-rate-val">{workingDays}</div>
+                <div className="cp-pc-rate-lbl">Working days</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Store List ── */}
+        <div className="cp-pc-right">
+          <div className="cp-pc-filter-bar">
+            {[['all','All'],['metro','Metro'],['regional','Regional'],['remote','Remote']].map(([v, l]) => (
+              <button key={v}
+                className={`cp-pc-filter-btn ${locFilter === v ? 'active' : ''}`}
+                onClick={() => setLocFilter(v)}>{l}</button>
+            ))}
+            <span className="cp-pc-count">{filteredStores.length} stores</span>
+          </div>
+
+          <div className="cp-pc-store-table">
+            <div className="cp-pc-table-hd">
+              <span style={{ flex: 1 }}>Store</span>
+              <span className="cp-pc-col-sm">PS</span>
+              <span className="cp-pc-col-sm">Visits</span>
+              <span className="cp-pc-col-sm">FQY</span>
+              <span className="cp-pc-col-rec">Status</span>
+            </div>
+            <div className="cp-pc-table-body">
+              {filteredStores.length === 0 && (
+                <div className="cp-pc-empty">No stores for this filter.</div>
+              )}
+              {filteredStores.map(s => {
+                const visits   = visitCountMap[s.id] || 0
+                const target   = parseFQY(s.call_fqy_target)
+                const onTgt    = visits >= target
+                const priority = psPriority(s.total_ranging)
+                const diff     = visits - target
+                const rec      = visits === 0 ? 'Add Visit'
+                               : diff > 0     ? 'Reduce'
+                               : onTgt        ? 'On Track'
+                               :                'Add Visit'
+                return (
+                  <div key={s.id} className={`cp-pc-store-row ${visits === 0 ? 'zero' : onTgt ? 'ok' : 'warn'}`}>
+                    <div className="cp-pc-sname-wrap">
+                      <span className="cp-pc-sname">{s.store_name || s.id}</span>
+                      <span className="cp-pc-sstate">{s.state}</span>
+                    </div>
+                    <span className="cp-pc-col-sm">
+                      <span className={`cp-dot ${priority || 'grey'}`} />
+                    </span>
+                    <span className="cp-pc-col-sm cp-pc-visits">{visits > 0 ? visits : '—'}</span>
+                    <span className="cp-pc-col-sm">
+                      <span className={`cp-pc-fqy-badge ${onTgt ? 'green' : 'red'}`}>
+                        {onTgt ? '↓' : '↑'} {target}
+                      </span>
+                    </span>
+                    <span className="cp-pc-col-rec">
+                      <span className={`cp-pc-rec cp-rec-${rec.toLowerCase().replace(/\s/g,'-')}`}>{rec}</span>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -605,9 +841,11 @@ export default function CyclePlanner() {
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
 
-  // Load PS scores once
+  // Load PS scores once (enriched for Perfect Cycle tab)
   useEffect(() => {
-    supabase.from('perfect_store').select('store_id, total_ranging, strategy_c4').eq('cycle', 4)
+    supabase.from('perfect_store')
+      .select('store_id, store_name, state, total_ranging, strategy_c4, call_fqy_target, focus_store, location_type')
+      .eq('cycle', 4)
       .then(({ data }) => {
         if (!data) return
         const map = {}
@@ -1032,7 +1270,12 @@ export default function CyclePlanner() {
       )}
 
       {/* ── Perfect Cycle Tab ── */}
-      {activeTab === 'perfect' && <PerfectCycleTab />}
+      {activeTab === 'perfect' && (
+        <PerfectCycleTab
+          rep={rep} cycle={cycle} slots={slots}
+          psScores={psScores} weeks={weeks} leaveDates={leaveDates}
+        />
+      )}
     </div>
   )
 }
