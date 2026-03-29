@@ -19,14 +19,14 @@ const CYCLE_STARTS = {
   3: '2026-09-14',
 }
 
-// Which states each rep covers
+// Which states each rep covers — must match exact DB values
 const REP_STATES = {
-  'Sam Gowen':          ['SA'],
-  'Dipen Surani':       ['WA'],
-  'Ashleigh Tasdarian': ['NSW'],
-  'David Kerr':         ['QLD'],
-  'Shane Vandewardt':   ['VIC'],
-  'Azra Horell':        ['VIC'],
+  'Sam Gowen':          ['South Australia'],
+  'Dipen Surani':       ['Western Australia'],
+  'Ashleigh Tasdarian': ['New South Wales'],
+  'David Kerr':         ['Queensland'],
+  'Shane Vandewardt':   ['Victoria'],
+  'Azra Horell':        ['Victoria'],
 }
 
 // Parse FQY target string → visits per 12-wk cycle
@@ -661,7 +661,12 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
   const filteredStores = useMemo(() => {
     let list = repStoreData
     if (locFilter !== 'all') {
-      list = list.filter(s => (s.location_type || '').toLowerCase() === locFilter.toLowerCase())
+      list = list.filter(s => {
+        const lt = (s.location_type || '').toLowerCase()
+        // 'Regional' matches 'Regional' and 'Regional - Day'
+        if (locFilter === 'Regional') return lt === 'regional' || lt === 'regional - day'
+        return lt === locFilter.toLowerCase()
+      })
     }
     return [...list].sort((a, b) => {
       const va = visitCountMap[a.id] || 0, ta = parseFQY(a.call_fqy_target)
@@ -758,7 +763,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
         {/* ── RIGHT: Store List ── */}
         <div className="cp-pc-right">
           <div className="cp-pc-filter-bar">
-            {[['all','All'],['Metro','Metro'],['Regional','Regional'],['Major Regional','Major Regional']].map(([v, l]) => (
+            {[['all','All'],['Metro','Metro'],['Regional','Regional'],['Major Regional','Major Regional'],['Remote','Remote']].map(([v, l]) => (
               <button key={v}
                 className={`cp-pc-filter-btn ${locFilter === v ? 'active' : ''}`}
                 onClick={() => setLocFilter(v)}>{l}</button>
