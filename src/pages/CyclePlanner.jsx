@@ -652,8 +652,8 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
   const filteredStores = useMemo(() => {
     let list = repStores
     if (locFilter !== 'all') {
-      const val = locFilter.charAt(0).toUpperCase() + locFilter.slice(1)
-      list = list.filter(s => (s.location_type || '').toLowerCase().startsWith(locFilter))
+      // Exact case-insensitive match against the value stored in the DB
+      list = list.filter(s => (s.location_type || '').toLowerCase() === locFilter.toLowerCase())
     }
     // Sort: stores needing visits first, then by name
     return [...list].sort((a, b) => {
@@ -751,7 +751,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
         {/* ── RIGHT: Store List ── */}
         <div className="cp-pc-right">
           <div className="cp-pc-filter-bar">
-            {[['all','All'],['metro','Metro'],['regional','Regional'],['remote','Remote']].map(([v, l]) => (
+            {[['all','All'],['Metro','Metro'],['Regional','Regional'],['Major Regional','Major Regional']].map(([v, l]) => (
               <button key={v}
                 className={`cp-pc-filter-btn ${locFilter === v ? 'active' : ''}`}
                 onClick={() => setLocFilter(v)}>{l}</button>
