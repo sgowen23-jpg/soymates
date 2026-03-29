@@ -588,7 +588,27 @@ function BuilderTab({ rep, psScores, dayRuns, weekTemplates, onRunsChange, onTem
 
 // ─── Perfect Cycle Tab ────────────────────────────────────────────────────────
 function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
-  const [locFilter, setLocFilter] = useState('all')
+  const [locFilter,    setLocFilter]    = useState('all')
+  const [repStoreData, setRepStoreData] = useState([])
+  const [storesLoading, setStoresLoading] = useState(true)
+
+  const repStates = REP_STATES[rep] || []
+
+  // Load this rep's stores directly from Supabase, filtered by state server-side
+  useEffect(() => {
+    if (!repStates.length) { setRepStoreData([]); setStoresLoading(false); return }
+    setStoresLoading(true)
+    supabase
+      .from('perfect_store')
+      .select('store_id, store_name, state, total_ranging, strategy_c4, call_fqy_target, location_type')
+      .eq('cycle', 4)
+      .in('state', repStates)
+      .then(({ data }) => {
+        // Normalise id so it matches the slot keys (String store_id)
+        setRepStoreData((data || []).map(s => ({ ...s, id: String(s.store_id) })))
+        setStoresLoading(false)
+      })
+  }, [rep])
 
   // Visit count per store from current planner slots
   const visitCountMap = useMemo(() => {
@@ -603,59 +623,46 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
     [weeks, leaveDates]
   )
 
-  // Stores for this rep (filtered by state territory)
-  const repStates = REP_STATES[rep] || []
-  const repStores = useMemo(() => {
-    return Object.entries(psScores)
-      .filter(([, s]) => repStates.includes(s.state))
-      .map(([id, s]) => ({ id, ...s }))
-      .sort((a, b) => (a.store_name || '').localeCompare(b.store_name || ''))
-  }, [psScores, rep])
-
   // Total visits scheduled
   const totalVisits = useMemo(
     () => Object.values(visitCountMap).reduce((a, b) => a + b, 0),
     [visitCountMap]
   )
 
-  // Strategy breakdown — visits + targets for rep's stores only
+  // Strategy breakdown — visits + targets for rep's stores
   const stratData = useMemo(() => {
     const groups = {}
-    repStores.forEach(s => {
+    repStoreData.forEach(s => {
       const key = (s.strategy_c4 || 'OTHER').toUpperCase()
-      if (!groups[key]) groups[key] = { visits: 0, target: 0, stores: 0 }
+      if (!groups[key]) groups[key] = { visits: 0, target: 0 }
       groups[key].target += parseFQY(s.call_fqy_target)
-      groups[key].stores++
     })
-    Object.entries(visitCountMap).forEach(([sid, count]) => {
-      const s = psScores[sid]
-      if (!s || !repStates.includes(s.state)) return
+    repStoreData.forEach(s => {
+      const count = visitCountMap[s.id] || 0
+      if (!count) return
       const key = (s.strategy_c4 || 'OTHER').toUpperCase()
-      if (!groups[key]) groups[key] = { visits: 0, target: 0, stores: 0 }
+      if (!groups[key]) groups[key] = { visits: 0, target: 0 }
       groups[key].visits += count
     })
     return groups
-  }, [repStores, visitCountMap, psScores])
+  }, [repStoreData, visitCountMap])
 
-  // Stores on track (visits >= FQY target)
+  // Stores on track
   const { onTrack, needsVisit } = useMemo(() => {
     let on = 0, need = 0
-    repStores.forEach(s => {
+    repStoreData.forEach(s => {
       const v = visitCountMap[s.id] || 0
-      const t = parseFQY(s.call_fqy_target)
-      v >= t ? on++ : need++
+      v >= parseFQY(s.call_fqy_target) ? on++ : need++
     })
     return { onTrack: on, needsVisit: need }
-  }, [repStores, visitCountMap])
+  }, [repStoreData, visitCountMap])
 
   // Filtered + sorted store list
   const filteredStores = useMemo(() => {
-    let list = repStores
+    let list = repStoreData
     if (locFilter !== 'all') {
-      // Exact case-insensitive match against the value stored in the DB
       list = list.filter(s => (s.location_type || '').toLowerCase() === locFilter.toLowerCase())
     }
-    // Sort: stores needing visits first, then by name
     return [...list].sort((a, b) => {
       const va = visitCountMap[a.id] || 0, ta = parseFQY(a.call_fqy_target)
       const vb = visitCountMap[b.id] || 0, tb = parseFQY(b.call_fqy_target)
@@ -663,7 +670,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
       if (aOk !== bOk) return aOk ? 1 : -1
       return (a.store_name || '').localeCompare(b.store_name || '')
     })
-  }, [repStores, locFilter, visitCountMap])
+  }, [repStoreData, locFilter, visitCountMap])
 
   const avgPerDay  = workingDays > 0 ? (totalVisits / workingDays).toFixed(1) : '0.0'
   const avgPerWeek = (totalVisits / 12).toFixed(1)
@@ -683,7 +690,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
             <div className="cp-pc-divider" />
             <div className="cp-pc-mini-row">
               <span>Stores visited</span>
-              <strong>{Object.keys(visitCountMap).filter(sid => repStates.includes(psScores[sid]?.state)).length}</strong>
+              <strong>{repStoreData.filter(s => visitCountMap[s.id] > 0).length}</strong>
             </div>
             <div className="cp-pc-mini-row">
               <span>On track</span>
@@ -721,7 +728,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
                 </div>
               )
             })}
-            <p className="cp-pc-hint">Visits vs FQY targets for {rep.split(' ')[0]}'s {repStates.join('/')} stores</p>
+            <p className="cp-pc-hint">Visits vs FQY targets for {rep.split(' ')[0]}'s {repStates.join('/')} stores ({repStoreData.length} total)</p>
           </div>
 
           {/* Call rate */}
@@ -768,7 +775,10 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
               <span className="cp-pc-col-rec">Status</span>
             </div>
             <div className="cp-pc-table-body">
-              {filteredStores.length === 0 && (
+              {storesLoading && (
+                <div className="cp-pc-empty"><div className="cp-spinner" style={{ margin: '0 auto' }} /></div>
+              )}
+              {!storesLoading && filteredStores.length === 0 && (
                 <div className="cp-pc-empty">No stores for this filter.</div>
               )}
               {filteredStores.map(s => {
