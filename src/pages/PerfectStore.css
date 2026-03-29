@@ -682,10 +682,26 @@
 /* Heading */
 .psb-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
 }
+
+.psb-export-btn {
+  padding: 8px 16px;
+  background: #1a2b5e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.psb-export-btn:hover { background: #253a7a; }
 
 .psb-heading-title {
   font-size: 1.2rem;

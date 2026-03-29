@@ -642,6 +642,89 @@ function PSBuilder() {
 
   const filledCount = Object.values(slots).filter(s => s?.store_id).length
 
+  // ── Export PDF ──────────────────────────────────────────────────────────────
+  function exportPDF() {
+    const repSlug  = rep.replace(/\s+/g, '')
+    const docTitle = `TargetStores_${repSlug}_Cycle${cycle}`
+
+    const statusDot = (ps) => {
+      if (!ps) return `<span style="width:10px;height:10px;border-radius:50%;background:#ddd;display:inline-block"></span>`
+      const r = ps.total_ranging
+      const col = r >= 20 ? '#16a085' : r >= 12 ? '#e67e22' : '#CC0000'
+      const lbl = r >= 20 ? 'Perfect Store' : r >= 12 ? 'On Track' : 'Off Track'
+      return `<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span><span style="font-size:10px;color:${col};font-weight:600">${lbl}</span></span>`
+    }
+
+    const rowsHTML = Array.from({ length: 10 }, (_, i) => i + 1).map(slotNum => {
+      const slot = slots[slotNum]
+      const ps   = slot ? psData[slot.store_id] : null
+      const dist = ps ? Math.round(ps.total_ranging / 28 * 100) + '%' : '—'
+      const gaps = ps ? (28 - ps.total_ranging) : '—'
+      const vis  = slot ? (visitCounts[slot.store_id] || 0) : '—'
+      const strategy = ps?.strategy_c4 || '—'
+      const stratColor = { GROW: '#16a085', DEVELOP: '#e67e22', EXPAND: '#CC0000' }[strategy] || '#888'
+
+      return `<tr class="${slotNum % 2 === 0 ? 'even' : ''}">
+        <td class="td-num">${slotNum}</td>
+        <td class="td-store">${slot?.store_name || '<span style="color:#ccc;font-style:italic">Empty slot</span>'}</td>
+        <td class="td-metric">${dist}</td>
+        <td class="td-metric ${ps && (28 - ps.total_ranging) > 0 ? 'td-red' : ''}">${gaps}</td>
+        <td class="td-metric">${dist}</td>
+        <td class="td-metric">${vis}</td>
+        <td class="td-strat"><span style="border:1.5px solid ${stratColor};color:${stratColor};border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;white-space:nowrap">${strategy}</span></td>
+        <td class="td-status">${statusDot(ps)}</td>
+      </tr>`
+    }).join('')
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${docTitle}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a1a;background:white}
+    .pdf-header{background:#CC0000;color:white;padding:20px 28px}
+    .pdf-header h1{font-size:20px;font-weight:800;margin-bottom:4px}
+    .pdf-header p{font-size:12px;opacity:.85}
+    .pdf-body{padding:24px 28px}
+    .pdf-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse}
+    th{background:#f5f5f5;text-align:left;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#666;border-bottom:2px solid #e0e0e0}
+    td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+    tr.even td{background:#fafafa}
+    .td-num{color:#bbb;font-weight:700;width:28px;text-align:center}
+    .td-store{font-weight:600;font-size:11.5px;min-width:180px}
+    .td-metric{text-align:center;font-weight:700;font-size:12px;color:#1a1a1a;width:70px}
+    .td-red{color:#CC0000}
+    .td-strat{width:90px}
+    .td-status{width:110px}
+    .pdf-legend{display:flex;gap:20px;padding:14px 28px;font-size:10px;color:#555;border-top:1px solid #eee;margin-top:4px}
+    .pdf-legend span{display:flex;align-items:center;gap:5px}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>
+    <div class="pdf-header">
+      <h1>${rep} — Target Stores Cycle ${cycle}</h1>
+      <p>${filledCount} of 10 slots filled · Perfect Store Builder</p>
+    </div>
+    <div class="pdf-body">
+      <div class="pdf-section-title">My Target Stores This Cycle</div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Store</th><th>Dist %</th><th>Gaps</th><th>PS Score</th><th>Visits C${cycle}</th><th>Strategy</th><th>Status</th>
+        </tr></thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>
+    <div class="pdf-legend">
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#16a085"></span> Perfect Store (≥20/28)</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e67e22"></span> On Track (12–19/28)</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#CC0000"></span> Off Track (&lt;12/28)</span>
+    </div>
+    </body></html>`
+
+    const win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+    win.document.title = docTitle
+    setTimeout(() => { win.focus(); win.print() }, 400)
+  }
+
   return (
     <div className="psb-container">
       {/* Controls */}
@@ -670,8 +753,11 @@ function PSBuilder() {
 
       {/* Heading */}
       <div className="psb-heading">
-        <h2 className="psb-heading-title">My Target Stores — {rep} Cycle {cycle}</h2>
-        <span className="psb-heading-sub">{filledCount} of 10 slots filled</span>
+        <div>
+          <h2 className="psb-heading-title">My Target Stores — {rep} Cycle {cycle}</h2>
+          <span className="psb-heading-sub">{filledCount} of 10 slots filled</span>
+        </div>
+        <button className="psb-export-btn" onClick={exportPDF}>⬇ Export PDF</button>
       </div>
 
       {/* Column headers */}
