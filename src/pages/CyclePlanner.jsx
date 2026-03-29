@@ -587,28 +587,8 @@ function BuilderTab({ rep, psScores, dayRuns, weekTemplates, onRunsChange, onTem
 }
 
 // ─── Perfect Cycle Tab ────────────────────────────────────────────────────────
-function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates }) {
-  const [locFilter,    setLocFilter]    = useState('all')
-  const [repStoreData, setRepStoreData] = useState([])
-  const [storesLoading, setStoresLoading] = useState(true)
-
-  const repStates = REP_STATES[rep] || []
-
-  // Load this rep's stores directly from Supabase, filtered by state server-side
-  useEffect(() => {
-    if (!repStates.length) { setRepStoreData([]); setStoresLoading(false); return }
-    setStoresLoading(true)
-    supabase
-      .from('perfect_store')
-      .select('store_id, store_name, state, total_ranging, strategy_c4, call_fqy_target, location_type')
-      .eq('cycle', 4)
-      .in('state', repStates)
-      .then(({ data }) => {
-        // Normalise id so it matches the slot keys (String store_id)
-        setRepStoreData((data || []).map(s => ({ ...s, id: String(s.store_id) })))
-        setStoresLoading(false)
-      })
-  }, [rep])
+function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repStoreData }) {
+  const [locFilter, setLocFilter] = useState('all')
 
   // Visit count per store from current planner slots
   const visitCountMap = useMemo(() => {
@@ -836,6 +816,9 @@ export default function CyclePlanner() {
   const [dayRuns,       setDayRuns]       = useState([])
   const [weekTemplates, setWeekTemplates] = useState([])
 
+  // Rep store data (used by Perfect Cycle tab + PDF export)
+  const [repStoreData, setRepStoreData] = useState([])
+
   // Planner data
   const [leaveDates,   setLeaveDates]   = useState(new Map())
   const [slots,        setSlots]        = useState({})
@@ -896,6 +879,17 @@ export default function CyclePlanner() {
         })
         setLeaveDates(map)
       })
+  }, [rep])
+
+  // Load this rep's stores from perfect_store (used by Perfect Cycle + PDF export)
+  useEffect(() => {
+    const repStates = REP_STATES[rep] || []
+    if (!repStates.length) { setRepStoreData([]); return }
+    supabase.from('perfect_store')
+      .select('store_id, store_name, state, total_ranging, strategy_c4, call_fqy_target, location_type')
+      .eq('cycle', 4)
+      .in('state', repStates)
+      .then(({ data }) => setRepStoreData((data || []).map(s => ({ ...s, id: String(s.store_id) }))))
   }, [rep])
 
   // Load planner data (slots, notes, homeBase, appliedRuns)
@@ -1114,11 +1108,53 @@ export default function CyclePlanner() {
       return `<div class="cp-pdf-week"><div class="cp-pdf-week-hd">Week ${wi + 1} · ${fmtDay(week[0])} – ${fmtDay(week[4])}</div><table class="cp-pdf-table"><tbody><tr>${daysHTML}</tr></tbody></table></div>`
     }).join('')
 
+    // ── Perfect Cycle stats for PDF ──────────────────────────────────────────
+    const vcMap = {}
+    Object.values(slots).forEach(sid => { if (sid) vcMap[sid] = (vcMap[sid] || 0) + 1 })
+    const totalVis  = Object.values(vcMap).reduce((a, b) => a + b, 0)
+    const wDays     = weeks.flat().filter(d => !leaveDates.has(toDS(d))).length
+    const avgDay    = wDays > 0 ? (totalVis / wDays).toFixed(1) : '0.0'
+    const avgWeek   = (totalVis / 12).toFixed(1)
+    const storesVis = repStoreData.filter(s => vcMap[s.id] > 0).length
+    let onTrackCt = 0, needsCt = 0
+    repStoreData.forEach(s => { (vcMap[s.id] || 0) >= parseFQY(s.call_fqy_target) ? onTrackCt++ : needsCt++ })
+    const stratGroups = {}
+    repStoreData.forEach(s => {
+      const k = (s.strategy_c4 || 'OTHER').toUpperCase()
+      if (!stratGroups[k]) stratGroups[k] = { visits: 0, target: 0 }
+      stratGroups[k].target += parseFQY(s.call_fqy_target)
+      stratGroups[k].visits += vcMap[s.id] || 0
+    })
+    const stratHTML = ['GROW','DEVELOP','EXPAND'].map(k => {
+      const g = stratGroups[k] || { visits: 0, target: 0 }
+      const ok = g.visits >= g.target
+      const colors = { GROW: '#16a085', DEVELOP: '#e67e22', EXPAND: '#CC0000' }
+      return `<div class="pc-strat-row">
+        <span class="pc-strat-badge" style="border-color:${colors[k]};color:${colors[k]}">${k}</span>
+        <span class="pc-strat-nums">${g.visits} visits</span>
+        <span class="pc-strat-target">/ ${g.target} target</span>
+        <span class="pc-strat-arrow" style="color:${ok?'#16a085':'#CC0000'}">${ok?'↓ On track':'↑ Needs more'}</span>
+      </div>`
+    }).join('')
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${docTitle}</title><style>
     *{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a1a}
     .cp-pdf-header{background:#CC0000;color:white;padding:20px 28px}.cp-pdf-header h1{font-size:20px;font-weight:800;margin-bottom:4px}.cp-pdf-header p{font-size:12px;opacity:.85}
     .cp-pdf-hb{padding:14px 28px;background:#f7f7f7;border-bottom:1px solid #e0e0e0;display:flex;gap:32px}
     .cp-pdf-hb-item label{font-size:9px;text-transform:uppercase;color:#888;letter-spacing:.06em;display:block}.cp-pdf-hb-item span{font-size:12px;font-weight:600}
+    .pc-summary{padding:16px 28px;background:white;border-bottom:2px solid #e0e0e0;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .pc-summary-col h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:10px;font-weight:700}
+    .pc-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .pc-stat-box{background:#f9f9f9;border-radius:6px;padding:8px 10px;text-align:center}
+    .pc-stat-box .num{font-size:20px;font-weight:800;color:#1a1a1a;display:block}
+    .pc-stat-box .lbl{font-size:9px;text-transform:uppercase;color:#aaa;letter-spacing:.05em}
+    .pc-mini-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:11px}
+    .pc-mini-row:last-child{border-bottom:none}
+    .pc-green{color:#16a085;font-weight:700}.pc-red{color:#CC0000;font-weight:700}
+    .pc-strat-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:11px}
+    .pc-strat-row:last-child{border-bottom:none}
+    .pc-strat-badge{border:1.5px solid;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700}
+    .pc-strat-nums{font-weight:700;min-width:60px}.pc-strat-target{color:#aaa;flex:1}.pc-strat-arrow{font-weight:600;font-size:10px}
     .cp-pdf-body{padding:20px 28px;display:flex;flex-direction:column;gap:18px}
     .cp-pdf-week{page-break-inside:avoid}.cp-pdf-week-hd{background:#CC0000;color:white;padding:6px 12px;font-size:11px;font-weight:700;border-radius:4px 4px 0 0}
     .cp-pdf-table{width:100%;border-collapse:collapse}.cp-pdf-day{width:20%;border:1px solid #e0e0e0;vertical-align:top;padding:8px}
@@ -1135,6 +1171,26 @@ export default function CyclePlanner() {
       <div class="cp-pdf-hb-item"><label>Home Address</label><span>${homeBase.home_address || '—'}</span></div>
       <div class="cp-pdf-hb-item"><label>Day Start</label><span>${homeBase.start_point || '—'}</span></div>
       <div class="cp-pdf-hb-item"><label>Day Finish</label><span>${homeBase.finish_point || '—'}</span></div>
+    </div>
+    <div class="pc-summary">
+      <div class="pc-summary-col">
+        <h3>Perfect Cycle Summary</h3>
+        <div class="pc-stat-grid">
+          <div class="pc-stat-box"><span class="num">${totalVis}</span><span class="lbl">Total Visits</span></div>
+          <div class="pc-stat-box"><span class="num">${storesVis}</span><span class="lbl">Stores Visited</span></div>
+          <div class="pc-stat-box"><span class="num">${avgDay}</span><span class="lbl">Avg / Day</span></div>
+          <div class="pc-stat-box"><span class="num">${avgWeek}</span><span class="lbl">Avg / Week</span></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="pc-mini-row"><span>On track</span><span class="pc-green">↓ ${onTrackCt}</span></div>
+          <div class="pc-mini-row"><span>Needs more visits</span><span class="${needsCt>0?'pc-red':'pc-green'}">${needsCt>0?'↑':'↓'} ${needsCt}</span></div>
+          <div class="pc-mini-row"><span>Working days</span><span><strong>${wDays}</strong></span></div>
+        </div>
+      </div>
+      <div class="pc-summary-col">
+        <h3>By Strategy</h3>
+        ${stratHTML}
+      </div>
     </div>
     <div class="cp-pdf-body">${weeksHTML}</div>
     <div class="cp-pdf-legend">
@@ -1158,9 +1214,7 @@ export default function CyclePlanner() {
           <h1 className="cp-title">Cycle Planner</h1>
           <div className="cp-header-actions">
             {saving && <span className="cp-autosave">● Saving…</span>}
-            {activeTab === 'planner' && (
-              <button className="cp-export-btn" onClick={exportPDF} disabled={loading}>⬇ Export PDF</button>
-            )}
+            <button className="cp-export-btn" onClick={exportPDF} disabled={loading}>⬇ Export PDF</button>
           </div>
         </div>
         <div className="cp-selectors">
@@ -1289,6 +1343,7 @@ export default function CyclePlanner() {
         <PerfectCycleTab
           rep={rep} cycle={cycle} slots={slots}
           psScores={psScores} weeks={weeks} leaveDates={leaveDates}
+          repStoreData={repStoreData}
         />
       )}
     </div>
