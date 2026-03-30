@@ -1,0 +1,294 @@
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+.promo-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+.promo-topbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-retailer-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.promo-retailer-tab {
+  padding: 7px 18px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 20px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.promo-retailer-tab:hover { border-color: #CC0000; color: #CC0000; }
+.promo-retailer-tab.active {
+  background: #CC0000;
+  border-color: #CC0000;
+  color: white;
+}
+
+.promo-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.promo-select {
+  padding: 7px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: white;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.promo-type-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.promo-type-tab {
+  padding: 6px 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.promo-type-tab:hover { border-color: #1a2b5e; color: #1a2b5e; }
+.promo-type-tab.active {
+  background: #1a2b5e;
+  border-color: #1a2b5e;
+  color: white;
+}
+
+/* ── Stat cards ───────────────────────────────────────────────────────────── */
+.promo-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 700px) { .promo-stats { grid-template-columns: repeat(2, 1fr); } }
+
+.promo-stat {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.promo-stat-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.promo-stat-lbl {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Table wrapper ────────────────────────────────────────────────────────── */
+.promo-table-wrap {
+  overflow-x: auto;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  background: white;
+}
+
+.promo-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-size: 12px;
+}
+
+/* ── Header rows ──────────────────────────────────────────────────────────── */
+.promo-month-tr th,
+.promo-week-tr th {
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.promo-product-th {
+  position: sticky !important;
+  left: 0;
+  z-index: 3 !important;
+  background: white !important;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 10px 14px;
+  text-align: left;
+  border-right: 2px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.promo-product-sub {
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.promo-month-th {
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #CC0000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f0f0f0;
+  border-right: 1px solid #f0f0f0;
+  white-space: nowrap;
+  background: #fff8f8;
+}
+
+.promo-week-th {
+  padding: 6px 6px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 2px solid #e0e0e0;
+  border-right: 1px solid #f0f0f0;
+  min-width: 58px;
+  white-space: nowrap;
+  position: relative;
+}
+.promo-week-th.current-week {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.promo-now-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: #CC0000;
+  border-radius: 50%;
+  margin: 2px auto 0;
+}
+
+/* ── Legend ───────────────────────────────────────────────────────────────── */
+.promo-legend {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 400;
+  font-size: 10px;
+}
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+.promo-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.price-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.case-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* ── Body rows ────────────────────────────────────────────────────────────── */
+.promo-row { transition: background 0.1s; }
+.promo-row:hover .promo-product-td,
+.promo-row:hover .promo-cell { background: #f5f5f5; }
+.promo-row.alt .promo-product-td,
+.promo-row.alt .promo-cell { background: #fafafa; }
+.promo-row.alt:hover .promo-product-td,
+.promo-row.alt:hover .promo-cell { background: #f0f0f0; }
+
+.promo-product-td {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a1a1a;
+  border-right: 2px solid #e8e8e8;
+  border-bottom: 1px solid #f5f5f5;
+  min-width: 220px;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promo-cell {
+  padding: 5px 5px;
+  text-align: center;
+  border-bottom: 1px solid #f5f5f5;
+  border-right: 1px solid #f5f5f5;
+  vertical-align: middle;
+}
+.promo-cell.current-week {
+  background: #fffbea !important;
+}
+.promo-cell.has-promo {
+  background: inherit;
+}
+
+/* ── Loading / empty ──────────────────────────────────────────────────────── */
+.promo-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 180px;
+  color: #888;
+  font-size: 14px;
+}
+.promo-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #CC0000;
+  border-radius: 50%;
+  animation: promo-spin 0.8s linear infinite;
+}
+@keyframes promo-spin { to { transform: rotate(360deg); } }
+
+.promo-empty {
+  text-align: center;
+  padding: 48px;
+  color: #aaa;
+  font-size: 14px;
+}

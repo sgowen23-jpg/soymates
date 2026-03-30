@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'MSO Pipeline', icon: '📋' },
   { label: 'Perfect Store', icon: '⭐' },
   { label: 'Cycle Planner', icon: '📆' },
+  { label: 'Promotions',   icon: '🏷️' },
   { label: 'Data Upload', icon: '📤' },
   { label: 'Leave Calendar', icon: '📅' },
   { label: 'Chat bot', icon: '💬', soon: true },
