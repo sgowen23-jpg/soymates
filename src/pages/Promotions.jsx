@@ -21,9 +21,9 @@ function getCurrentWeek(weeks) {
 function isUHT(p) { return /uht/i.test(p) }
 
 function getSegment(p) {
-  if (/ygt/i.test(p))  return 'Yoghurt'
-  if (/frsh|esl/i.test(p)) return 'Fresh'
-  if (/uht/i.test(p))  return 'UHT'
+  if (/ygt/i.test(p))       return 'Yoghurt'
+  if (/frsh|esl/i.test(p))  return 'Fresh'
+  if (/uht/i.test(p))       return 'UHT'
   return 'Other'
 }
 
@@ -34,9 +34,17 @@ function segClass(seg) {
   return 'seg-other'
 }
 
+// Split a product name at a word boundary around maxChars
+function splitName(name, maxChars = 22) {
+  if (name.length <= maxChars) return [name, '']
+  const slice = name.slice(0, maxChars + 1)
+  const lastSpace = slice.lastIndexOf(' ')
+  if (lastSpace > 0) return [name.slice(0, lastSpace), name.slice(lastSpace + 1)]
+  return [name.slice(0, maxChars), name.slice(maxChars)]
+}
+
 // ─── Mobile List View ─────────────────────────────────────────────────────────
 function PromoListView({ productRows, orderedProducts, lookup, filteredWeeks, currentWeek }) {
-  // Group rows by product
   const cards = useMemo(() => {
     const seen = new Set()
     const list = []
@@ -97,7 +105,6 @@ function PromoListView({ productRows, orderedProducts, lookup, filteredWeeks, cu
 export default function Promotions() {
   const [retailer, setRetailer]     = useState('IGA')
   const [month, setMonth]           = useState('all')
-  const [promoType, setPromoType]   = useState('all')
   const [category, setCategory]     = useState('all')
   const [mobileView, setMobileView] = useState('table')
   const [data, setData]             = useState([])
@@ -109,7 +116,6 @@ export default function Promotions() {
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
 
-  // Load 2026 data ordered by sort_order (Excel row order)
   useEffect(() => {
     setLoading(true)
     setData([])
@@ -126,12 +132,10 @@ export default function Promotions() {
       })
   }, [retailer])
 
-  // All unique weeks in order
   const allWeeks = useMemo(() => (
     [...new Set(data.map(r => r.week_start))].sort()
   ), [data])
 
-  // Available months
   const availableMonths = useMemo(() => {
     const seen = new Set()
     allWeeks.forEach(w => {
@@ -156,7 +160,6 @@ export default function Promotions() {
 
   const currentWeek = useMemo(() => getCurrentWeek(allWeeks), [allWeeks])
 
-  // lookup: product → promo_type → week → display value
   const lookup = useMemo(() => {
     const map = {}
     data.forEach(r => {
@@ -168,7 +171,6 @@ export default function Promotions() {
     return map
   }, [data])
 
-  // Ordered unique products
   const orderedProducts = useMemo(() => {
     const seen = new Set()
     const list = []
@@ -181,7 +183,7 @@ export default function Promotions() {
     return list
   }, [data])
 
-  // Build rows: one row per (product, promo_type) in Excel order
+  // Always show both types — no promoType filter
   const productRows = useMemo(() => {
     const inRange = (p, type) => filteredWeeks.some(w => lookup[p]?.[type]?.[w])
 
@@ -191,26 +193,12 @@ export default function Promotions() {
 
     const rows = []
     filtered.forEach(p => {
-      const hasPrice = inRange(p, 'price')
-      const hasCase  = inRange(p, 'case_deal')
-
-      const wantPrice = promoType === 'all' || promoType === 'price' || promoType === 'both'
-      const wantCase  = promoType === 'all' || promoType === 'case_deal' || promoType === 'both'
-
-      if (promoType === 'both') {
-        if (hasPrice && hasCase) {
-          rows.push({ p, type: 'price' })
-          rows.push({ p, type: 'case_deal' })
-        }
-      } else {
-        if (wantPrice && hasPrice) rows.push({ p, type: 'price' })
-        if (wantCase  && hasCase)  rows.push({ p, type: 'case_deal' })
-      }
+      if (inRange(p, 'price'))     rows.push({ p, type: 'price' })
+      if (inRange(p, 'case_deal')) rows.push({ p, type: 'case_deal' })
     })
     return rows
-  }, [orderedProducts, lookup, filteredWeeks, category, promoType])
+  }, [orderedProducts, lookup, filteredWeeks, category])
 
-  // Month groups for header
   const monthGroups = useMemo(() => {
     const groups = []
     filteredWeeks.forEach(w => {
@@ -225,7 +213,6 @@ export default function Promotions() {
     return groups
   }, [filteredWeeks])
 
-  // Stats
   const uniqueProducts = useMemo(() => [...new Set(productRows.map(r => r.p))], [productRows])
   const activeProductCount = useMemo(() => {
     if (!currentWeek) return 0
@@ -262,13 +249,6 @@ export default function Promotions() {
               <button key={v}
                 className={`promo-type-tab ${category === v ? 'active' : ''}`}
                 onClick={() => setCategory(v)}>{l}</button>
-            ))}
-          </div>
-          <div className="promo-type-tabs">
-            {[['all','All'],['price','Price'],['case_deal','Case Deal'],['both','Both']].map(([v,l]) => (
-              <button key={v}
-                className={`promo-type-tab ${promoType === v ? 'active' : ''}`}
-                onClick={() => setPromoType(v)}>{l}</button>
             ))}
           </div>
         </div>
@@ -345,14 +325,25 @@ export default function Promotions() {
               </thead>
               <tbody>
                 {productRows.map(({ p, type }, pi) => {
-                  const productIdx = orderedProducts.indexOf(p)
-                  const isAlt = productIdx % 2 === 1
+                  const productIdx      = orderedProducts.indexOf(p)
+                  const isAlt           = productIdx % 2 === 1
                   const isFirstOfProduct = pi === 0 || productRows[pi-1].p !== p
+                  const isLastOfProduct  = pi === productRows.length - 1 || productRows[pi+1].p !== p
+
+                  // Split name: line1 in first row, line2 in last row (sub-row)
+                  const [line1, line2] = splitName(p)
+                  // Show line2 only in the sub-row of a multi-row product
+                  const hasSubRow = !isLastOfProduct || !isFirstOfProduct
+                  // This row is the sub-row (second/last row of a product)
+                  const isSubRow  = !isFirstOfProduct
+
                   return (
-                    <tr key={`${p}_${type}`} className={`promo-row ${isAlt ? 'alt' : ''}`}>
-                      <td className={`promo-product-td ${isFirstOfProduct ? '' : 'promo-product-td-cont'}`}
-                          title={p}>
-                        {isFirstOfProduct ? p : ''}
+                    <tr key={`${p}_${type}`} className={`promo-row ${isAlt ? 'alt' : ''} ${isSubRow ? 'promo-sub-row' : ''}`}>
+                      <td
+                        className={`promo-product-td ${isSubRow ? 'promo-product-td-sub' : ''}`}
+                        title={p}
+                      >
+                        {isFirstOfProduct ? line1 : line2 || ''}
                       </td>
                       <td className={`promo-type-cell ${type === 'price' ? 'type-price' : 'type-case'}`}>
                         {type === 'price' ? 'Price' : 'Case'}
@@ -361,7 +352,7 @@ export default function Promotions() {
                         const val = lookup[p]?.[type]?.[w]
                         return (
                           <td key={w}
-                            className={`promo-cell ${w === currentWeek ? 'current-week' : ''}`}>
+                            className={`promo-cell ${w === currentWeek ? 'current-week' : ''} ${isSubRow ? 'promo-cell-sub' : ''}`}>
                             {val && (
                               <span className={`promo-badge ${type === 'price' ? 'price-badge' : 'case-badge'}`}>
                                 {val}

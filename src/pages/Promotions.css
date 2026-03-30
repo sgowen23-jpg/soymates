@@ -215,9 +215,10 @@
 .type-price { color: #1d4ed8; background: #eff6ff; }
 .type-case  { color: #065f46; background: #f0fdf4; }
 
-.promo-product-td-cont {
-  color: transparent;
-  border-bottom: 1px solid #f5f5f5;
+/* Sub-row week cells — slightly lighter background, no top border */
+.promo-cell-sub {
+  border-top: none;
+  background: inherit;
 }
 
 .promo-month-th {
@@ -308,11 +309,19 @@
   color: #1a1a1a;
   border-right: 2px solid #e8e8e8;
   border-bottom: 1px solid #f5f5f5;
+  width: 220px;
   min-width: 220px;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 220px;
   white-space: nowrap;
+}
+
+/* Sub-row: name continuation — no top border, muted, compact */
+.promo-product-td-sub {
+  color: #999;
+  font-weight: 400;
+  border-top: none;
+  padding-top: 0;
+  padding-bottom: 5px;
 }
 
 .promo-cell {
@@ -475,6 +484,7 @@
 
   /* Narrow product column on mobile table view */
   .promo-product-th {
+    width: 110px;
     min-width: 110px;
     max-width: 110px;
     padding: 8px 8px;
@@ -482,6 +492,7 @@
   }
 
   .promo-product-td {
+    width: 110px;
     min-width: 110px;
     max-width: 110px;
     padding: 6px 8px;
