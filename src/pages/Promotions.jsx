@@ -5,6 +5,22 @@ import './Promotions.css'
 const RETAILERS = ['IGA', 'Ritchies', 'Foodworks', 'Foodland', 'Drakes']
 const MONTHS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
+const METCASH_WEEKS = {
+  '2025-11-05': 32, '2025-11-12': 33, '2025-11-19': 34, '2025-11-26': 35,
+  '2025-12-03': 36, '2025-12-10': 37, '2025-12-17': 38, '2025-12-24': 39,
+  '2025-12-31': 40, '2026-01-07': 41, '2026-01-14': 42, '2026-01-21': 43,
+  '2026-01-28': 44, '2026-02-04': 45, '2026-02-11': 46, '2026-02-18': 47,
+  '2026-02-25': 48, '2026-03-04': 49, '2026-03-11': 50, '2026-03-18': 51,
+  '2026-03-25': 52, '2026-04-01':  1, '2026-04-08':  2, '2026-04-15':  3,
+  '2026-04-22':  4, '2026-04-29':  5, '2026-05-06':  6, '2026-05-13':  7,
+  '2026-05-20':  8, '2026-05-27':  9, '2026-06-03': 10, '2026-06-10': 11,
+  '2026-06-17': 12, '2026-06-24': 13, '2026-07-01': 14, '2026-07-08': 15,
+  '2026-07-15': 16, '2026-07-22': 17, '2026-07-29': 18, '2026-08-05': 19,
+  '2026-08-12': 20, '2026-08-19': 21, '2026-08-26': 22, '2026-09-02': 23,
+  '2026-09-09': 24, '2026-09-16': 25, '2026-09-23': 26, '2026-09-30': 27,
+  '2026-10-07': 28, '2026-10-14': 29, '2026-10-21': 30, '2026-10-28': 31,
+}
+
 function toDate(str) { return new Date(str + 'T00:00:00') }
 function fmtWeekHeader(str) {
   const d = toDate(str)
@@ -15,8 +31,16 @@ function fmtWeekLong(str) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 function getCurrentWeek(weeks) {
+  if (!weeks.length) return null
   const today = new Date(); today.setHours(0,0,0,0)
-  return weeks.filter(w => toDate(w) <= today).slice(-1)[0] || null
+  // Find the last week whose start is <= today (the week currently in progress)
+  let current = null
+  for (const w of weeks) {
+    if (toDate(w) <= today) current = w
+    else break
+  }
+  // If today is before the first week, highlight the first week anyway
+  return current || weeks[0]
 }
 function isUHT(p) { return /uht/i.test(p) }
 
@@ -329,6 +353,15 @@ export default function Promotions() {
                   <th className="promo-type-th"></th>
                   {monthGroups.map(g => (
                     <th key={g.key} colSpan={g.count} className="promo-month-th">{g.label}</th>
+                  ))}
+                </tr>
+                <tr className="promo-metcash-tr">
+                  <th className="promo-product-th promo-metcash-label-th">Metcash Wk</th>
+                  <th className="promo-type-th"></th>
+                  {filteredWeeks.map(w => (
+                    <th key={w} className={`promo-metcash-th ${w === currentWeek ? 'current-week' : ''}`}>
+                      {METCASH_WEEKS[w] ?? ''}
+                    </th>
                   ))}
                 </tr>
                 <tr className="promo-week-tr">
