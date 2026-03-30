@@ -713,7 +713,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repSt
                 </div>
               )
             })}
-            <p className="cp-pc-hint">Visits vs FQY targets for {rep.split(' ')[0]}'s {repStates.join('/')} stores ({repStoreData.length} total)</p>
+            <p className="cp-pc-hint">Visits vs FQY targets for {rep.split(' ')[0]}'s {(REP_STATES[rep] || []).join('/')} stores ({repStoreData.length} total)</p>
           </div>
 
           {/* Call rate */}
@@ -760,10 +760,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repSt
               <span className="cp-pc-col-rec">Status</span>
             </div>
             <div className="cp-pc-table-body">
-              {storesLoading && (
-                <div className="cp-pc-empty"><div className="cp-spinner" style={{ margin: '0 auto' }} /></div>
-              )}
-              {!storesLoading && filteredStores.length === 0 && (
+              {filteredStores.length === 0 && (
                 <div className="cp-pc-empty">No stores for this filter.</div>
               )}
               {filteredStores.map(s => {
