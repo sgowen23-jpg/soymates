@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import './Promotions.css'
 
@@ -109,6 +109,8 @@ export default function Promotions() {
   const [mobileView, setMobileView] = useState('table')
   const [data, setData]             = useState([])
   const [loading, setLoading]       = useState(true)
+  const tableWrapRef  = useRef(null)
+  const didAutoScroll = useRef(false)
 
   useEffect(() => {
     const mc = document.querySelector('.main-content')
@@ -227,6 +229,23 @@ export default function Promotions() {
     uniqueProducts.filter(p => filteredWeeks.some(w => lookup[p]?.['case_deal']?.[w])).length,
     [uniqueProducts, filteredWeeks, lookup])
 
+  // Auto-scroll to current week on first render of the table
+  useEffect(() => {
+    if (!currentWeek || !tableWrapRef.current || didAutoScroll.current) return
+    const th = tableWrapRef.current.querySelector(`th[data-week="${currentWeek}"]`)
+    if (!th) return
+    didAutoScroll.current = true
+    const wrap = tableWrapRef.current
+    const stickyWidth = 220 + 52 // product + type columns
+    const colOffset = th.offsetLeft
+    const colWidth  = th.offsetWidth
+    const viewWidth = wrap.clientWidth
+    wrap.scrollLeft = colOffset - stickyWidth - (viewWidth - stickyWidth - colWidth) / 2
+  }, [currentWeek, filteredWeeks, loading])
+
+  // Reset auto-scroll flag when retailer changes so it re-centres on new data
+  useEffect(() => { didAutoScroll.current = false }, [retailer])
+
   return (
     <div className="promo-page">
 
@@ -302,7 +321,7 @@ export default function Promotions() {
         />
       ) : (
         <div className="promo-table-outer">
-          <div className="promo-table-wrap">
+          <div className="promo-table-wrap" ref={tableWrapRef}>
             <table className="promo-table">
               <thead>
                 <tr className="promo-month-tr">
@@ -316,9 +335,11 @@ export default function Promotions() {
                   <th className="promo-product-th promo-product-sub"></th>
                   <th className="promo-type-th promo-type-sub">Type</th>
                   {filteredWeeks.map(w => (
-                    <th key={w} className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}>
-                      {fmtWeekHeader(w)}
-                      {w === currentWeek && <span className="promo-now-dot" />}
+                    <th key={w} data-week={w} className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}>
+                      {w === currentWeek
+                        ? <><span className="promo-now-label">Now</span>{fmtWeekHeader(w)}</>
+                        : fmtWeekHeader(w)
+                      }
                     </th>
                   ))}
                 </tr>
