@@ -81,9 +81,33 @@
   color: white;
 }
 
-/* ── Mobile view toggle (hidden on desktop) ───────────────────────────────── */
-.promo-mobile-toggle {
-  display: none;
+/* ── View toggle (Table / List) ──────────────────────────────────────────── */
+.promo-view-toggle {
+  display: flex;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.promo-mobile-toggle-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: white;
+  color: #888;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.promo-mobile-toggle-btn.active {
+  background: #1a2b5e;
+  color: white;
+}
+.promo-mobile-toggle-btn:hover:not(.active) {
+  background: #f5f5f5;
+  color: #333;
 }
 
 /* ── Stat cards ───────────────────────────────────────────────────────────── */
@@ -118,10 +142,14 @@
 /* ── Table wrapper ────────────────────────────────────────────────────────── */
 .promo-table-outer {
   position: relative;
+  width: 100%;
 }
 
 .promo-table-wrap {
+  display: block;
+  width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
   border: 1.5px solid #e8e8e8;
   border-radius: 10px;
   background: white;
@@ -134,17 +162,17 @@
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 0;
+  height: 100%;
   width: 40px;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.85));
   border-radius: 0 10px 10px 0;
   pointer-events: none;
+  z-index: 10;
 }
 
 .promo-table {
   border-collapse: collapse;
-  width: max-content;
-  min-width: 100%;
+  table-layout: auto;
   font-size: 12px;
 }
 
@@ -376,11 +404,16 @@
   font-size: 14px;
 }
 
-/* ── List view cards (mobile) ─────────────────────────────────────────────── */
+/* ── List view cards ──────────────────────────────────────────────────────── */
 .promo-list-view {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .promo-list-view { grid-template-columns: 1fr; }
 }
 
 .promo-card {
@@ -467,29 +500,6 @@
   .promo-type-tab {
     padding: 5px 10px;
     font-size: 11px;
-  }
-
-  /* Mobile view toggle */
-  .promo-mobile-toggle {
-    display: flex;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    align-self: flex-start;
-  }
-
-  .promo-mobile-toggle-btn {
-    padding: 6px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    border: none;
-    background: white;
-    color: #888;
-    cursor: pointer;
-  }
-  .promo-mobile-toggle-btn.active {
-    background: #1a2b5e;
-    color: white;
   }
 
   /* Narrow product column on mobile table view */

@@ -114,8 +114,8 @@ export default function Promotions() {
 
   useEffect(() => {
     const mc = document.querySelector('.main-content')
-    if (mc) mc.style.overflowY = 'auto'
-    return () => { if (mc) mc.style.overflowY = '' }
+    if (mc) { mc.style.overflowY = 'auto'; mc.style.overflowX = 'hidden' }
+    return () => { if (mc) { mc.style.overflowY = ''; mc.style.overflowX = '' } }
   }, [])
 
   useEffect(() => {
@@ -272,8 +272,8 @@ export default function Promotions() {
           </div>
         </div>
 
-        {/* Mobile-only Table / List toggle */}
-        <div className="promo-mobile-toggle">
+        {/* Table / List toggle */}
+        <div className="promo-view-toggle">
           <button
             className={`promo-mobile-toggle-btn ${mobileView === 'table' ? 'active' : ''}`}
             onClick={() => setMobileView('table')}>Table</button>
