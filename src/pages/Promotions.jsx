@@ -3,11 +3,16 @@ import { supabase } from '../lib/supabase'
 import './Promotions.css'
 
 const RETAILERS = ['IGA', 'Ritchies', 'Foodworks', 'Foodland', 'Drakes']
+const MONTHS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 function toDate(str) { return new Date(str + 'T00:00:00') }
 function fmtWeekHeader(str) {
   const d = toDate(str)
   return `${d.getDate()}/${d.getMonth() + 1}`
+}
+function fmtWeekLong(str) {
+  const d = toDate(str)
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 function getCurrentWeek(weeks) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -15,14 +20,88 @@ function getCurrentWeek(weeks) {
 }
 function isUHT(p) { return /uht/i.test(p) }
 
+function getSegment(p) {
+  if (/ygt/i.test(p))  return 'Yoghurt'
+  if (/frsh|esl/i.test(p)) return 'Fresh'
+  if (/uht/i.test(p))  return 'UHT'
+  return 'Other'
+}
+
+function segClass(seg) {
+  if (seg === 'UHT')     return 'seg-uht'
+  if (seg === 'Fresh')   return 'seg-fresh'
+  if (seg === 'Yoghurt') return 'seg-yoghurt'
+  return 'seg-other'
+}
+
+// ─── Mobile List View ─────────────────────────────────────────────────────────
+function PromoListView({ productRows, orderedProducts, lookup, filteredWeeks, currentWeek }) {
+  // Group rows by product
+  const cards = useMemo(() => {
+    const seen = new Set()
+    const list = []
+    productRows.forEach(({ p }) => {
+      if (!seen.has(p)) { seen.add(p); list.push(p) }
+    })
+    return list.map(p => {
+      const types = productRows.filter(r => r.p === p).map(r => r.type)
+      const activeWeeks = filteredWeeks.filter(w =>
+        types.some(t => lookup[p]?.[t]?.[w])
+      )
+      return { p, types, activeWeeks }
+    })
+  }, [productRows, filteredWeeks, lookup])
+
+  if (cards.length === 0) return (
+    <div className="promo-empty">No promotions found for this filter.</div>
+  )
+
+  return (
+    <div className="promo-list-view">
+      {cards.map(({ p, types, activeWeeks }) => {
+        const seg = isUHT(p) ? 'UHT' : getSegment(p)
+        return (
+          <div key={p} className="promo-card">
+            <div className="promo-card-header">
+              <span className="promo-card-name">{p}</span>
+              <span className={`promo-card-seg ${segClass(seg)}`}>{seg}</span>
+            </div>
+            <div className="promo-card-weeks">
+              {activeWeeks.length === 0
+                ? <span style={{ fontSize: 12, color: '#aaa' }}>No promos in selected period</span>
+                : activeWeeks.map(w => {
+                  const priceVal = lookup[p]?.['price']?.[w]
+                  const caseVal  = lookup[p]?.['case_deal']?.[w]
+                  const isCurrent = w === currentWeek
+                  return (
+                    <div key={w} className="promo-card-week-row"
+                      style={isCurrent ? { background: '#fffbea', borderRadius: 4, padding: '2px 4px', margin: '0 -4px' } : {}}>
+                      <span className="promo-card-date">{fmtWeekLong(w)}</span>
+                      <div className="promo-card-badges">
+                        {priceVal && <span className="promo-badge price-badge">{priceVal}</span>}
+                        {caseVal  && <span className="promo-badge case-badge">{caseVal}</span>}
+                      </div>
+                    </div>
+                  )
+                })
+              }
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Promotions() {
-  const [retailer, setRetailer]   = useState('IGA')
-  const [month, setMonth]         = useState('all')
-  const [promoType, setPromoType] = useState('all')
-  const [category, setCategory]   = useState('all')
-  const [data, setData]           = useState([])
-  const [loading, setLoading]     = useState(true)
+  const [retailer, setRetailer]     = useState('IGA')
+  const [month, setMonth]           = useState('all')
+  const [promoType, setPromoType]   = useState('all')
+  const [category, setCategory]     = useState('all')
+  const [mobileView, setMobileView] = useState('table')
+  const [data, setData]             = useState([])
+  const [loading, setLoading]       = useState(true)
 
   useEffect(() => {
     const mc = document.querySelector('.main-content')
@@ -40,7 +119,7 @@ export default function Promotions() {
       .eq('retailer', retailer)
       .gte('week_start', '2026-01-01')
       .order('sort_order', { ascending: true })
-      .order('promo_type', { ascending: true })  // price before case_deal
+      .order('promo_type', { ascending: true })
       .then(({ data: rows }) => {
         setData(rows || [])
         setLoading(false)
@@ -89,7 +168,7 @@ export default function Promotions() {
     return map
   }, [data])
 
-  // Ordered unique products — preserves Excel sort_order (data already sorted by sort_order)
+  // Ordered unique products
   const orderedProducts = useMemo(() => {
     const seen = new Set()
     const list = []
@@ -146,7 +225,7 @@ export default function Promotions() {
     return groups
   }, [filteredWeeks])
 
-  // Stats — based on unique products
+  // Stats
   const uniqueProducts = useMemo(() => [...new Set(productRows.map(r => r.p))], [productRows])
   const activeProductCount = useMemo(() => {
     if (!currentWeek) return 0
@@ -193,6 +272,16 @@ export default function Promotions() {
             ))}
           </div>
         </div>
+
+        {/* Mobile-only Table / List toggle */}
+        <div className="promo-mobile-toggle">
+          <button
+            className={`promo-mobile-toggle-btn ${mobileView === 'table' ? 'active' : ''}`}
+            onClick={() => setMobileView('table')}>Table</button>
+          <button
+            className={`promo-mobile-toggle-btn ${mobileView === 'list' ? 'active' : ''}`}
+            onClick={() => setMobileView('list')}>List</button>
+        </div>
       </div>
 
       {/* ── Stat cards ── */}
@@ -215,7 +304,7 @@ export default function Promotions() {
         </div>
       </div>
 
-      {/* ── Calendar table ── */}
+      {/* ── Calendar table / List ── */}
       {loading ? (
         <div className="promo-loading">
           <div className="promo-spinner" />
@@ -223,61 +312,70 @@ export default function Promotions() {
         </div>
       ) : productRows.length === 0 ? (
         <div className="promo-empty">No promotions found for this filter.</div>
+      ) : mobileView === 'list' ? (
+        <PromoListView
+          productRows={productRows}
+          orderedProducts={orderedProducts}
+          lookup={lookup}
+          filteredWeeks={filteredWeeks}
+          currentWeek={currentWeek}
+        />
       ) : (
-        <div className="promo-table-wrap">
-          <table className="promo-table">
-            <thead>
-              <tr className="promo-month-tr">
-                <th className="promo-product-th">Product</th>
-                <th className="promo-type-th"></th>
-                {monthGroups.map(g => (
-                  <th key={g.key} colSpan={g.count} className="promo-month-th">{g.label}</th>
-                ))}
-              </tr>
-              <tr className="promo-week-tr">
-                <th className="promo-product-th promo-product-sub"></th>
-                <th className="promo-type-th promo-type-sub">Type</th>
-                {filteredWeeks.map(w => (
-                  <th key={w} className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}>
-                    {fmtWeekHeader(w)}
-                    {w === currentWeek && <span className="promo-now-dot" />}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {productRows.map(({ p, type }, pi) => {
-                // Alternate shading by product group (not by row index)
-                const productIdx = orderedProducts.indexOf(p)
-                const isAlt = productIdx % 2 === 1
-                const isFirstOfProduct = pi === 0 || productRows[pi-1].p !== p
-                return (
-                  <tr key={`${p}_${type}`} className={`promo-row ${isAlt ? 'alt' : ''}`}>
-                    <td className={`promo-product-td ${isFirstOfProduct ? '' : 'promo-product-td-cont'}`}
-                        title={p}>
-                      {isFirstOfProduct ? p : ''}
-                    </td>
-                    <td className={`promo-type-cell ${type === 'price' ? 'type-price' : 'type-case'}`}>
-                      {type === 'price' ? 'Price' : 'Case'}
-                    </td>
-                    {filteredWeeks.map(w => {
-                      const val = lookup[p]?.[type]?.[w]
-                      return (
-                        <td key={w}
-                          className={`promo-cell ${w === currentWeek ? 'current-week' : ''}`}>
-                          {val && (
-                            <span className={`promo-badge ${type === 'price' ? 'price-badge' : 'case-badge'}`}>
-                              {val}
-                            </span>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="promo-table-outer">
+          <div className="promo-table-wrap">
+            <table className="promo-table">
+              <thead>
+                <tr className="promo-month-tr">
+                  <th className="promo-product-th">Product</th>
+                  <th className="promo-type-th"></th>
+                  {monthGroups.map(g => (
+                    <th key={g.key} colSpan={g.count} className="promo-month-th">{g.label}</th>
+                  ))}
+                </tr>
+                <tr className="promo-week-tr">
+                  <th className="promo-product-th promo-product-sub"></th>
+                  <th className="promo-type-th promo-type-sub">Type</th>
+                  {filteredWeeks.map(w => (
+                    <th key={w} className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}>
+                      {fmtWeekHeader(w)}
+                      {w === currentWeek && <span className="promo-now-dot" />}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {productRows.map(({ p, type }, pi) => {
+                  const productIdx = orderedProducts.indexOf(p)
+                  const isAlt = productIdx % 2 === 1
+                  const isFirstOfProduct = pi === 0 || productRows[pi-1].p !== p
+                  return (
+                    <tr key={`${p}_${type}`} className={`promo-row ${isAlt ? 'alt' : ''}`}>
+                      <td className={`promo-product-td ${isFirstOfProduct ? '' : 'promo-product-td-cont'}`}
+                          title={p}>
+                        {isFirstOfProduct ? p : ''}
+                      </td>
+                      <td className={`promo-type-cell ${type === 'price' ? 'type-price' : 'type-case'}`}>
+                        {type === 'price' ? 'Price' : 'Case'}
+                      </td>
+                      {filteredWeeks.map(w => {
+                        const val = lookup[p]?.[type]?.[w]
+                        return (
+                          <td key={w}
+                            className={`promo-cell ${w === currentWeek ? 'current-week' : ''}`}>
+                            {val && (
+                              <span className={`promo-badge ${type === 'price' ? 'price-badge' : 'case-badge'}`}>
+                                {val}
+                              </span>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -81,6 +81,11 @@
   color: white;
 }
 
+/* ── Mobile view toggle (hidden on desktop) ───────────────────────────────── */
+.promo-mobile-toggle {
+  display: none;
+}
+
 /* ── Stat cards ───────────────────────────────────────────────────────────── */
 .promo-stats {
   display: grid;
@@ -111,11 +116,29 @@
 }
 
 /* ── Table wrapper ────────────────────────────────────────────────────────── */
+.promo-table-outer {
+  position: relative;
+}
+
 .promo-table-wrap {
   overflow-x: auto;
   border: 1.5px solid #e8e8e8;
   border-radius: 10px;
   background: white;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll-right gradient indicator */
+.promo-table-outer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.85));
+  border-radius: 0 10px 10px 0;
+  pointer-events: none;
 }
 
 .promo-table {
@@ -332,4 +355,159 @@
   padding: 48px;
   color: #aaa;
   font-size: 14px;
+}
+
+/* ── List view cards (mobile) ─────────────────────────────────────────────── */
+.promo-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-card {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.promo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.promo-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-card-seg {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.seg-uht-core { background: #fde8e8; color: #CC0000; }
+.seg-uht      { background: #fff3cd; color: #856404; }
+.seg-fresh    { background: #d1fae5; color: #065f46; }
+.seg-yoghurt  { background: #ede9fe; color: #5b21b6; }
+.seg-other    { background: #f3f4f6; color: #6b7280; }
+
+.promo-card-weeks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promo-card-week-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.promo-card-date {
+  color: #666;
+  font-weight: 500;
+  min-width: 54px;
+  flex-shrink: 0;
+}
+
+.promo-card-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ── Mobile overrides ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .promo-page {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .promo-retailer-tab {
+    padding: 6px 13px;
+    font-size: 12px;
+  }
+
+  .promo-filter-row {
+    gap: 6px;
+  }
+
+  .promo-type-tab {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  /* Mobile view toggle */
+  .promo-mobile-toggle {
+    display: flex;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    align-self: flex-start;
+  }
+
+  .promo-mobile-toggle-btn {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    background: white;
+    color: #888;
+    cursor: pointer;
+  }
+  .promo-mobile-toggle-btn.active {
+    background: #1a2b5e;
+    color: white;
+  }
+
+  /* Narrow product column on mobile table view */
+  .promo-product-th {
+    min-width: 110px;
+    max-width: 110px;
+    padding: 8px 8px;
+    font-size: 10px;
+  }
+
+  .promo-product-td {
+    min-width: 110px;
+    max-width: 110px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* Type column shifts with narrower product column */
+  .promo-type-th,
+  .promo-type-cell {
+    left: 110px;
+  }
+
+  /* Narrower week columns */
+  .promo-week-th {
+    min-width: 52px;
+    font-size: 10px;
+    padding: 5px 4px 6px;
+  }
+
+  /* Smaller badges */
+  .promo-badge {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .promo-stat-val { font-size: 20px; }
+  .promo-stat-lbl { font-size: 10px; }
+  .promo-stat     { padding: 10px 12px; }
 }
