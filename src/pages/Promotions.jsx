@@ -4,155 +4,162 @@ import './Promotions.css'
 
 const RETAILERS = ['IGA', 'Ritchies', 'Foodworks', 'Foodland', 'Drakes']
 
-function toDate(str) {
-  return new Date(str + 'T00:00:00')
-}
-
+function toDate(str) { return new Date(str + 'T00:00:00') }
 function fmtWeekHeader(str) {
   const d = toDate(str)
   return `${d.getDate()}/${d.getMonth() + 1}`
 }
-
 function getCurrentWeek(weeks) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  // Find the latest week_start that is <= today
+  const today = new Date(); today.setHours(0,0,0,0)
   return weeks.filter(w => toDate(w) <= today).slice(-1)[0] || null
 }
-
-function isUHT(product) {
-  return /uht/i.test(product)
-}
+function isUHT(p) { return /uht/i.test(p) }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Promotions() {
   const [retailer, setRetailer]   = useState('IGA')
   const [month, setMonth]         = useState('all')
   const [promoType, setPromoType] = useState('all')
-  const [category, setCategory]   = useState('all')   // 'all' | 'uht' | 'dairy'
+  const [category, setCategory]   = useState('all')
   const [data, setData]           = useState([])
   const [loading, setLoading]     = useState(true)
 
-  // Make main-content scrollable while mounted
   useEffect(() => {
     const mc = document.querySelector('.main-content')
     if (mc) mc.style.overflowY = 'auto'
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
 
-  // Load data for selected retailer — 2026 only
+  // Load 2026 data ordered by sort_order (Excel row order)
   useEffect(() => {
     setLoading(true)
     setData([])
     supabase
       .from('promo_calendar')
-      .select('product_description, sku, week_start, promo_type, value, display_value')
+      .select('product_description, week_start, promo_type, value, display_value, sort_order')
       .eq('retailer', retailer)
       .gte('week_start', '2026-01-01')
-      .order('week_start')
+      .order('sort_order', { ascending: true })
+      .order('promo_type', { ascending: true })  // price before case_deal
       .then(({ data: rows }) => {
         setData(rows || [])
         setLoading(false)
       })
   }, [retailer])
 
-  // All unique weeks, sorted
+  // All unique weeks in order
   const allWeeks = useMemo(() => (
     [...new Set(data.map(r => r.week_start))].sort()
   ), [data])
 
-  // Available months derived from data
+  // Available months
   const availableMonths = useMemo(() => {
     const seen = new Set()
     allWeeks.forEach(w => {
       const d = toDate(w)
-      seen.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`)
+      seen.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`)
     })
     return [...seen].sort()
   }, [allWeeks])
 
   function monthLabel(key) {
-    if (key === 'all') return 'All months'
     const [y, m] = key.split('-')
-    const d = new Date(+y, +m, 1)
-    return d.toLocaleString('en-AU', { month: 'short', year: '2-digit' })
+    return new Date(+y, +m, 1).toLocaleString('en-AU', { month: 'short', year: '2-digit' })
   }
 
-  // Filtered weeks by month
   const filteredWeeks = useMemo(() => {
     if (month === 'all') return allWeeks
     return allWeeks.filter(w => {
       const d = toDate(w)
-      return `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}` === month
+      return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}` === month
     })
   }, [allWeeks, month])
 
-  // Current week
   const currentWeek = useMemo(() => getCurrentWeek(allWeeks), [allWeeks])
 
-  // Build lookup: product → promo_type → week_start → display_value
+  // lookup: product → promo_type → week → display value
   const lookup = useMemo(() => {
     const map = {}
     data.forEach(r => {
       if (!map[r.product_description]) map[r.product_description] = {}
       if (!map[r.product_description][r.promo_type]) map[r.product_description][r.promo_type] = {}
-      map[r.product_description][r.promo_type][r.week_start] = r.display_value || (r.value != null ? `$${r.value}` : '?')
+      map[r.product_description][r.promo_type][r.week_start] =
+        r.display_value || (r.value != null ? `$${r.value}` : '?')
     })
     return map
   }, [data])
 
-  // Products visible based on promoType + category filter
-  const products = useMemo(() => {
-    const inRange = (pd, type) =>
-      filteredWeeks.some(w => lookup[pd]?.[type]?.[w])
+  // Ordered unique products — preserves Excel sort_order (data already sorted by sort_order)
+  const orderedProducts = useMemo(() => {
+    const seen = new Set()
+    const list = []
+    data.forEach(r => {
+      if (!seen.has(r.product_description)) {
+        seen.add(r.product_description)
+        list.push(r.product_description)
+      }
+    })
+    return list
+  }, [data])
 
-    let all = Object.keys(lookup).sort()
+  // Build rows: one row per (product, promo_type) in Excel order
+  const productRows = useMemo(() => {
+    const inRange = (p, type) => filteredWeeks.some(w => lookup[p]?.[type]?.[w])
 
-    // Category filter
-    if (category === 'uht')   all = all.filter(isUHT)
-    if (category === 'dairy') all = all.filter(p => !isUHT(p))
+    let filtered = orderedProducts
+    if (category === 'uht')   filtered = filtered.filter(isUHT)
+    if (category === 'dairy') filtered = filtered.filter(p => !isUHT(p))
 
-    // Promo type filter
-    if (promoType === 'price')     return all.filter(p => inRange(p, 'price'))
-    if (promoType === 'case_deal') return all.filter(p => inRange(p, 'case_deal'))
-    if (promoType === 'both')      return all.filter(p => inRange(p, 'price') && inRange(p, 'case_deal'))
-    return all
-  }, [lookup, filteredWeeks, promoType, category])
+    const rows = []
+    filtered.forEach(p => {
+      const hasPrice = inRange(p, 'price')
+      const hasCase  = inRange(p, 'case_deal')
 
-  // Month groups for header colspan
+      const wantPrice = promoType === 'all' || promoType === 'price' || promoType === 'both'
+      const wantCase  = promoType === 'all' || promoType === 'case_deal' || promoType === 'both'
+
+      if (promoType === 'both') {
+        if (hasPrice && hasCase) {
+          rows.push({ p, type: 'price' })
+          rows.push({ p, type: 'case_deal' })
+        }
+      } else {
+        if (wantPrice && hasPrice) rows.push({ p, type: 'price' })
+        if (wantCase  && hasCase)  rows.push({ p, type: 'case_deal' })
+      }
+    })
+    return rows
+  }, [orderedProducts, lookup, filteredWeeks, category, promoType])
+
+  // Month groups for header
   const monthGroups = useMemo(() => {
     const groups = []
     filteredWeeks.forEach(w => {
       const d = toDate(w)
       const key = `${d.getFullYear()}-${d.getMonth()}`
       const label = d.toLocaleString('en-AU', { month: 'long', year: 'numeric' })
-      if (!groups.length || groups[groups.length - 1].key !== key) {
+      if (!groups.length || groups[groups.length-1].key !== key)
         groups.push({ key, label, count: 1 })
-      } else {
-        groups[groups.length - 1].count++
-      }
+      else
+        groups[groups.length-1].count++
     })
     return groups
   }, [filteredWeeks])
 
-  // Stats
+  // Stats — based on unique products
+  const uniqueProducts = useMemo(() => [...new Set(productRows.map(r => r.p))], [productRows])
   const activeProductCount = useMemo(() => {
-    const cw = currentWeek
-    if (!cw) return 0
-    return products.filter(p =>
-      lookup[p]?.['price']?.[cw] || lookup[p]?.['case_deal']?.[cw]
+    if (!currentWeek) return 0
+    return uniqueProducts.filter(p =>
+      lookup[p]?.['price']?.[currentWeek] || lookup[p]?.['case_deal']?.[currentWeek]
     ).length
-  }, [products, lookup, currentWeek])
-
-  const activePriceThisMonth = useMemo(() =>
-    products.filter(p => filteredWeeks.some(w => lookup[p]?.['price']?.[w])).length,
-    [products, filteredWeeks, lookup]
-  )
-
-  const activeCaseThisMonth = useMemo(() =>
-    products.filter(p => filteredWeeks.some(w => lookup[p]?.['case_deal']?.[w])).length,
-    [products, filteredWeeks, lookup]
-  )
+  }, [uniqueProducts, lookup, currentWeek])
+  const activePriceCount = useMemo(() =>
+    uniqueProducts.filter(p => filteredWeeks.some(w => lookup[p]?.['price']?.[w])).length,
+    [uniqueProducts, filteredWeeks, lookup])
+  const activeCaseCount = useMemo(() =>
+    uniqueProducts.filter(p => filteredWeeks.some(w => lookup[p]?.['case_deal']?.[w])).length,
+    [uniqueProducts, filteredWeeks, lookup])
 
   return (
     <div className="promo-page">
@@ -161,46 +168,28 @@ export default function Promotions() {
       <div className="promo-topbar">
         <div className="promo-retailer-tabs">
           {RETAILERS.map(r => (
-            <button
-              key={r}
+            <button key={r}
               className={`promo-retailer-tab ${retailer === r ? 'active' : ''}`}
-              onClick={() => setRetailer(r)}
-            >
-              {r}
-            </button>
+              onClick={() => setRetailer(r)}>{r}</button>
           ))}
         </div>
         <div className="promo-filter-row">
-          <select
-            className="promo-select"
-            value={month}
-            onChange={e => setMonth(e.target.value)}
-          >
+          <select className="promo-select" value={month} onChange={e => setMonth(e.target.value)}>
             <option value="all">All months</option>
-            {availableMonths.map(m => (
-              <option key={m} value={m}>{monthLabel(m)}</option>
-            ))}
+            {availableMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
           </select>
           <div className="promo-type-tabs">
-            {[['all','All'],['uht','UHT'],['dairy','Dairy']].map(([v, l]) => (
-              <button
-                key={v}
+            {[['all','All'],['uht','UHT'],['dairy','Dairy']].map(([v,l]) => (
+              <button key={v}
                 className={`promo-type-tab ${category === v ? 'active' : ''}`}
-                onClick={() => setCategory(v)}
-              >
-                {l}
-              </button>
+                onClick={() => setCategory(v)}>{l}</button>
             ))}
           </div>
           <div className="promo-type-tabs">
-            {[['all','All'],['price','Price'],['case_deal','Case Deal'],['both','Both']].map(([v, l]) => (
-              <button
-                key={v}
+            {[['all','All'],['price','Price'],['case_deal','Case Deal'],['both','Both']].map(([v,l]) => (
+              <button key={v}
                 className={`promo-type-tab ${promoType === v ? 'active' : ''}`}
-                onClick={() => setPromoType(v)}
-              >
-                {l}
-              </button>
+                onClick={() => setPromoType(v)}>{l}</button>
             ))}
           </div>
         </div>
@@ -209,15 +198,15 @@ export default function Promotions() {
       {/* ── Stat cards ── */}
       <div className="promo-stats">
         <div className="promo-stat">
-          <div className="promo-stat-val">{products.length}</div>
+          <div className="promo-stat-val">{uniqueProducts.length}</div>
           <div className="promo-stat-lbl">Products on promo</div>
         </div>
         <div className="promo-stat">
-          <div className="promo-stat-val">{activePriceThisMonth}</div>
+          <div className="promo-stat-val">{activePriceCount}</div>
           <div className="promo-stat-lbl">Price promos {month === 'all' ? 'total' : 'this month'}</div>
         </div>
         <div className="promo-stat">
-          <div className="promo-stat-val">{activeCaseThisMonth}</div>
+          <div className="promo-stat-val">{activeCaseCount}</div>
           <div className="promo-stat-lbl">Case deals {month === 'all' ? 'total' : 'this month'}</div>
         </div>
         <div className="promo-stat">
@@ -232,34 +221,24 @@ export default function Promotions() {
           <div className="promo-spinner" />
           <p>Loading {retailer} promotions…</p>
         </div>
-      ) : products.length === 0 ? (
+      ) : productRows.length === 0 ? (
         <div className="promo-empty">No promotions found for this filter.</div>
       ) : (
         <div className="promo-table-wrap">
           <table className="promo-table">
             <thead>
-              {/* Month group row */}
               <tr className="promo-month-tr">
                 <th className="promo-product-th">Product</th>
+                <th className="promo-type-th"></th>
                 {monthGroups.map(g => (
-                  <th key={g.key} colSpan={g.count} className="promo-month-th">
-                    {g.label}
-                  </th>
+                  <th key={g.key} colSpan={g.count} className="promo-month-th">{g.label}</th>
                 ))}
               </tr>
-              {/* Week date row */}
               <tr className="promo-week-tr">
-                <th className="promo-product-th promo-product-sub">
-                  <span className="promo-legend">
-                    <span className="promo-badge price-badge">Price</span>
-                    <span className="promo-badge case-badge">Case Deal</span>
-                  </span>
-                </th>
+                <th className="promo-product-th promo-product-sub"></th>
+                <th className="promo-type-th promo-type-sub">Type</th>
                 {filteredWeeks.map(w => (
-                  <th
-                    key={w}
-                    className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}
-                  >
+                  <th key={w} className={`promo-week-th ${w === currentWeek ? 'current-week' : ''}`}>
                     {fmtWeekHeader(w)}
                     {w === currentWeek && <span className="promo-now-dot" />}
                   </th>
@@ -267,30 +246,36 @@ export default function Promotions() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product, pi) => (
-                <tr key={product} className={`promo-row ${pi % 2 === 1 ? 'alt' : ''}`}>
-                  <td className="promo-product-td" title={product}>
-                    {product}
-                  </td>
-                  {filteredWeeks.map(w => {
-                    const pv = (promoType === 'all' || promoType === 'price' || promoType === 'both')
-                      ? lookup[product]?.['price']?.[w]
-                      : null
-                    const cv = (promoType === 'all' || promoType === 'case_deal' || promoType === 'both')
-                      ? lookup[product]?.['case_deal']?.[w]
-                      : null
-                    return (
-                      <td
-                        key={w}
-                        className={`promo-cell ${w === currentWeek ? 'current-week' : ''} ${pv || cv ? 'has-promo' : ''}`}
-                      >
-                        {pv && <span className="promo-badge price-badge">{pv}</span>}
-                        {cv && <span className="promo-badge case-badge">{cv}</span>}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
+              {productRows.map(({ p, type }, pi) => {
+                // Alternate shading by product group (not by row index)
+                const productIdx = orderedProducts.indexOf(p)
+                const isAlt = productIdx % 2 === 1
+                const isFirstOfProduct = pi === 0 || productRows[pi-1].p !== p
+                return (
+                  <tr key={`${p}_${type}`} className={`promo-row ${isAlt ? 'alt' : ''}`}>
+                    <td className={`promo-product-td ${isFirstOfProduct ? '' : 'promo-product-td-cont'}`}
+                        title={p}>
+                      {isFirstOfProduct ? p : ''}
+                    </td>
+                    <td className={`promo-type-cell ${type === 'price' ? 'type-price' : 'type-case'}`}>
+                      {type === 'price' ? 'Price' : 'Case'}
+                    </td>
+                    {filteredWeeks.map(w => {
+                      const val = lookup[p]?.[type]?.[w]
+                      return (
+                        <td key={w}
+                          className={`promo-cell ${w === currentWeek ? 'current-week' : ''}`}>
+                          {val && (
+                            <span className={`promo-badge ${type === 'price' ? 'price-badge' : 'case-badge'}`}>
+                              {val}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
