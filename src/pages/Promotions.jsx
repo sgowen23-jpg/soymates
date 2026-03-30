@@ -20,11 +20,16 @@ function getCurrentWeek(weeks) {
   return weeks.filter(w => toDate(w) <= today).slice(-1)[0] || null
 }
 
+function isUHT(product) {
+  return /uht/i.test(product)
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Promotions() {
   const [retailer, setRetailer]   = useState('IGA')
   const [month, setMonth]         = useState('all')
   const [promoType, setPromoType] = useState('all')
+  const [category, setCategory]   = useState('all')   // 'all' | 'uht' | 'dairy'
   const [data, setData]           = useState([])
   const [loading, setLoading]     = useState(true)
 
@@ -35,7 +40,7 @@ export default function Promotions() {
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
 
-  // Load data for selected retailer
+  // Load data for selected retailer — 2026 only
   useEffect(() => {
     setLoading(true)
     setData([])
@@ -43,6 +48,7 @@ export default function Promotions() {
       .from('promo_calendar')
       .select('product_description, sku, week_start, promo_type, value, display_value')
       .eq('retailer', retailer)
+      .gte('week_start', '2026-01-01')
       .order('week_start')
       .then(({ data: rows }) => {
         setData(rows || [])
@@ -95,18 +101,23 @@ export default function Promotions() {
     return map
   }, [data])
 
-  // Products visible based on promoType filter
+  // Products visible based on promoType + category filter
   const products = useMemo(() => {
     const inRange = (pd, type) =>
       filteredWeeks.some(w => lookup[pd]?.[type]?.[w])
 
-    const all = Object.keys(lookup).sort()
-    if (promoType === 'all') return all
+    let all = Object.keys(lookup).sort()
+
+    // Category filter
+    if (category === 'uht')   all = all.filter(isUHT)
+    if (category === 'dairy') all = all.filter(p => !isUHT(p))
+
+    // Promo type filter
     if (promoType === 'price')     return all.filter(p => inRange(p, 'price'))
     if (promoType === 'case_deal') return all.filter(p => inRange(p, 'case_deal'))
     if (promoType === 'both')      return all.filter(p => inRange(p, 'price') && inRange(p, 'case_deal'))
     return all
-  }, [lookup, filteredWeeks, promoType])
+  }, [lookup, filteredWeeks, promoType, category])
 
   // Month groups for header colspan
   const monthGroups = useMemo(() => {
@@ -170,6 +181,17 @@ export default function Promotions() {
               <option key={m} value={m}>{monthLabel(m)}</option>
             ))}
           </select>
+          <div className="promo-type-tabs">
+            {[['all','All'],['uht','UHT'],['dairy','Dairy']].map(([v, l]) => (
+              <button
+                key={v}
+                className={`promo-type-tab ${category === v ? 'active' : ''}`}
+                onClick={() => setCategory(v)}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
           <div className="promo-type-tabs">
             {[['all','All'],['price','Price'],['case_deal','Case Deal'],['both','Both']].map(([v, l]) => (
               <button
