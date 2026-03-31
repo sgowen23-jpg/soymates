@@ -137,9 +137,7 @@ export default function Promotions() {
   const didAutoScroll = useRef(false)
 
   useEffect(() => {
-    const mc = document.querySelector('.main-content')
-    if (mc) { mc.style.overflowY = 'auto'; mc.style.overflowX = 'hidden' }
-    return () => { if (mc) { mc.style.overflowY = ''; mc.style.overflowX = '' } }
+    // no main-content overflow manipulation — .promo-page scrolls itself
   }, [])
 
   useEffect(() => {

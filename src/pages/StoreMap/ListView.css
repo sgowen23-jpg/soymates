@@ -75,10 +75,12 @@
 .list-wrap {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .store-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
@@ -87,6 +89,24 @@
   top: 0;
   background: #fafafa;
   z-index: 2;
+}
+
+.store-table th:first-child,
+.store-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+
+.store-table thead th:first-child {
+  background: #fafafa;
+  z-index: 3;
+}
+
+.store-table tr:hover td:first-child {
+  background: #f4fbf4;
 }
 
 .store-table th {
