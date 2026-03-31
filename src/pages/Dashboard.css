@@ -24,7 +24,8 @@
 /* When sidebar is closed, shift toolbar content right of the floating hamburger */
 @media (max-width: 480px) {
   .sidebar-closed .storemap-toolbar,
-  .sidebar-closed .distribution-toolbar {
+  .sidebar-closed .distribution-toolbar,
+  .sidebar-closed .promo-page {
     padding-left: 52px;
   }
 }

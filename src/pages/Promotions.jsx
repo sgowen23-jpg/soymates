@@ -137,10 +137,6 @@ export default function Promotions() {
   const didAutoScroll = useRef(false)
 
   useEffect(() => {
-    // no main-content overflow manipulation — .promo-page scrolls itself
-  }, [])
-
-  useEffect(() => {
     setLoading(true)
     setData([])
     supabase
