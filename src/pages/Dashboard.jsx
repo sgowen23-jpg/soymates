@@ -14,7 +14,8 @@ const Targets      = lazy(() => import('./Targets'))
 const MSOPipeline  = lazy(() => import('./MSOPipeline'))
 const PerfectStore = lazy(() => import('./PerfectStore'))
 const CyclePlanner = lazy(() => import('./CyclePlanner'))
-const Promotions   = lazy(() => import('./Promotions'))
+// Promotions temporarily disconnected — files kept for reference
+// const Promotions   = lazy(() => import('./Promotions'))
 
 function PageSpinner() {
   return (
@@ -71,7 +72,7 @@ export default function Dashboard() {
           {activePage === 'MSO Pipeline'  && <MSOPipeline />}
           {activePage === 'Perfect Store' && <PerfectStore />}
           {activePage === 'Cycle Planner' && <CyclePlanner />}
-          {activePage === 'Promotions'   && <Promotions />}
+          {/* Promotions temporarily disconnected */}
           {PLACEHOLDER_PAGES.includes(activePage) && (
             <div className="placeholder-page">
               <h2>{activePage}</h2>
