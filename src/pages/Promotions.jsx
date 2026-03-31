@@ -254,6 +254,7 @@ export default function Promotions() {
     if (!th) return
     didAutoScroll.current = true
     const wrap = tableWrapRef.current
+    console.log(`[Promotions] ${retailer} — scrollWidth: ${wrap.scrollWidth}, clientWidth: ${wrap.clientWidth}, overflow: ${wrap.scrollWidth > wrap.clientWidth ? 'YES (table wider than container)' : 'NO (table fits — nothing to scroll)'}`)
     const stickyWidth = 220 + 52 // product + type columns
     const colOffset = th.offsetLeft
     const colWidth  = th.offsetWidth

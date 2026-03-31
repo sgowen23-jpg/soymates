@@ -28,6 +28,15 @@
   .distribution-toolbar .filter-select { flex: 1; font-size: 13px; }
 }
 
+/* Hamburger clearance: sidebar is a fixed overlay on mobile (≤767px).       */
+/* Push toolbar content right of the floating hamburger button (left:12px,   */
+/* ~34px wide → clear at 52px).                                              */
+@media (max-width: 767px) {
+  .sidebar-closed .distribution-toolbar {
+    padding-left: 52px;
+  }
+}
+
 .distribution-content {
   flex: 1;
   overflow: hidden;
