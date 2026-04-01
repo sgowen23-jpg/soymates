@@ -2,12 +2,16 @@
 """
 Import Promo Calendar from Excel into Supabase promo_calendar table.
 
-Excel: C:/Users/sgowe/Downloads/1. UPDATED - 03032026 Promo Calendar_VAP_By MSO_updated 11.02.26 (1).xlsx
+Excel: C:/Users/sgowe/Downloads/1. UPDATED - 03032026 Promo Calendar_VAP_By MSO_updated 11.02.26 (2).xlsx
 Table: promo_calendar
+
+Each retailer sheet has a different layout. SHEET_CONFIG defines the exact
+row/column positions for each sheet, verified by inspection of the actual file.
 """
 
 import openpyxl
 import urllib.request
+import urllib.parse
 import urllib.error
 import json
 import datetime
@@ -17,21 +21,37 @@ import sys
 
 EXCEL_PATH = (
     r"C:\Users\sgowe\Downloads"
-    r"\1. UPDATED - 03032026 Promo Calendar_VAP_By MSO_updated 11.02.26 (1).xlsx"
+    r"\1. UPDATED - 03032026 Promo Calendar_VAP_By MSO_updated 11.02.26 (2).xlsx"
 )
 
 SUPABASE_URL = "https://zrqnnyugnxtlmkboegyn.supabase.co"
 SUPABASE_KEY = "sb_publishable_pFWQYGJhjM-BGPNbvwGUQg_dK0izygj"
 TABLE = "promo_calendar"
 
+# Sheet name → retailer label (handle trailing-space variants)
 SHEET_TO_RETAILER = {
-    "IGA Promotions": "IGA",
+    "IGA Promotions":    "IGA",
     "Ritchies Promotions": "Ritchies",
-    "Foodworks.": "Foodworks",
-    "Foodland": "Foodland",
-    "Drakes  ": "Drakes",
-    # Also handle single-space variant just in case
-    "Drakes ": "Drakes",
+    "Foodworks.":        "Foodworks",
+    "Foodland":          "Foodland",
+    "Drakes  ":          "Drakes",
+    "Drakes ":           "Drakes",
+    "Drakes":            "Drakes",
+}
+
+# Per-sheet layout config (all indices are 0-based)
+#   header_row  : row index containing column labels + Customer Week date cells
+#   data_start  : row index of the first data row
+#   type_col    : column index of the "Type" cell ("1. Price" / "2. Case Deal")
+#   desc_col    : column index of the product description
+#   sku_col     : column index of the SKU (None if not present)
+#   dates_start : first column index that may contain date cells in the header row
+SHEET_CONFIG = {
+    "IGA":       {"header_row": 3, "data_start": 4,  "type_col": 3, "desc_col": 5, "sku_col": None, "dates_start": 9},
+    "Ritchies":  {"header_row": 5, "data_start": 6,  "type_col": 1, "desc_col": 3, "sku_col": 2,    "dates_start": 5},
+    "Foodworks": {"header_row": 1, "data_start": 2,  "type_col": 3, "desc_col": 6, "sku_col": 5,    "dates_start": 10},
+    "Foodland":  {"header_row": 5, "data_start": 6,  "type_col": 1, "desc_col": 3, "sku_col": 2,    "dates_start": 6},
+    "Drakes":    {"header_row": 5, "data_start": 6,  "type_col": 3, "desc_col": 6, "sku_col": 5,    "dates_start": 10},
 }
 
 BATCH_SIZE = 200
@@ -51,14 +71,14 @@ def parse_value(raw):
     """
     Parse a promo cell value.
     Returns (value, display_value, skip) where:
-      - skip=True means ignore this cell entirely
-      - value is float or None
-      - display_value is a string
+      - skip=True  → ignore this cell entirely (no promo)
+      - value      → float or None
+      - display_value → string label shown in the UI
     """
     if raw is None:
         return None, None, True
 
-    # datetime objects are not valid promo values
+    # datetime objects are header/metadata cells, not promo values
     if isinstance(raw, datetime.datetime):
         return None, None, True
 
@@ -71,27 +91,27 @@ def parse_value(raw):
         if not stripped:
             return None, None, True
 
-        # Long text → annotation note, skip
+        # Long text → annotation, skip
         if len(stripped) > 30:
             return None, None, True
 
-        # 'Deleted' or similar → skip
-        if stripped.lower() in ("deleted", "n/a", "tbc", "."):
+        # Known non-value strings
+        if stripped.lower() in ("deleted", "n/a", "tbc", ".", "#ref!"):
             return None, None, True
 
-        # Multi-buy patterns like '2 for $5', '3 for $10', '2 for $4.80'
+        # Multi-buy patterns like "2 for $5"
         lower = stripped.lower()
         if "for $" in lower or " for " in lower:
             return None, stripped, False
 
-        # Try to coerce plain numeric strings
+        # Try to coerce numeric strings ("2", "10.88", "$2.80")
         try:
             v = float(stripped.replace("$", "").strip())
             return v, format_display_value(v), False
         except ValueError:
             pass
 
-        # Everything else that's short enough: treat as display_value with no numeric
+        # Short non-numeric string — treat as display label
         return None, stripped, False
 
     return None, None, True
@@ -109,103 +129,72 @@ def parse_promo_type(raw):
     return None
 
 
-def detect_columns(row12, row11):
-    """
-    Scan row 12 (0-indexed list) to find:
-      type_col, desc_col, sku_col, week_cols {col_index: week_start_str}
-
-    row12 date cells are the Customer Week (Wednesday) dates — these are correct.
-    row11 (VAP week, Monday dates) is kept as a parameter for backwards compatibility
-    but is no longer used for week_start values.
-    """
-    type_col = None
-    desc_col = None
-    sku_col = None
-    week_cols = {}  # col_index → "YYYY-MM-DD"
-
-    for i, cell in enumerate(row12):
-        if cell is None:
-            continue
-
-        if isinstance(cell, datetime.datetime):
-            # Use the Customer Week date from row 12 (Wednesday) directly
-            week_cols[i] = cell.strftime("%Y-%m-%d")
-            continue
-
-        h = str(cell).strip().lower()
-
-        if h == "type":
-            type_col = i
-        elif "description" in h:
-            # 'Description' always wins over SKU as the description column
-            desc_col = i
-        elif "sku" in h:
-            if sku_col is None:
-                sku_col = i
-
-    # If no explicit 'Description' column was found, fall back to SKU column for description text
-    if desc_col is None and sku_col is not None:
-        desc_col = sku_col
-
-    return type_col, desc_col, sku_col, week_cols
-
-
 # ── Core parser ───────────────────────────────────────────────────────────────
 
 def parse_sheet(ws, retailer):
     """
-    Parse a worksheet and return a list of row dicts ready for Supabase insert.
+    Parse a worksheet using its per-sheet config.
+    Returns (records, skipped_count).
     """
+    cfg = SHEET_CONFIG[retailer]
     rows_data = list(ws.iter_rows(values_only=True))
 
-    row11 = rows_data[10]  # index 10 = row 11 (VAP week dates)
-    row12 = rows_data[11]  # index 11 = row 12 (headers)
+    header_row  = rows_data[cfg["header_row"]]
+    data_start  = cfg["data_start"]
+    type_col    = cfg["type_col"]
+    desc_col    = cfg["desc_col"]
+    sku_col     = cfg.get("sku_col")
+    dates_start = cfg["dates_start"]
 
-    type_col, desc_col, sku_col, week_cols = detect_columns(row12, row11)
+    # Build week_cols: col_index → "YYYY-MM-DD" for every date cell in the header row
+    week_cols = {}
+    for i in range(dates_start, len(header_row)):
+        cell = header_row[i]
+        if isinstance(cell, datetime.datetime):
+            week_cols[i] = cell.strftime("%Y-%m-%d")
 
-    if type_col is None:
-        print(f"  WARNING: Could not detect 'Type' column in {retailer} — skipping sheet.")
+    if not week_cols:
+        print(f"  WARNING: No date columns found in {retailer} header row {cfg['header_row']} — skipping sheet.")
         return [], 0
 
     records = []
     skipped = 0
 
-    # Maps (description, sku) → sort_order assigned on first appearance.
-    # sort_order reflects the original Excel row number (row 13 = 1, row 14 = 2, …).
+    # sort_order: preserves original Excel row ordering per product.
+    # Both price and case_deal rows for the same product share the same value.
     product_sort_order = {}
     next_sort_order = 1
 
-    for excel_row_offset, row in enumerate(rows_data[12:]):  # data starts at index 12 = row 13
-        # Get promo type — skip if missing or unrecognised
-        raw_type = row[type_col] if type_col < len(row) else None
+    for row in rows_data[data_start:]:
+        # Type column determines price vs case_deal
+        raw_type   = row[type_col] if type_col < len(row) else None
         promo_type = parse_promo_type(raw_type)
         if promo_type is None:
             skipped += 1
             continue
 
-        # Get description and SKU
+        # Description
         description = None
-        if desc_col is not None and desc_col < len(row):
-            v = row[desc_col]
-            if v is not None:
-                description = str(v).strip() or None
+        if desc_col < len(row) and row[desc_col] is not None:
+            description = str(row[desc_col]).strip() or None
 
+        # SKU
         sku = None
-        if sku_col is not None and sku_col < len(row):
+        if sku_col is not None and sku_col < len(row) and row[sku_col] is not None:
             v = row[sku_col]
-            if v is not None:
-                sku = str(int(v)) if isinstance(v, float) and v == int(v) else str(v).strip()
-                sku = sku or None
+            if isinstance(v, float) and v == int(v):
+                sku = str(int(v))
+            else:
+                sku = str(v).strip() or None
 
-        # Assign sort_order based on the first Excel row this product appears on.
-        # Both 'price' and 'case_deal' rows for the same product share the same value.
+        # Assign sort_order on first appearance of each (description, sku) pair
         product_key = (description, sku)
         if product_key not in product_sort_order:
             product_sort_order[product_key] = next_sort_order
             next_sort_order += 1
         sort_order = product_sort_order[product_key]
 
-        # Iterate week columns
+        # Iterate date columns
         for col_idx, week_start in week_cols.items():
             raw_val = row[col_idx] if col_idx < len(row) else None
             value, display_value, skip = parse_value(raw_val)
@@ -213,18 +202,16 @@ def parse_sheet(ws, retailer):
             if skip:
                 continue
 
-            records.append(
-                {
-                    "retailer": retailer,
-                    "product_description": description,
-                    "sku": sku,
-                    "week_start": week_start,
-                    "promo_type": promo_type,
-                    "value": value,
-                    "display_value": display_value,
-                    "sort_order": sort_order,
-                }
-            )
+            records.append({
+                "retailer":          retailer,
+                "product_description": description,
+                "sku":               sku,
+                "week_start":        week_start,
+                "promo_type":        promo_type,
+                "value":             value,
+                "display_value":     display_value,
+                "sort_order":        sort_order,
+            })
 
     return records, skipped
 
@@ -253,8 +240,6 @@ def supabase_delete(retailer):
 
 def supabase_insert_batch(records):
     """POST a batch of records to Supabase."""
-    import urllib.parse
-
     url = f"{SUPABASE_URL}/rest/v1/{TABLE}"
     body = json.dumps(records).encode("utf-8")
     req = urllib.request.Request(
@@ -277,10 +262,7 @@ def supabase_insert_batch(records):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-import urllib.parse  # noqa: E402 – needed for supabase_delete
-
-
-def run(dry_run=False, dry_run_retailer="IGA", dry_run_limit=5):
+def run(dry_run=False, dry_run_limit=3):
     print(f"Loading workbook: {EXCEL_PATH}")
     wb = openpyxl.load_workbook(EXCEL_PATH, data_only=True)
 
@@ -298,27 +280,27 @@ def run(dry_run=False, dry_run_retailer="IGA", dry_run_limit=5):
         print(f"--- {retailer} ({sheet_name}) ---")
         records, skipped = parse_sheet(ws, retailer)
 
-        print(f"  Parsed  : {len(records)} promo entries")
+        # Count unique products
+        unique = len({r["product_description"] for r in records})
+        weeks  = len({r["week_start"] for r in records})
+        print(f"  Parsed  : {len(records)} promo entries ({unique} products, {weeks} weeks)")
         print(f"  Skipped : {skipped} rows (no valid type)")
 
         if dry_run:
-            if retailer == dry_run_retailer:
-                print(f"\n  DRY-RUN — first {dry_run_limit} rows that would be inserted:")
-                for i, r in enumerate(records[:dry_run_limit]):
-                    print(f"  [{i+1}] {json.dumps(r, default=str)}")
-            else:
-                print("  DRY-RUN — skipping Supabase operations for this sheet.")
+            print(f"  DRY-RUN — first {dry_run_limit} records:")
+            for i, r in enumerate(records[:dry_run_limit]):
+                print(f"  [{i+1}] {json.dumps(r, default=str)}")
             print()
             continue
 
-        # Live run: delete then insert
+        # Live run: delete existing data then insert fresh
         print(f"  Deleting existing {retailer} rows from Supabase…")
         status = supabase_delete(retailer)
         print(f"  Delete status: {status}")
 
         inserted = 0
         for i in range(0, len(records), BATCH_SIZE):
-            batch = records[i : i + BATCH_SIZE]
+            batch  = records[i : i + BATCH_SIZE]
             status, err = supabase_insert_batch(batch)
             if err:
                 print(f"  ERROR on batch {i // BATCH_SIZE + 1}: {status} — {err}")
@@ -330,8 +312,6 @@ def run(dry_run=False, dry_run_retailer="IGA", dry_run_limit=5):
 
 
 if __name__ == "__main__":
-    # ── Dry-run mode (default) ────────────────────────────────────────────────
-    # Pass --live as a CLI argument to actually write to Supabase.
     live = "--live" in sys.argv
 
     if live:
@@ -341,9 +321,9 @@ if __name__ == "__main__":
         run(dry_run=False)
     else:
         print("=" * 60)
-        print("DRY-RUN MODE — printing first 5 IGA rows only")
+        print("DRY-RUN MODE — showing first 3 records per sheet")
         print("=" * 60)
-        run(dry_run=True, dry_run_retailer="IGA", dry_run_limit=5)
+        run(dry_run=True, dry_run_limit=3)
         print()
         print("To import all retailers into Supabase, run:")
         print("  python import_promo_calendar.py --live")

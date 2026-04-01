@@ -143,7 +143,6 @@ export default function Promotions() {
       .from('promo_calendar')
       .select('product_description, week_start, promo_type, value, display_value, sort_order')
       .eq('retailer', retailer)
-      .gte('week_start', '2026-01-01')
       .order('sort_order', { ascending: true })
       .order('promo_type', { ascending: true })
       .then(({ data: rows }) => {
@@ -254,7 +253,6 @@ export default function Promotions() {
     if (!th) return
     didAutoScroll.current = true
     const wrap = tableWrapRef.current
-    console.log(`[Promotions] ${retailer} — scrollWidth: ${wrap.scrollWidth}, clientWidth: ${wrap.clientWidth}, overflow: ${wrap.scrollWidth > wrap.clientWidth ? 'YES (table wider than container)' : 'NO (table fits — nothing to scroll)'}`)
     const stickyWidth = 220 + 52 // product + type columns
     const colOffset = th.offsetLeft
     const colWidth  = th.offsetWidth
