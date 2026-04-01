@@ -15,6 +15,7 @@ const MSOPipeline  = lazy(() => import('./MSOPipeline'))
 const PerfectStore = lazy(() => import('./PerfectStore'))
 const CyclePlanner = lazy(() => import('./CyclePlanner'))
 const Promotions   = lazy(() => import('./Promotions'))
+const FocusStores  = lazy(() => import('./FocusStores'))
 
 function PageSpinner() {
   return (
@@ -72,6 +73,7 @@ export default function Dashboard() {
           {activePage === 'Perfect Store' && <PerfectStore />}
           {activePage === 'Cycle Planner' && <CyclePlanner />}
           {activePage === 'Promotions'   && <Promotions />}
+          {activePage === 'Focus Stores' && <FocusStores />}
           {PLACEHOLDER_PAGES.includes(activePage) && (
             <div className="placeholder-page">
               <h2>{activePage}</h2>

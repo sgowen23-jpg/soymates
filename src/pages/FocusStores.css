@@ -1,0 +1,381 @@
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+.fs-page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+.fs-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 16px;
+  color: #666;
+  font-size: 14px;
+}
+.fs-spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #CC0000;
+  border-radius: 50%;
+  animation: fs-spin 0.8s linear infinite;
+}
+@keyframes fs-spin { to { transform: rotate(360deg); } }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.fs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fs-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2b5e;
+  margin: 0 0 4px;
+}
+
+.fs-sub {
+  color: #888;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.fs-tabs {
+  display: flex;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fs-tab {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: white;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.fs-tab.active {
+  background: #1a2b5e;
+  color: white;
+}
+.fs-tab:hover:not(.active) {
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* ── KPI cards ────────────────────────────────────────────────────────────── */
+.fs-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.fs-kpi {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border-left: 4px solid #e8e8e8;
+}
+.fs-kpi--blue    { border-left-color: #2980b9; }
+.fs-kpi--green   { border-left-color: #16a085; }
+.fs-kpi--orange  { border-left-color: #e67e22; }
+.fs-kpi--emerald { border-left-color: #16a085; }
+
+.fs-kpi-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.fs-kpi--blue    .fs-kpi-val { color: #2980b9; }
+.fs-kpi--green   .fs-kpi-val { color: #16a085; }
+.fs-kpi--orange  .fs-kpi-val { color: #e67e22; }
+.fs-kpi--emerald .fs-kpi-val { color: #16a085; }
+
+.fs-kpi-lbl {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Filters ──────────────────────────────────────────────────────────────── */
+.fs-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fs-select {
+  padding: 7px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: white;
+  color: #1a1a1a;
+  cursor: pointer;
+  outline: none;
+}
+.fs-select:focus { border-color: #1a2b5e; }
+
+.fs-result-count {
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+/* ── Table wrapper ────────────────────────────────────────────────────────── */
+.fs-table-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  background: white;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.fs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  min-width: 900px;
+}
+
+.fs-table thead th {
+  background: #f8f9fa;
+  border-bottom: 2px solid #e8e8e8;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.fs-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.fs-sortable:hover { background: #f0f1f3; color: #1a2b5e; }
+
+.fs-sort-icon { font-size: 10px; color: #bbb; }
+
+.fs-table tbody tr { transition: background 0.1s; }
+.fs-table tbody tr:hover { background: #f8f9fa; }
+.fs-table tbody tr:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
+
+.fs-table td {
+  padding: 9px 12px;
+  vertical-align: middle;
+  color: #1a1a1a;
+}
+
+.fs-num {
+  text-align: right;
+}
+
+.fs-store-name {
+  font-weight: 600;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fs-muted {
+  color: #666;
+  font-size: 12px;
+}
+
+/* ── Strategy pill ────────────────────────────────────────────────────────── */
+.fs-strat-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ── State badge ──────────────────────────────────────────────────────────── */
+.fs-state-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f0f1f3;
+  color: #1a2b5e;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fs-state-full {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #444;
+}
+
+/* ── Ranging score ────────────────────────────────────────────────────────── */
+.fs-ranging {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.fs-ranging--good { background: #e8f8f5; color: #16a085; }
+.fs-ranging--ok   { background: #fef9e7; color: #e67e22; }
+.fs-ranging--low  { background: #fdedec; color: #CC0000; }
+
+/* ── GSV value highlight ─────────────────────────────────────────────────── */
+.fs-gsv-val {
+  font-weight: 700;
+  color: #1a2b5e;
+}
+
+/* ── Status dropdown ──────────────────────────────────────────────────────── */
+.fs-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fs-status-select {
+  padding: 4px 8px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  min-width: 120px;
+  transition: all 0.15s;
+}
+.fs-status-select:focus { border-color: #1a2b5e; }
+.fs-status-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.fs-saving { font-size: 11px; color: #aaa; }
+.fs-saved  { font-size: 12px; color: #16a085; font-weight: 700; }
+
+/* ── Empty ────────────────────────────────────────────────────────────────── */
+.fs-empty {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* ── Totals row ───────────────────────────────────────────────────────────── */
+.fs-totals-row {
+  border-top: 2px solid #e8e8e8;
+  background: #f8f9fa;
+}
+.fs-totals-row td {
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #1a1a1a;
+}
+
+/* ── GSV Tab ──────────────────────────────────────────────────────────────── */
+.fs-gsv-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fs-gsv-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.fs-gsv-card {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border-left: 4px solid #e8e8e8;
+}
+.fs-gsv-card--blue   { border-left-color: #2980b9; }
+.fs-gsv-card--green  { border-left-color: #16a085; }
+.fs-gsv-card--orange { border-left-color: #e67e22; }
+.fs-gsv-card--purple { border-left-color: #8e44ad; }
+
+.fs-gsv-card-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+.fs-gsv-card--blue   .fs-gsv-card-val { color: #2980b9; }
+.fs-gsv-card--green  .fs-gsv-card-val { color: #16a085; }
+.fs-gsv-card--orange .fs-gsv-card-val { color: #e67e22; }
+.fs-gsv-card--purple .fs-gsv-card-val { color: #8e44ad; }
+
+.fs-gsv-card-lbl {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fs-gsv-note {
+  font-size: 11px;
+  color: #aaa;
+  margin: 0;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .fs-page     { padding: 12px; gap: 12px; }
+  .fs-kpis     { grid-template-columns: repeat(2, 1fr); }
+  .fs-gsv-cards { grid-template-columns: repeat(2, 1fr); }
+  .fs-kpi-val  { font-size: 1.3rem; }
+  .fs-title    { font-size: 1.2rem; }
+}
+@media (max-width: 400px) {
+  .fs-kpis     { grid-template-columns: 1fr; }
+  .fs-gsv-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Hamburger clearance ──────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .sidebar-closed .fs-page {
+    padding-left: 52px;
+  }
+}
