@@ -5,6 +5,8 @@
   flex-direction: column;
   gap: 16px;
   box-sizing: border-box;
+  width: 100%;          /* explicit: prevents flex item from overflowing parent */
+  min-width: 0;         /* prevents min-width:auto stretching past viewport     */
   max-width: 1600px;
   margin: 0 auto;
   flex: 1;
@@ -119,7 +121,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
-@media (max-width: 700px) { .promo-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 767px) { .promo-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 400px) { .promo-stats { grid-template-columns: 1fr; } }
 
 .promo-stat {
   background: white;
@@ -146,6 +149,7 @@
 .promo-table-outer {
   position: relative;
   width: 100%;
+  min-width: 0;
 }
 
 .promo-table-wrap {
@@ -158,6 +162,7 @@
   background: white;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
 }
 
 /* Scroll-right gradient indicator */
@@ -513,14 +518,14 @@
 }
 
 /* ── Mobile overrides ─────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .promo-page {
-    padding: 12px;
+    padding: 10px;
     gap: 10px;
   }
 
   .promo-retailer-tab {
-    padding: 6px 13px;
+    padding: 6px 12px;
     font-size: 12px;
   }
 
@@ -533,35 +538,54 @@
     font-size: 11px;
   }
 
-  /* Narrow product column on mobile table view */
+  /* Table font size */
+  .promo-table {
+    font-size: 11px;
+  }
+
+  /* Narrow product column — 90px frees up more scrollable area */
   .promo-product-th {
-    width: 110px;
-    min-width: 110px;
-    max-width: 110px;
-    padding: 8px 8px;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    padding: 6px 6px;
     font-size: 10px;
   }
 
   .promo-product-td {
-    width: 110px;
-    min-width: 110px;
-    max-width: 110px;
-    padding: 6px 8px;
-    font-size: 11px;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    padding: 5px 6px;
+    font-size: 10px;
   }
 
-  /* Type column shifts with narrower product column */
-  .promo-type-th,
+  /* Type column: narrower + shifts left with product column */
+  .promo-type-th {
+    left: 90px;
+    width: 40px;
+    min-width: 40px;
+  }
+
   .promo-type-cell {
-    left: 110px;
-    background: #fff;
+    left: 90px;
+    width: 40px;
+    min-width: 40px;
+    font-size: 9px;
+    padding: 4px 3px;
   }
 
   /* Narrower week columns */
   .promo-week-th {
-    min-width: 52px;
+    min-width: 46px;
     font-size: 10px;
-    padding: 5px 4px 6px;
+    padding: 4px 3px 5px;
+  }
+
+  .promo-metcash-th {
+    min-width: 46px;
+    padding: 4px 3px;
+    font-size: 10px;
   }
 
   /* Smaller badges */

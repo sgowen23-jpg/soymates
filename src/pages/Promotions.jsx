@@ -249,15 +249,20 @@ export default function Promotions() {
   // Auto-scroll to current week on first render of the table
   useEffect(() => {
     if (!currentWeek || !tableWrapRef.current || didAutoScroll.current) return
-    const th = tableWrapRef.current.querySelector(`th[data-week="${currentWeek}"]`)
-    if (!th) return
-    didAutoScroll.current = true
     const wrap = tableWrapRef.current
-    const stickyWidth = 220 + 52 // product + type columns
-    const colOffset = th.offsetLeft
-    const colWidth  = th.offsetWidth
-    const viewWidth = wrap.clientWidth
-    wrap.scrollLeft = colOffset - stickyWidth - (viewWidth - stickyWidth - colWidth) / 2
+    // Measure actual sticky column widths from the DOM so mobile (narrower columns) works correctly
+    requestAnimationFrame(() => {
+      const th = wrap.querySelector(`th[data-week="${currentWeek}"]`)
+      if (!th) return
+      didAutoScroll.current = true
+      const productTh  = wrap.querySelector('.promo-product-th')
+      const typeTh     = wrap.querySelector('.promo-type-th')
+      const stickyWidth = (productTh?.offsetWidth ?? 220) + (typeTh?.offsetWidth ?? 52)
+      const colOffset  = th.offsetLeft
+      const colWidth   = th.offsetWidth
+      const viewWidth  = wrap.clientWidth
+      wrap.scrollLeft  = colOffset - stickyWidth - (viewWidth - stickyWidth - colWidth) / 2
+    })
   }, [currentWeek, filteredWeeks, loading])
 
   // Reset auto-scroll flag when retailer changes so it re-centres on new data
