@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import GsvPlannerTab from './GsvPlannerTab'
 import './FocusStores.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATES = ['All States', 'New South Wales', 'Queensland', 'South Australia', 'Victoria', 'Western Australia']
+const REPS = ['Sam Gowen', 'Dipen Surani', 'Ashleigh Tasdarian', 'David Kerr', 'Shane Vandewardt', 'Azra Horell']
 const STATE_SHORT = { 'New South Wales': 'NSW', 'Queensland': 'QLD', 'South Australia': 'SA', 'Victoria': 'VIC', 'Western Australia': 'WA' }
 
 const STRATEGY_META = {
@@ -188,6 +190,7 @@ function GsvTab({ stores }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function FocusStores() {
   const [tab, setTab]             = useState('tracker')
+  const [plannerRep, setPlannerRep] = useState('Sam Gowen')
   const [stores, setStores]       = useState([])
   const [loading, setLoading]     = useState(true)
   const [stateF, setStateF]       = useState('All States')
@@ -308,6 +311,9 @@ export default function FocusStores() {
           <button className={`fs-tab${tab === 'gsv' ? ' active' : ''}`} onClick={() => setTab('gsv')}>
             GSV Summary
           </button>
+          <button className={`fs-tab${tab === 'planner' ? ' active' : ''}`} onClick={() => setTab('planner')}>
+            GSV Planner
+          </button>
         </div>
       </div>
 
@@ -331,7 +337,17 @@ export default function FocusStores() {
         </div>
       </div>
 
-      {tab === 'gsv' ? (
+      {tab === 'planner' ? (
+        <>
+          <div className="fs-filters">
+            <label className="fs-rep-label">Rep:</label>
+            <select className="fs-select" value={plannerRep} onChange={e => setPlannerRep(e.target.value)}>
+              {REPS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <GsvPlannerTab rep={plannerRep} cycleNum={4} />
+        </>
+      ) : tab === 'gsv' ? (
         <GsvTab stores={stores} />
       ) : (
         <>
