@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { supabase } from '../lib/supabase'
 import './PerfectStore.css'
+
+const FocusStores = lazy(() => import('./FocusStores'))
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STRATEGY_META = {
   'PERFECT STORE': { color: '#16a085', bg: '#e8f8f5', icon: '🏆', order: 0 },
-  'GROW':          { color: '#2980b9', bg: '#ebf5fb', icon: '📈', order: 1 },
-  'DEVELOP':       { color: '#e67e22', bg: '#fef9e7', icon: '🔧', order: 2 },
-  'EXPAND':        { color: '#CC0000', bg: '#fdedec', icon: '🔴', order: 3 },
+  'DEVELOP':       { color: '#2980b9', bg: '#ebf5fb', icon: '🔧', order: 1 },
+  'GROW':          { color: '#e67e22', bg: '#fef9e7', icon: '📈', order: 2 },
+  'EXPAND':        { color: '#8e44ad', bg: '#f5eef8', icon: '🟣', order: 3 },
   'CLOSED':        { color: '#999',    bg: '#f4f6f7', icon: '🚫', order: 4 },
 }
 
@@ -195,10 +197,18 @@ function StorePanel({ store, onClose }) {
 
 // ─── View options (add future cycles here) ───────────────────────────────────
 const VIEW_OPTIONS = [
-  { value: '4',       label: 'Cycle 4' },
-  { value: '3',       label: 'Cycle 3' },
-  { value: 'c3-c4',  label: 'C3 → C4 Comparison' },
+  { value: '1',      label: 'Cycle 1' },
+  { value: '4',      label: 'Cycle 4' },
+  { value: '3',      label: 'Cycle 3' },
+  { value: 'c3-c4', label: 'C3 → C4 Comparison' },
 ]
+
+const LOC_TYPES = ['All', 'Metro', 'Regional', 'Major Regional', 'Remote']
+
+function fmtCurrency(v) {
+  if (v == null || v === '') return '—'
+  return `$${Number(v).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+}
 
 // ─── Comparison delta row ─────────────────────────────────────────────────────
 function DeltaCell({ val }) {
@@ -809,7 +819,8 @@ export default function PerfectStore() {
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
 
-  const [activeTab, setActiveTab] = useState('tracker')
+  const [psSection, setPsSection]   = useState('pipeline')
+  const [activeTab, setActiveTab]   = useState('tracker')
 
   const [stores, setStores]         = useState([])
   const [c3Stores, setC3Stores]     = useState([])
@@ -819,6 +830,7 @@ export default function PerfectStore() {
   const [stateFilter, setStateFilter] = useState('All States')
   const [stratFilter, setStratFilter] = useState('All')
   const [bannerFilter, setBannerFilter] = useState('All')
+  const [locTypeFilter, setLocTypeFilter] = useState('All')
   const [sortKey, setSortKey]       = useState('vitasoy_rank')
   const [sortDir, setSortDir]       = useState('asc')
   const [page, setPage]             = useState(0)
@@ -891,6 +903,7 @@ export default function PerfectStore() {
         if (k !== stratFilter) return false
       }
       if (bannerFilter !== 'All' && s.banner !== bannerFilter) return false
+      if (locTypeFilter !== 'All' && s.location_type !== locTypeFilter) return false
       if (search) {
         const q = search.toLowerCase()
         if (!(s.store_name || '').toLowerCase().includes(q) &&
@@ -910,7 +923,7 @@ export default function PerfectStore() {
       return 0
     })
     return list
-  }, [stores, stateFilter, stratFilter, bannerFilter, search, sortKey, sortDir])
+  }, [stores, stateFilter, stratFilter, bannerFilter, locTypeFilter, search, sortKey, sortDir])
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -919,7 +932,7 @@ export default function PerfectStore() {
   }
 
   // Reset to page 0 when filters change
-  useEffect(() => { setPage(0) }, [search, stateFilter, stratFilter, bannerFilter])
+  useEffect(() => { setPage(0) }, [search, stateFilter, stratFilter, bannerFilter, locTypeFilter])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -940,7 +953,34 @@ export default function PerfectStore() {
 
   return (
     <div className="ps-page">
-      {/* ── Tab bar ── */}
+
+      {/* ── Top sub-nav: Pipeline | Focus Stores ── */}
+      <div className="psb-tab-bar">
+        <button
+          className={`psb-tab ${psSection === 'pipeline' ? 'active' : ''}`}
+          onClick={() => setPsSection('pipeline')}
+        >
+          Pipeline
+        </button>
+        <button
+          className={`psb-tab ${psSection === 'focus-stores' ? 'active' : ''}`}
+          onClick={() => setPsSection('focus-stores')}
+        >
+          Focus Stores
+        </button>
+      </div>
+
+      {/* ── Focus Stores section ── */}
+      {psSection === 'focus-stores' && (
+        <Suspense fallback={<div className="ps-loading"><div className="ps-spinner" /><p>Loading…</p></div>}>
+          <FocusStores />
+        </Suspense>
+      )}
+
+      {/* ── Pipeline section ── */}
+      {psSection === 'pipeline' && <>
+
+      {/* Inner tab bar: Store Tracker | PS Builder */}
       <div className="psb-tab-bar">
         <button
           className={`psb-tab ${activeTab === 'tracker' ? 'active' : ''}`}
@@ -1035,12 +1075,25 @@ export default function PerfectStore() {
         <select className="ps-select" value={bannerFilter} onChange={e => setBannerFilter(e.target.value)}>
           {banners.map(b => <option key={b}>{b}</option>)}
         </select>
-        {(stratFilter !== 'All' || stateFilter !== 'All States' || bannerFilter !== 'All' || search) && (
-          <button className="ps-clear-btn" onClick={() => { setStratFilter('All'); setStateFilter('All States'); setBannerFilter('All'); setSearch('') }}>
+        {(stratFilter !== 'All' || stateFilter !== 'All States' || bannerFilter !== 'All' || locTypeFilter !== 'All' || search) && (
+          <button className="ps-clear-btn" onClick={() => { setStratFilter('All'); setStateFilter('All States'); setBannerFilter('All'); setLocTypeFilter('All'); setSearch('') }}>
             Clear filters
           </button>
         )}
         <span className="ps-result-count">{filtered.length} stores</span>
+      </div>
+
+      {/* Location type pills */}
+      <div className="ps-loc-pills">
+        {LOC_TYPES.map(lt => (
+          <button
+            key={lt}
+            className={`ps-loc-pill ${locTypeFilter === lt ? 'active' : ''}`}
+            onClick={() => setLocTypeFilter(lt)}
+          >
+            {lt}
+          </button>
+        ))}
       </div>
 
       {/* Table + Panel */}
@@ -1059,6 +1112,9 @@ export default function PerfectStore() {
                 <SortHead col="yoghurt" label="Yog" />
                 <SortHead col="vitasoy_rank" label="VS Rank" />
                 <SortHead col="call_fqy_target" label="Call FQY" />
+                <SortHead col="first_order_gsv" label="First Order GSV $" />
+                <SortHead col="total_gsv_opportunity" label="Total GSV $" />
+                <th className="ps-th">POG</th>
               </tr>
             </thead>
             <tbody>
@@ -1103,6 +1159,11 @@ export default function PerfectStore() {
                     </td>
                     <td className="ps-rank">{s.vitasoy_rank ? `#${s.vitasoy_rank}` : '—'}</td>
                     <td className="ps-calls">{s.call_fqy_target != null ? `${s.call_fqy_target}×` : '—'}</td>
+                    <td className="ps-gsv-cell">{fmtCurrency(s.first_order_gsv)}</td>
+                    <td className="ps-gsv-cell">{fmtCurrency(s.total_gsv_opportunity)}</td>
+                    <td className="ps-pog-cell">
+                      {s.planogram_to_do ? <span className="ps-pog-badge">POG</span> : null}
+                    </td>
                   </tr>
                 )
               })}
@@ -1130,6 +1191,8 @@ export default function PerfectStore() {
       </>}  {/* end single-cycle view */}
       </>}  {/* end !loading */}
       </>}  {/* end tracker tab */}
+
+      </>}  {/* end pipeline section */}
     </div>
   )
 }

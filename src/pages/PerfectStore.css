@@ -236,6 +236,62 @@
 .ps-kpi-chip-sub { font-size: 0.72rem; color: #aaa; }
 
 /* Filters */
+/* ── Location type pills ──────────────────────────────────────────────────── */
+.ps-loc-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ps-loc-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #e0e0e0;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.ps-loc-pill:hover {
+  border-color: #1a2b5e;
+  color: #1a2b5e;
+}
+.ps-loc-pill.active {
+  background: #1a2b5e;
+  border-color: #1a2b5e;
+  color: white;
+}
+
+/* ── GSV currency cells ───────────────────────────────────────────────────── */
+.ps-gsv-cell {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a2b5e;
+  white-space: nowrap;
+}
+
+/* ── POG badge ────────────────────────────────────────────────────────────── */
+.ps-pog-cell {
+  text-align: center;
+}
+
+.ps-pog-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #f5eef8;
+  color: #8e44ad;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
 .ps-filters {
   display: flex;
   gap: 10px;
