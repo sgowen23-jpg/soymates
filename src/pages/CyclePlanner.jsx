@@ -803,7 +803,36 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repSt
 }
 
 // ─── Cycle View Tab ───────────────────────────────────────────────────────────
+function fmtGsv(v) {
+  if (v == null || v === '') return '–'
+  const n = parseFloat(v)
+  if (isNaN(n)) return '–'
+  return '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
 function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
+  const [expandedId, setExpandedId] = useState(null)
+  // Detailed cycle=1 data keyed by store_id (gap cols, GSV, status)
+  const [psC1, setPsC1] = useState({})
+
+  useEffect(() => {
+    supabase.from('perfect_store')
+      .select([
+        'store_id','focus_store_status','call_fqy_target','cycle_1_calls',
+        'first_order_gsv','total_gsv_opportunity','annual_gsv_opportunity',
+        'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap',
+        'total_ranging_gap','location_type','planogram_to_do','planogram_completed',
+        'ofl_secured','ofl_secured_ctns','ofl_gsv_value',
+      ].join(','))
+      .eq('cycle', 1)
+      .then(({ data }) => {
+        if (!data) return
+        const map = {}
+        data.forEach(r => { map[String(r.store_id)] = r })
+        setPsC1(map)
+      })
+  }, []) // fetch once — cycle 1 is the source of gap data regardless of planner cycle
+
   // For each week, collect unique store IDs from all 5 days (slots keyed "dateStr_slotIdx")
   const weekStores = useMemo(() => {
     return weeks.map(week => {
@@ -825,6 +854,10 @@ function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
     weekStores.forEach(w => w.forEach(s => all.add(s.id)))
     return all.size
   }, [weekStores])
+
+  function toggleExpand(id) {
+    setExpandedId(prev => prev === id ? null : id)
+  }
 
   return (
     <div className="cv-wrap">
@@ -854,15 +887,37 @@ function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
                     <p className="cv-empty">No stores</p>
                   )}
                   {stores.map(s => {
-                    const meta   = STRATEGY_META[s.strategy_c4] || {}
-                    const colour = meta.colour || '#bbb'
-                    const bg     = meta.bg     || '#f5f5f5'
-                    const dotCls = psPriority(s.total_ranging)
+                    const meta    = STRATEGY_META[s.strategy_c4] || {}
+                    const colour  = meta.colour || '#bbb'
+                    const bg      = meta.bg     || '#f5f5f5'
+                    const dotCls  = psPriority(s.total_ranging)
+                    const detail  = psC1[s.id] || {}
+                    const isOpen  = expandedId === s.id
+                    const status  = detail.focus_store_status || ''
+                    const statusCls = status === 'On Track' ? 'cv-status-green'
+                                    : status === 'At Risk'  ? 'cv-status-orange'
+                                    : status === 'Behind'   ? 'cv-status-red'
+                                    : ''
+                    const gaps = [
+                      { label: 'UHT Core',   val: detail.uht_core_gap },
+                      { label: 'Non-Core',   val: detail.non_core_gap },
+                      { label: 'Chilled',    val: detail.chilled_gap },
+                      { label: 'RTD',        val: detail.rtd_gap },
+                      { label: 'Yoghurt',    val: detail.yoghurt_gap },
+                      { label: 'Total Gap',  val: detail.total_ranging_gap },
+                    ]
+                    const calls = detail.cycle_1_calls ?? '–'
+                    const callTarget = detail.call_fqy_target || s.call_fqy_target || '–'
+
                     return (
-                      <div key={s.id} className="cv-store-card"
-                        style={{ borderLeftColor: colour }}>
+                      <div key={s.id}
+                        className={`cv-store-card${isOpen ? ' expanded' : ''}`}
+                        style={{ borderLeftColor: colour }}
+                        onClick={() => toggleExpand(s.id)}>
+
                         <div className="cv-store-name" title={s.store_name}>
                           {s.store_name}
+                          <span className="cv-expand-icon">{isOpen ? '▲' : '▼'}</span>
                         </div>
                         <div className="cv-store-meta">
                           {s.strategy_c4 && (
@@ -879,6 +934,62 @@ function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
                             <span className="cv-focus">★</span>
                           )}
                         </div>
+
+                        {isOpen && (
+                          <div className="cv-detail-panel" onClick={e => e.stopPropagation()}>
+
+                            {/* Status + location */}
+                            <div className="cv-detail-row">
+                              {status && (
+                                <span className={`cv-status-badge ${statusCls}`}>{status}</span>
+                              )}
+                              {detail.location_type && (
+                                <span className="cv-loc-tag">{detail.location_type}</span>
+                              )}
+                            </div>
+
+                            {/* Calls */}
+                            <div className="cv-detail-section">
+                              <div className="cv-detail-label">Calls this cycle</div>
+                              <div className="cv-detail-value">
+                                {calls} <span className="cv-detail-muted">/ target: {callTarget}</span>
+                              </div>
+                            </div>
+
+                            {/* GSV */}
+                            <div className="cv-detail-section">
+                              <div className="cv-detail-label">GSV Opportunity</div>
+                              <div className="cv-gsv-row">
+                                <div className="cv-gsv-item">
+                                  <span className="cv-gsv-lbl">First Order</span>
+                                  <span className="cv-gsv-val">{fmtGsv(detail.first_order_gsv)}</span>
+                                </div>
+                                <div className="cv-gsv-item">
+                                  <span className="cv-gsv-lbl">Total C1</span>
+                                  <span className="cv-gsv-val">{fmtGsv(detail.total_gsv_opportunity)}</span>
+                                </div>
+                                <div className="cv-gsv-item">
+                                  <span className="cv-gsv-lbl">Annual</span>
+                                  <span className="cv-gsv-val">{fmtGsv(detail.annual_gsv_opportunity)}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Gaps */}
+                            <div className="cv-detail-section">
+                              <div className="cv-detail-label">Ranging Gaps (SKUs)</div>
+                              <div className="cv-gap-grid">
+                                {gaps.map(g => (
+                                  <div key={g.label} className={`cv-gap-item${g.label === 'Total Gap' ? ' cv-gap-total' : ''}`}>
+                                    <span className="cv-gap-lbl">{g.label}</span>
+                                    <span className="cv-gap-val">{g.val ?? '–'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                          </div>
+                        )}
                       </div>
                     )
                   })}
