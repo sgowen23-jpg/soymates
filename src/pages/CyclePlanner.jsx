@@ -804,6 +804,7 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repSt
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CyclePlanner() {
+  const [cpSection, setCpSection]  = useState('planner')   // 'cycle-view' | 'planner'
   const [activeTab, setActiveTab] = useState('planner')
   const [cycle, setCycle]         = useState(1)
   const [rep, setRep]             = useState('Sam Gowen')
@@ -1230,7 +1231,25 @@ export default function CyclePlanner() {
         </div>
       </div>
 
-      {/* Tab bar */}
+      {/* ── Outer section sub-nav ── */}
+      <div className="cp-tab-bar cp-section-bar">
+        {[['cycle-view','Cycle View'],['planner','Planner']].map(([id, label]) => (
+          <button key={id} className={`cp-tab ${cpSection === id ? 'active' : ''}`}
+            onClick={() => setCpSection(id)}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── Cycle View placeholder ── */}
+      {cpSection === 'cycle-view' && (
+        <div className="cp-coming-soon">
+          <p>Cycle View — coming soon</p>
+        </div>
+      )}
+
+      {/* ── Planner section ── */}
+      {cpSection === 'planner' && (<>
+
+      {/* Inner tab bar */}
       <div className="cp-tab-bar">
         {[['planner','Cycle Planner'],['builder','Cycle Builder'],['perfect','Perfect Cycle']].map(([id, label]) => (
           <button key={id} className={`cp-tab ${activeTab === id ? 'active' : ''}`}
@@ -1343,6 +1362,8 @@ export default function CyclePlanner() {
           repStoreData={repStoreData}
         />
       )}
+
+      </>)} {/* end cpSection === 'planner' */}
     </div>
   )
 }
