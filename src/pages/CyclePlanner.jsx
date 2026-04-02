@@ -802,6 +802,96 @@ function PerfectCycleTab({ rep, cycle, slots, psScores, weeks, leaveDates, repSt
   )
 }
 
+// ─── Cycle View Tab ───────────────────────────────────────────────────────────
+function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
+  // For each week, collect unique store IDs from all 5 days (slots keyed "dateStr_slotIdx")
+  const weekStores = useMemo(() => {
+    return weeks.map(week => {
+      const storeIds = new Set()
+      week.forEach(date => {
+        const ds = toDS(date)
+        Object.entries(slots).forEach(([key, storeId]) => {
+          if (key.startsWith(ds + '_') && storeId) storeIds.add(String(storeId))
+        })
+      })
+      return Array.from(storeIds)
+        .map(id => ({ id, ...(psScores[id] || {}) }))
+        .filter(s => s.store_name)
+    })
+  }, [weeks, slots, psScores])
+
+  const totalPlanned = useMemo(() => {
+    const all = new Set()
+    weekStores.forEach(w => w.forEach(s => all.add(s.id)))
+    return all.size
+  }, [weekStores])
+
+  return (
+    <div className="cv-wrap">
+      <div className="cv-summary-bar">
+        <span className="cv-summary-item">
+          <strong>{totalPlanned}</strong> unique stores planned across Cycle {cycle}
+        </span>
+        <span className="cv-summary-item cv-rep-label">Rep: {rep}</span>
+      </div>
+
+      <div className="cv-scroll">
+        <div className="cv-grid">
+          {weeks.map((week, wi) => {
+            const stores = weekStores[wi]
+            return (
+              <div key={wi} className="cv-week-col">
+                <div className="cv-week-hd">
+                  <span className="cv-week-num">Wk {wi + 1}</span>
+                  <span className="cv-week-range">
+                    {fmtDay(week[0])}<br />{fmtDay(week[4])}
+                  </span>
+                  <span className="cv-week-count">{stores.length} store{stores.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                <div className="cv-store-list">
+                  {stores.length === 0 && (
+                    <p className="cv-empty">No stores</p>
+                  )}
+                  {stores.map(s => {
+                    const meta   = STRATEGY_META[s.strategy_c4] || {}
+                    const colour = meta.colour || '#bbb'
+                    const bg     = meta.bg     || '#f5f5f5'
+                    const dotCls = psPriority(s.total_ranging)
+                    return (
+                      <div key={s.id} className="cv-store-card"
+                        style={{ borderLeftColor: colour }}>
+                        <div className="cv-store-name" title={s.store_name}>
+                          {s.store_name}
+                        </div>
+                        <div className="cv-store-meta">
+                          {s.strategy_c4 && (
+                            <span className="cv-pill"
+                              style={{ background: bg, color: colour }}>
+                              {meta.label || s.strategy_c4}
+                            </span>
+                          )}
+                          <span className="cv-score">
+                            {dotCls && <span className={`cv-dot cv-dot-${dotCls}`} />}
+                            {s.total_ranging ?? '–'}<span className="cv-score-denom">/28</span>
+                          </span>
+                          {s.focus_store && (
+                            <span className="cv-focus">★</span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CyclePlanner() {
   const [cpSection, setCpSection]  = useState('planner')   // 'cycle-view' | 'planner'
@@ -1239,11 +1329,9 @@ export default function CyclePlanner() {
         ))}
       </div>
 
-      {/* ── Cycle View placeholder ── */}
+      {/* ── Cycle View ── */}
       {cpSection === 'cycle-view' && (
-        <div className="cp-coming-soon">
-          <p>Cycle View — coming soon</p>
-        </div>
+        <CycleViewTab rep={rep} cycle={cycle} slots={slots} weeks={weeks} psScores={psScores} />
       )}
 
       {/* ── Planner section ── */}

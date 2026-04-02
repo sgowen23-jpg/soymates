@@ -514,14 +514,163 @@
 }
 .cp-section-bar .cp-tab.active { background: #1a2b5e; }
 
-/* Cycle View placeholder */
-.cp-coming-soon {
+/* ── Cycle View ───────────────────────────────────────────────────────────────── */
+.cv-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cv-summary-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: #aaa;
-  font-size: 14px;
+  gap: 24px;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #444;
+}
+.cv-summary-item strong { color: #1a2b5e; }
+.cv-rep-label { margin-left: auto; color: #888; }
+
+/* Horizontal scroll container */
+.cv-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* 12-column grid — each column min 160px, max 200px */
+.cv-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(160px, 200px));
+  gap: 8px;
+  min-width: max-content;
+}
+
+/* Week column */
+.cv-week-col {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Week header */
+.cv-week-hd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 6px;
+  background: #1a2b5e;
+  color: white;
+}
+.cv-week-num {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.cv-week-range {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+.cv-week-count {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.18);
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  align-self: flex-start;
+}
+
+/* Store list inside column */
+.cv-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  flex: 1;
+}
+.cv-empty {
+  font-size: 11px;
+  color: #bbb;
+  text-align: center;
+  padding: 12px 4px;
+  margin: 0;
+}
+
+/* Individual store card */
+.cv-store-card {
+  border-left: 3px solid #ccc;
+  background: #fafafa;
+  border-radius: 0 5px 5px 0;
+  padding: 5px 7px;
+  cursor: default;
+  transition: background 0.12s;
+}
+.cv-store-card:hover { background: #f0f4ff; }
+
+.cv-store-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.cv-store-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cv-pill {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.cv-score {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+}
+.cv-score-denom { color: #bbb; font-weight: 400; }
+
+.cv-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cv-dot-green  { background: #16a085; }
+.cv-dot-orange { background: #e67e22; }
+.cv-dot-red    { background: #CC0000; }
+
+.cv-focus {
+  font-size: 10px;
+  color: #f39c12;
+  line-height: 1;
 }
 
 /* ── Week template picker + clear ────────────────────────────────────────────── */
