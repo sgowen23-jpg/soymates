@@ -810,194 +810,226 @@ function fmtGsv(v) {
   return '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-function CycleViewTab({ rep, cycle, slots, weeks, psScores }) {
+function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
   const [expandedId, setExpandedId] = useState(null)
-  // Detailed cycle=1 data keyed by store_id (gap cols, GSV, status)
+
+  // Single source of truth: fetch ALL needed fields from cycle=1
+  // (strategy, ranging, gaps, GSV, status — everything in one query)
   const [psC1, setPsC1] = useState({})
+  const [c1Loading, setC1Loading] = useState(true)
 
   useEffect(() => {
+    setC1Loading(true)
     supabase.from('perfect_store')
       .select([
-        'store_id','focus_store_status','call_fqy_target','cycle_1_calls',
+        'store_id','store_name','strategy_c4','total_ranging','focus_store','location_type',
+        'focus_store_status','call_fqy_target','cycle_1_calls',
         'first_order_gsv','total_gsv_opportunity','annual_gsv_opportunity',
-        'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap',
-        'total_ranging_gap','location_type','planogram_to_do','planogram_completed',
-        'ofl_secured','ofl_secured_ctns','ofl_gsv_value',
+        'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap','total_ranging_gap',
+        'planogram_to_do','planogram_completed','ofl_secured','ofl_secured_ctns','ofl_gsv_value',
       ].join(','))
       .eq('cycle', 1)
       .then(({ data }) => {
-        if (!data) return
         const map = {}
-        data.forEach(r => { map[String(r.store_id)] = r })
+        ;(data || []).forEach(r => { map[String(r.store_id)] = r })
         setPsC1(map)
+        setC1Loading(false)
       })
-  }, []) // fetch once — cycle 1 is the source of gap data regardless of planner cycle
+  }, [])
 
-  // For each week, collect unique store IDs from all 5 days (slots keyed "dateStr_slotIdx")
-  const weekStores = useMemo(() => {
-    return weeks.map(week => {
-      const storeIds = new Set()
-      week.forEach(date => {
-        const ds = toDS(date)
-        Object.entries(slots).forEach(([key, storeId]) => {
-          if (key.startsWith(ds + '_') && storeId) storeIds.add(String(storeId))
-        })
-      })
-      return Array.from(storeIds)
-        .map(id => ({ id, ...(psScores[id] || {}) }))
-        .filter(s => s.store_name)
-    })
-  }, [weeks, slots, psScores])
-
+  // Count unique planned stores for summary bar
   const totalPlanned = useMemo(() => {
     const all = new Set()
-    weekStores.forEach(w => w.forEach(s => all.add(s.id)))
+    weeks.forEach(week => {
+      week.forEach(date => {
+        const ds = toDS(date)
+        Array.from({ length: 8 }, (_, i) => slots[`${ds}_${i}`]).filter(Boolean).forEach(id => all.add(id))
+      })
+    })
     return all.size
-  }, [weekStores])
+  }, [weeks, slots])
 
-  function toggleExpand(id) {
-    setExpandedId(prev => prev === id ? null : id)
+  // Get ordered store IDs for a given day (slot 0-7, skip nulls)
+  function getDayStoreIds(dateStr) {
+    return Array.from({ length: 8 }, (_, i) => slots[`${dateStr}_${i}`]).filter(Boolean)
+  }
+
+  function toggleExpand(uid) {
+    setExpandedId(prev => prev === uid ? null : uid)
+  }
+
+  if (loading || c1Loading) {
+    return <div className="cp-loading"><div className="cp-spinner" /><p>Loading cycle view…</p></div>
   }
 
   return (
     <div className="cv-wrap">
+      {/* Summary bar */}
       <div className="cv-summary-bar">
         <span className="cv-summary-item">
-          <strong>{totalPlanned}</strong> unique stores planned across Cycle {cycle}
+          <strong>{totalPlanned}</strong> unique stores planned — Cycle {cycle}
         </span>
         <span className="cv-summary-item cv-rep-label">Rep: {rep}</span>
+        <span className="cv-summary-item cv-ro-badge">Read-only view</span>
       </div>
 
-      <div className="cv-scroll">
-        <div className="cv-grid">
-          {weeks.map((week, wi) => {
-            const stores = weekStores[wi]
-            return (
-              <div key={wi} className="cv-week-col">
-                <div className="cv-week-hd">
-                  <span className="cv-week-num">Wk {wi + 1}</span>
-                  <span className="cv-week-range">
-                    {fmtDay(week[0])}<br />{fmtDay(week[4])}
-                  </span>
-                  <span className="cv-week-count">{stores.length} store{stores.length !== 1 ? 's' : ''}</span>
-                </div>
+      {/* Calendar — same week/day structure as Planner */}
+      <div className="cp-calendar">
+        {weeks.map((week, wi) => {
+          return (
+            <div key={wi} className="cp-week">
+              {/* Week header — matches Planner exactly */}
+              <div className="cp-week-hd">
+                <span>Week {wi + 1}</span>
+                <span className="cp-week-range">{fmtDay(week[0])} – {fmtDay(week[4])}</span>
+              </div>
 
-                <div className="cv-store-list">
-                  {stores.length === 0 && (
-                    <p className="cv-empty">No stores</p>
-                  )}
-                  {stores.map(s => {
-                    const meta    = STRATEGY_META[s.strategy_c4] || {}
-                    const colour  = meta.colour || '#bbb'
-                    const bg      = meta.bg     || '#f5f5f5'
-                    const dotCls  = psPriority(s.total_ranging)
-                    const detail  = psC1[s.id] || {}
-                    const isOpen  = expandedId === s.id
-                    const status  = detail.focus_store_status || ''
-                    const statusCls = status === 'On Track' ? 'cv-status-green'
-                                    : status === 'At Risk'  ? 'cv-status-orange'
-                                    : status === 'Behind'   ? 'cv-status-red'
-                                    : ''
-                    const gaps = [
-                      { label: 'UHT Core',   val: detail.uht_core_gap },
-                      { label: 'Non-Core',   val: detail.non_core_gap },
-                      { label: 'Chilled',    val: detail.chilled_gap },
-                      { label: 'RTD',        val: detail.rtd_gap },
-                      { label: 'Yoghurt',    val: detail.yoghurt_gap },
-                      { label: 'Total Gap',  val: detail.total_ranging_gap },
-                    ]
-                    const calls = detail.cycle_1_calls ?? '–'
-                    const callTarget = detail.call_fqy_target || s.call_fqy_target || '–'
+              {/* Day grid — 5 columns */}
+              <div className="cp-week-grid">
+                {week.map(date => {
+                  const ds       = toDS(date)
+                  const leaveInfo = leaveDates.get(ds) || null
+                  const storeIds = getDayStoreIds(ds)
 
+                  if (leaveInfo) {
+                    const isPH = leaveInfo.type === 'Public Holiday'
                     return (
-                      <div key={s.id}
-                        className={`cv-store-card${isOpen ? ' expanded' : ''}`}
-                        style={{ borderLeftColor: colour }}
-                        onClick={() => toggleExpand(s.id)}>
-
-                        <div className="cv-store-name" title={s.store_name}>
-                          {s.store_name}
-                          <span className="cv-expand-icon">{isOpen ? '▲' : '▼'}</span>
-                        </div>
-                        <div className="cv-store-meta">
-                          {s.strategy_c4 && (
-                            <span className="cv-pill"
-                              style={{ background: bg, color: colour }}>
-                              {meta.label || s.strategy_c4}
-                            </span>
-                          )}
-                          <span className="cv-score">
-                            {dotCls && <span className={`cv-dot cv-dot-${dotCls}`} />}
-                            {s.total_ranging ?? '–'}<span className="cv-score-denom">/28</span>
+                      <div key={ds} className={`cp-day cp-day-leave${isPH ? ' cp-day-pubhol' : ''}`}>
+                        <div className="cp-day-hd">
+                          <span className="cp-day-lbl">{fmtDay(date)}</span>
+                          <span className={`cp-leave-tag${isPH ? ' cp-leave-tag-ph' : ''}`}>
+                            {isPH ? '🏛 Public Holiday' : '🏖 On Leave'}
                           </span>
-                          {s.focus_store && (
-                            <span className="cv-focus">★</span>
-                          )}
                         </div>
-
-                        {isOpen && (
-                          <div className="cv-detail-panel" onClick={e => e.stopPropagation()}>
-
-                            {/* Status + location */}
-                            <div className="cv-detail-row">
-                              {status && (
-                                <span className={`cv-status-badge ${statusCls}`}>{status}</span>
-                              )}
-                              {detail.location_type && (
-                                <span className="cv-loc-tag">{detail.location_type}</span>
-                              )}
-                            </div>
-
-                            {/* Calls */}
-                            <div className="cv-detail-section">
-                              <div className="cv-detail-label">Calls this cycle</div>
-                              <div className="cv-detail-value">
-                                {calls} <span className="cv-detail-muted">/ target: {callTarget}</span>
-                              </div>
-                            </div>
-
-                            {/* GSV */}
-                            <div className="cv-detail-section">
-                              <div className="cv-detail-label">GSV Opportunity</div>
-                              <div className="cv-gsv-row">
-                                <div className="cv-gsv-item">
-                                  <span className="cv-gsv-lbl">First Order</span>
-                                  <span className="cv-gsv-val">{fmtGsv(detail.first_order_gsv)}</span>
-                                </div>
-                                <div className="cv-gsv-item">
-                                  <span className="cv-gsv-lbl">Total C1</span>
-                                  <span className="cv-gsv-val">{fmtGsv(detail.total_gsv_opportunity)}</span>
-                                </div>
-                                <div className="cv-gsv-item">
-                                  <span className="cv-gsv-lbl">Annual</span>
-                                  <span className="cv-gsv-val">{fmtGsv(detail.annual_gsv_opportunity)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Gaps */}
-                            <div className="cv-detail-section">
-                              <div className="cv-detail-label">Ranging Gaps (SKUs)</div>
-                              <div className="cv-gap-grid">
-                                {gaps.map(g => (
-                                  <div key={g.label} className={`cv-gap-item${g.label === 'Total Gap' ? ' cv-gap-total' : ''}`}>
-                                    <span className="cv-gap-lbl">{g.label}</span>
-                                    <span className="cv-gap-val">{g.val ?? '–'}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                          </div>
-                        )}
+                        {leaveInfo.name && <div className="cp-leave-name">{leaveInfo.name}</div>}
                       </div>
                     )
-                  })}
-                </div>
+                  }
+
+                  return (
+                    <div key={ds} className="cp-day">
+                      <div className="cp-day-hd">
+                        <span className="cp-day-lbl">{fmtDay(date)}</span>
+                        <span className="cv-day-count">
+                          {storeIds.length > 0 ? `${storeIds.length} store${storeIds.length !== 1 ? 's' : ''}` : ''}
+                        </span>
+                      </div>
+
+                      <div className="cv-ro-slots">
+                        {storeIds.length === 0 && (
+                          <p className="cv-empty">No stores</p>
+                        )}
+                        {storeIds.map((storeId, slotIdx) => {
+                          const s      = psC1[storeId] || {}
+                          const name   = s.store_name || STORES.find(st => st.id === storeId)?.name || `Store ${storeId}`
+                          const meta   = STRATEGY_META[s.strategy_c4] || {}
+                          const colour = meta.colour || '#ccc'
+                          const bg     = meta.bg     || '#f5f5f5'
+                          const dotCls = psPriority(s.total_ranging)
+                          // Use a uid combining storeId + dateStr so the same store on different days expands independently
+                          const uid    = `${ds}_${storeId}`
+                          const isOpen = expandedId === uid
+
+                          const status    = s.focus_store_status || ''
+                          const statusCls = status === 'On Track' ? 'cv-status-green'
+                                          : status === 'At Risk'  ? 'cv-status-orange'
+                                          : status === 'Behind'   ? 'cv-status-red' : ''
+                          const gaps = [
+                            { label: 'UHT Core',  val: s.uht_core_gap },
+                            { label: 'Non-Core',  val: s.non_core_gap },
+                            { label: 'Chilled',   val: s.chilled_gap },
+                            { label: 'RTD',       val: s.rtd_gap },
+                            { label: 'Yoghurt',   val: s.yoghurt_gap },
+                            { label: 'Total Gap', val: s.total_ranging_gap },
+                          ]
+
+                          return (
+                            <div key={uid}
+                              className={`cv-store-card${isOpen ? ' expanded' : ''}`}
+                              style={{ borderLeftColor: colour }}
+                              onClick={() => toggleExpand(uid)}>
+
+                              {/* Slot number + name row */}
+                              <div className="cv-card-top">
+                                <span className="cp-slot-n">{slotIdx + 1}</span>
+                                <span className="cv-store-name" title={name}>{name}</span>
+                                <span className="cv-expand-icon">{isOpen ? '▲' : '▼'}</span>
+                              </div>
+
+                              {/* Score + strategy row */}
+                              <div className="cv-store-meta">
+                                {dotCls && <span className={`cv-dot cv-dot-${dotCls}`} />}
+                                <span className="cv-score">
+                                  {s.total_ranging ?? '–'}<span className="cv-score-denom">/28</span>
+                                </span>
+                                {s.strategy_c4 && (
+                                  <span className="cv-pill" style={{ background: bg, color: colour }}>
+                                    {meta.label || s.strategy_c4}
+                                  </span>
+                                )}
+                                {s.focus_store && <span className="cv-focus">★</span>}
+                              </div>
+
+                              {/* Expanded detail panel */}
+                              {isOpen && (
+                                <div className="cv-detail-panel" onClick={e => e.stopPropagation()}>
+
+                                  <div className="cv-detail-row">
+                                    {status && <span className={`cv-status-badge ${statusCls}`}>{status}</span>}
+                                    {s.location_type && <span className="cv-loc-tag">{s.location_type}</span>}
+                                  </div>
+
+                                  <div className="cv-detail-section">
+                                    <div className="cv-detail-label">Calls this cycle</div>
+                                    <div className="cv-detail-value">
+                                      {s.cycle_1_calls ?? '–'}
+                                      <span className="cv-detail-muted"> / target: {s.call_fqy_target || '–'}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="cv-detail-section">
+                                    <div className="cv-detail-label">GSV Opportunity</div>
+                                    <div className="cv-gsv-row">
+                                      <div className="cv-gsv-item">
+                                        <span className="cv-gsv-lbl">First Order</span>
+                                        <span className="cv-gsv-val">{fmtGsv(s.first_order_gsv)}</span>
+                                      </div>
+                                      <div className="cv-gsv-item">
+                                        <span className="cv-gsv-lbl">Total C1</span>
+                                        <span className="cv-gsv-val">{fmtGsv(s.total_gsv_opportunity)}</span>
+                                      </div>
+                                      <div className="cv-gsv-item">
+                                        <span className="cv-gsv-lbl">Annual</span>
+                                        <span className="cv-gsv-val">{fmtGsv(s.annual_gsv_opportunity)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="cv-detail-section">
+                                    <div className="cv-detail-label">Ranging Gaps (SKUs)</div>
+                                    <div className="cv-gap-grid">
+                                      {gaps.map(g => (
+                                        <div key={g.label} className={`cv-gap-item${g.label === 'Total Gap' ? ' cv-gap-total' : ''}`}>
+                                          <span className="cv-gap-lbl">{g.label}</span>
+                                          <span className="cv-gap-val">{g.val ?? '–'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1442,7 +1474,7 @@ export default function CyclePlanner() {
 
       {/* ── Cycle View ── */}
       {cpSection === 'cycle-view' && (
-        <CycleViewTab rep={rep} cycle={cycle} slots={slots} weeks={weeks} psScores={psScores} />
+        <CycleViewTab rep={rep} cycle={cycle} slots={slots} weeks={weeks} leaveDates={leaveDates} loading={loading} />
       )}
 
       {/* ── Planner section ── */}

@@ -518,107 +518,81 @@
 .cv-wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
+/* Summary bar */
 .cv-summary-bar {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
   padding: 10px 14px;
   background: #f8f9fa;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   font-size: 13px;
   color: #444;
+  flex-wrap: wrap;
 }
 .cv-summary-item strong { color: #1a2b5e; }
 .cv-rep-label { margin-left: auto; color: #888; }
-
-/* Horizontal scroll container */
-.cv-scroll {
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
-/* 12-column grid — each column min 160px, max 200px */
-.cv-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(160px, 200px));
-  gap: 8px;
-  min-width: max-content;
-}
-
-/* Week column */
-.cv-week-col {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* Week header */
-.cv-week-hd {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px 6px;
-  background: #1a2b5e;
-  color: white;
-}
-.cv-week-num {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-.cv-week-range {
-  font-size: 11px;
-  line-height: 1.35;
-  opacity: 0.9;
-}
-.cv-week-count {
-  margin-top: 2px;
+.cv-ro-badge {
   font-size: 10px;
-  font-weight: 600;
-  background: rgba(255,255,255,0.18);
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 10px;
-  align-self: flex-start;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: #e8ecf8;
+  color: #1a2b5e;
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 
-/* Store list inside column */
-.cv-store-list {
+/* Day store count badge */
+.cv-day-count {
+  font-size: 10px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+/* Read-only slot list (replaces cp-slots + StoreSelect) */
+.cv-ro-slots {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 6px;
-  flex: 1;
+  margin-top: 4px;
 }
+
 .cv-empty {
   font-size: 11px;
-  color: #bbb;
+  color: #ccc;
   text-align: center;
-  padding: 12px 4px;
+  padding: 10px 4px;
   margin: 0;
 }
 
-/* Individual store card */
+/* Store card — matches planner cp-ss-btn style */
 .cv-store-card {
   border-left: 3px solid #ccc;
   background: #fafafa;
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 6px 6px 0;
   padding: 5px 7px;
-  cursor: default;
+  cursor: pointer;
   transition: background 0.12s;
+  user-select: none;
 }
 .cv-store-card:hover { background: #f0f4ff; }
+.cv-store-card.expanded { background: #eef2ff; border-left-width: 4px; }
+
+/* Top row: slot number + name + chevron */
+.cv-card-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
 
 .cv-store-name {
+  flex: 1;
   font-size: 11px;
   font-weight: 600;
   color: #222;
@@ -626,7 +600,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
 }
 
 .cv-store-meta {
