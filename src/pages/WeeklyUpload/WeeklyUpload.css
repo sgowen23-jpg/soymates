@@ -245,6 +245,39 @@
 }
 .wu-btn-secondary:hover { background: #ebebeb; }
 
+/* ── SQL Setup block ────────────────────────────────────────────────────────── */
+.wu-sql-block {
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.wu-sql-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2b5e;
+  transition: background 0.15s;
+}
+.wu-sql-toggle:hover { background: #eef2ff; }
+.wu-sql-pre {
+  margin: 0;
+  padding: 16px;
+  background: #1a1a1a;
+  color: #a8ff78;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: 'Consolas', 'Courier New', monospace;
+  border-top: 1px solid #333;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .wu-page { padding: 12px; }

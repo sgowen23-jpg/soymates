@@ -108,6 +108,9 @@ function parseDistributionFile(arrayBuffer) {
   const metaIdx  = {}
   const prodCols = [] // { name, colIdx }
 
+  // Columns to skip (not products)
+  const SKIP_COLS = new Set(['grand total'])
+
   headerRow.forEach((h, i) => {
     if (h === null || h === undefined) return
     const hn = String(h).trim()
@@ -115,7 +118,7 @@ function parseDistributionFile(arrayBuffer) {
     if (normMeta.includes(normH)) {
       // Map "Location ID" → store_id; "RepName" → rep_name; others as-is
       metaIdx[normH] = i
-    } else if (hn.length > 0) {
+    } else if (hn.length > 0 && !SKIP_COLS.has(normH)) {
       prodCols.push({ name: hn, colIdx: i })
     }
   })
@@ -370,6 +373,86 @@ function Uploader({ title, description, icon, table, conflictCols, parseFile, sh
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const SQL_SETUP = `-- Run this once in Supabase SQL Editor to create the required tables
+
+create table if not exists bnb_13wk (
+  id                      bigserial primary key,
+  store_id                integer not null,
+  item_id                 integer not null,
+  store_name              text,
+  state                   text,
+  store_region            text,
+  mso                     text,
+  rep_name                text,
+  item_name               text,
+  pog_category            text,
+  count_of_ranging        numeric,
+  sum_of_ranging          numeric,
+  distribution_percentage numeric,
+  ranging_gap             numeric,
+  to_target_percentage    numeric,
+  buy_rate_latest         numeric,
+  uploaded_at             timestamptz default now(),
+  unique (store_id, item_id)
+);
+
+create table if not exists bnb_26wk (
+  id                      bigserial primary key,
+  store_id                integer not null,
+  item_id                 integer not null,
+  store_name              text,
+  state                   text,
+  store_region            text,
+  mso                     text,
+  rep_name                text,
+  item_name               text,
+  pog_category            text,
+  count_of_ranging        numeric,
+  sum_of_ranging          numeric,
+  distribution_percentage numeric,
+  ranging_gap             numeric,
+  to_target_percentage    numeric,
+  buy_rate_latest         numeric,
+  uploaded_at             timestamptz default now(),
+  unique (store_id, item_id)
+);
+
+create table if not exists store_distribution (
+  id           bigserial primary key,
+  store_id     integer not null,
+  store_name   text,
+  state        text,
+  rep_name     text,
+  item_name    text not null,
+  distribution numeric,
+  uploaded_at  timestamptz default now(),
+  unique (store_id, item_name)
+);
+
+-- Enable RLS (required for Supabase PostgREST)
+alter table bnb_13wk         enable row level security;
+alter table bnb_26wk         enable row level security;
+alter table store_distribution enable row level security;
+
+-- Allow authenticated users to read and write
+create policy "auth read bnb_13wk"         on bnb_13wk         for all to authenticated using (true) with check (true);
+create policy "auth read bnb_26wk"         on bnb_26wk         for all to authenticated using (true) with check (true);
+create policy "auth read store_distribution" on store_distribution for all to authenticated using (true) with check (true);`
+
+function SqlSetup() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="wu-sql-block">
+      <button className="wu-sql-toggle" onClick={() => setOpen(o => !o)}>
+        {open ? '▲' : '▼'} First time? Run this SQL in Supabase to create the tables
+      </button>
+      {open && (
+        <pre className="wu-sql-pre">{SQL_SETUP}</pre>
+      )}
+    </div>
+  )
+}
+
 export default function WeeklyUpload() {
   return (
     <div className="wu-page">
@@ -380,6 +463,8 @@ export default function WeeklyUpload() {
           Matching uses <strong>Store ID + Item ID</strong> only — no name matching.
         </p>
       </div>
+
+      <SqlSetup />
 
       <div className="wu-uploaders">
 
