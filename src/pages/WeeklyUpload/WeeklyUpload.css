@@ -1,0 +1,254 @@
+/* ── Page ──────────────────────────────────────────────────────────────────── */
+.wu-page {
+  padding: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.wu-page-header { display: flex; flex-direction: column; gap: 6px; }
+.wu-page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+.wu-page-sub {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* ── Uploader cards ─────────────────────────────────────────────────────────── */
+.wu-uploaders {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wu-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border: 1.5px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wu-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.wu-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.wu-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 3px;
+}
+
+.wu-card-desc {
+  font-size: 12px;
+  color: #777;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Sheet spec badge ───────────────────────────────────────────────────────── */
+.wu-sheet-spec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.wu-spec-label {
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.wu-spec-code {
+  background: #f0f4ff;
+  color: #1a2b5e;
+  border: 1px solid #d0d8f0;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+/* ── Drop zone ──────────────────────────────────────────────────────────────── */
+.wu-drop {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 24px 20px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.15s;
+  background: #fafafa;
+}
+
+.wu-drop:hover {
+  border-color: #CC0000;
+  background: #fff5f5;
+}
+
+.wu-drop-icon { font-size: 1.3rem; }
+.wu-drop-text { font-size: 13px; color: #666; font-weight: 500; }
+
+/* ── Alerts ─────────────────────────────────────────────────────────────────── */
+.wu-alert {
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  line-height: 1.6;
+}
+.wu-alert code {
+  background: rgba(0,0,0,0.07);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+.wu-alert-info    { background: #eef4ff; border: 1px solid #c5d8ff; color: #1a2b5e; }
+.wu-alert-success { background: #edfaf1; border: 1px solid #b2dfc0; color: #1a5e2a; }
+.wu-alert-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #8b0000; }
+
+.wu-warn { color: #b35c00; }
+.wu-link-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  color: inherit;
+  font-weight: 600;
+}
+.wu-link-btn:hover { opacity: 0.7; }
+
+/* ── Preview ────────────────────────────────────────────────────────────────── */
+.wu-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wu-preview-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.wu-preview-scroll {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+.wu-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.wu-preview-table th {
+  background: #1a2b5e;
+  color: #fff;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.wu-preview-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  white-space: nowrap;
+}
+.wu-preview-table tr:last-child td { border-bottom: none; }
+.wu-preview-table tr:nth-child(even) td { background: #fafafa; }
+.wu-null { color: #ccc; font-style: italic; }
+
+/* ── Upload progress ────────────────────────────────────────────────────────── */
+.wu-uploading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wu-progress-wrap {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.wu-progress-bar {
+  height: 100%;
+  background: #CC0000;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.wu-progress-label {
+  font-size: 12px;
+  color: #888;
+  text-align: right;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────────── */
+.wu-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.wu-btn-primary {
+  padding: 9px 18px;
+  background: #CC0000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wu-btn-primary:hover:not(:disabled) { background: #a30000; }
+.wu-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.wu-btn-secondary {
+  padding: 9px 18px;
+  background: #f5f5f5;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wu-btn-secondary:hover { background: #ebebeb; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .wu-page { padding: 12px; }
+  .wu-card { padding: 14px 16px; }
+  .wu-drop { flex-direction: column; gap: 6px; }
+  .wu-btn-primary, .wu-btn-secondary { font-size: 12px; padding: 8px 14px; }
+}
