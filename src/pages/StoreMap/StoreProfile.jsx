@@ -26,16 +26,16 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
       setProductData(null)
       const table = bnbPeriod === '26wk' ? 'bnb_26wk' : 'bnb_13wk'
       const [distRes, bnbRes] = await Promise.all([
-        supabase.from('store_distribution').select('product, ranging').eq('store_id', store.id),
-        supabase.from(table).select('product, gap').eq('store_id', store.id),
+        supabase.from('store_distribution').select('item_name, latest_distribution').eq('location_id', store.id),
+        supabase.from(table).select('item_name, ranging_gap').eq('store_id', store.id),
       ])
       const bnbMap = {}
-      bnbRes.data?.forEach(r => { bnbMap[clean(r.product)] = r.gap })
+      bnbRes.data?.forEach(r => { bnbMap[clean(r.item_name)] = r.ranging_gap })
 
       const gaps = [], nbt = [], good = []
       distRes.data?.forEach(r => {
-        const name = clean(r.product)
-        if (r.ranging === 0) {
+        const name = clean(r.item_name)
+        if (r.latest_distribution === 0) {
           gaps.push(name)
         } else {
           if (bnbMap[name] === 1) nbt.push(name)

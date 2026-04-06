@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
-import { STORES } from '../../data/stores'
 import { supabase } from '../../lib/supabase'
 import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
-const ALL_CHAINS = [...new Set(STORES.map(s => s.chain))].sort()
-
 export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod }) {
+  const [stores, setStores] = useState([])
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
   const [sortCol, setSortCol] = useState('name')
@@ -15,12 +13,31 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   const [gapMap, setGapMap] = useState({})
   const [loading, setLoading] = useState(true)
 
+  const ALL_CHAINS = useMemo(() => [...new Set(stores.map(s => s.chain))].filter(Boolean).sort(), [stores])
+
+  // Fetch store list from Supabase once on mount
+  useEffect(() => {
+    supabase.from('stores')
+      .select('store_id, store_name, state, store_region, rep_name, mso, suburb')
+      .then(({ data }) => {
+        setStores((data || []).map(s => ({
+          id:     s.store_id,
+          name:   s.store_name,
+          state:  s.state,
+          region: s.store_region,
+          rep:    s.rep_name,
+          chain:  s.mso || '',
+          suburb: s.suburb || '',
+        })))
+      })
+  }, [])
+
   useEffect(() => {
     async function fetchGaps() {
       setLoading(true)
       // Only fetch distribution data for stores visible under current filters —
       // avoids a full table scan when a state or rep filter is active
-      const visibleIds = STORES
+      const visibleIds = stores
         .filter(s => {
           const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
           const matchRep   = !filters?.rep   || filters.rep   === 'All' || s.rep   === filters.rep
@@ -32,24 +49,24 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       const { data } = await supabase
         .from('store_distribution')
-        .select('store_id, ranging')
-        .in('store_id', visibleIds)
+        .select('location_id, latest_distribution')
+        .in('location_id', visibleIds)
 
       const map = {}
       data?.forEach(r => {
-        const id = String(r.store_id)
+        const id = String(r.location_id)
         if (map[id] === undefined) map[id] = 0
-        if (r.ranging === 0) map[id]++
+        if (r.latest_distribution === 0) map[id]++
       })
       setGapMap(map)
       setLoading(false)
     }
     fetchGaps()
-  }, [filters?.state, filters?.rep])
+  }, [stores, filters?.state, filters?.rep])
 
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()
-    return STORES.filter(s => {
+    return stores.filter(s => {
       const matchSearch = !q ||
         s.name.toLowerCase().includes(q) ||
         s.suburb.toLowerCase().includes(q) ||
