@@ -3,137 +3,158 @@ import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import './DataUpload.css'
 
-const DB_FIELDS = [
-  { key: 'store_name',   label: 'Store Name',   required: true },
-  { key: 'address',      label: 'Address',       required: false },
-  { key: 'suburb',       label: 'Suburb',        required: false },
-  { key: 'state',        label: 'State',         required: false },
-  { key: 'postcode',     label: 'Postcode',      required: false },
-  { key: 'latitude',     label: 'Latitude',      required: false },
-  { key: 'longitude',    label: 'Longitude',     required: false },
-  { key: 'client',       label: 'Client',        required: false },
-  { key: 'rep',          label: 'Rep',           required: false },
-  { key: 'store_type',   label: 'Store Type',    required: false },
-  { key: 'phone',        label: 'Phone',         required: false },
-  { key: 'contact_name', label: 'Contact Name',  required: false },
+const CHUNK = 200
+const SHEET_NAME = 'Master Store Key'
+const STEPS = ['Upload', 'Preview', 'Done']
+
+// ── Coerce helpers ────────────────────────────────────────────────────────────
+
+const toInt   = v => { if (v == null || v === '') return null; const n = parseInt(v, 10);  return isNaN(n) ? null : n }
+const toFloat = v => { if (v == null || v === '') return null; const n = parseFloat(v);    return isNaN(n) ? null : n }
+const toStr   = v => (v == null || v === '') ? null : String(v).trim()
+
+// ── Column map (src = exact Excel header, dest = DB column) ──────────────────
+
+const COL_MAP = [
+  { src: 'Store ID',           dest: 'store_id',        parse: toInt,   required: true },
+  { src: 'Store ID (26)',      dest: 'store_id_26',      parse: toInt   },
+  { src: 'Location ID (Dist)', dest: 'location_id_dist', parse: toInt   },
+  { src: 'Store Name',         dest: 'store_name',       parse: toStr   },
+  { src: 'State',              dest: 'state',            parse: toStr   },
+  { src: 'Store Region',       dest: 'store_region',     parse: toStr   },
+  { src: 'MSO',                dest: 'mso',              parse: toStr   },
+  { src: 'Rep Name',           dest: 'rep_name',         parse: toStr   },
+  { src: 'Group Name',         dest: 'group_name',       parse: toStr   },
+  { src: 'Address',            dest: 'address',          parse: toStr   },
+  { src: 'Suburb',             dest: 'suburb',           parse: toStr   },
+  { src: 'Postcode',           dest: 'postcode',         parse: toStr   },
+  { src: 'Classification',     dest: 'classification',   parse: toStr   },
+  { src: 'Latitude',           dest: 'latitude',         parse: toFloat },
+  { src: 'Longitude',          dest: 'longitude',        parse: toFloat },
 ]
 
-// Try to auto-match Excel column headers to DB fields
-function autoMap(headers) {
-  const mapping = {}
-  const lower = h => h.toLowerCase().replace(/[\s_-]/g, '')
-  DB_FIELDS.forEach(({ key }) => {
-    const match = headers.find(h => lower(h) === lower(key)) ||
-                  headers.find(h => lower(h).includes(lower(key))) ||
-                  headers.find(h => lower(key).includes(lower(h)))
-    mapping[key] = match || ''
+// ── Parser ────────────────────────────────────────────────────────────────────
+
+function parseFile(arrayBuffer) {
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+
+  const sheetName = wb.SheetNames.find(
+    n => n.trim().toLowerCase() === SHEET_NAME.toLowerCase()
+  )
+  if (!sheetName) {
+    return { error: `Sheet "${SHEET_NAME}" not found. Sheets in file: ${wb.SheetNames.join(', ')}` }
+  }
+
+  const ws  = wb.Sheets[sheetName]
+  const raw = XLSX.utils.sheet_to_json(ws, { defval: null })
+  if (!raw.length) return { error: `Sheet "${SHEET_NAME}" is empty.` }
+
+  // Build case-insensitive header lookup
+  const norm = h => String(h).trim().toLowerCase()
+  const headerLookup = {}
+  Object.keys(raw[0]).forEach(h => { headerLookup[norm(h)] = h })
+
+  let skipped = 0
+  const records = []
+
+  raw.forEach(row => {
+    const rec = {}
+    COL_MAP.forEach(col => {
+      const actualKey = headerLookup[norm(col.src)]
+      rec[col.dest] = actualKey !== undefined ? col.parse(row[actualKey]) : null
+    })
+    if (rec.store_id === null) { skipped++; return }
+    records.push(rec)
   })
-  return mapping
+
+  return { records, skipped, totalRows: raw.length }
 }
 
-const STEPS = ['Upload', 'Map Columns', 'Preview', 'Done']
-const CHUNK = 50 // rows per Supabase batch
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DataUpload() {
-  const [step, setStep]         = useState(0)
-  const [fileName, setFileName] = useState('')
-  const [headers, setHeaders]   = useState([])
-  const [rows, setRows]         = useState([])     // raw Excel rows (array of objects)
-  const [mapping, setMapping]   = useState({})
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus]     = useState(null)   // { type: 'success'|'error', msg }
+  const [step,      setStep]      = useState(0)
+  const [fileName,  setFileName]  = useState('')
+  const [parseInfo, setParseInfo] = useState(null)   // { records, skipped, totalRows }
   const [uploading, setUploading] = useState(false)
+  const [progress,  setProgress]  = useState(0)
+  const [status,    setStatus]    = useState(null)   // { type: 'success'|'error', msg }
   const fileRef = useRef()
 
-  // ── Step 1: parse file ──────────────────────────────────────────────────────
+  function reset() {
+    setStep(0); setFileName(''); setParseInfo(null)
+    setUploading(false); setProgress(0); setStatus(null)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   function handleFile(e) {
-    const file = e.target.files[0]
+    const file = e.target.files?.[0]
     if (!file) return
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const wb = XLSX.read(evt.target.result, { type: 'binary' })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      const data = XLSX.utils.sheet_to_json(ws, { defval: '' })
-      if (!data.length) return
-      const hdrs = Object.keys(data[0])
-      setHeaders(hdrs)
-      setRows(data)
-      setMapping(autoMap(hdrs))
+      const result = parseFile(evt.target.result)
+      if (result.error) {
+        setStatus({ type: 'error', msg: result.error })
+        setStep(2)
+        return
+      }
+      setParseInfo(result)
       setStep(1)
     }
-    reader.readAsBinaryString(file)
+    reader.readAsArrayBuffer(file)
   }
 
   function handleDrop(e) {
     e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      const dt = new DataTransfer()
-      dt.items.add(file)
-      fileRef.current.files = dt.files
-      handleFile({ target: { files: [file] } })
-    }
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleFile({ target: { files: [file] } })
   }
 
-  // ── Step 2: mapping ─────────────────────────────────────────────────────────
-  function updateMapping(field, col) {
-    setMapping(m => ({ ...m, [field]: col }))
-  }
-
-  // ── Step 3: preview — build mapped rows ─────────────────────────────────────
-  function buildMappedRows() {
-    return rows.map(row => {
-      const out = {}
-      DB_FIELDS.forEach(({ key }) => {
-        if (mapping[key]) out[key] = row[mapping[key]] ?? ''
-      })
-      // coerce lat/lng to numbers
-      if (out.latitude)  out.latitude  = parseFloat(out.latitude)  || null
-      if (out.longitude) out.longitude = parseFloat(out.longitude) || null
-      return out
-    })
-  }
-
-  // ── Step 4: upload ──────────────────────────────────────────────────────────
   async function handleUpload() {
     setUploading(true)
     setProgress(0)
-    setStatus(null)
-    const mapped = buildMappedRows()
-    const total  = mapped.length
-    let done = 0
-    let errors = []
+
+    // DELETE all existing rows
+    const { error: delErr } = await supabase
+      .from('stores')
+      .delete()
+      .not('store_id', 'is', null)
+
+    if (delErr) {
+      setUploading(false)
+      setStatus({ type: 'error', msg: `Delete failed: ${delErr.message}` })
+      setStep(2)
+      return
+    }
+
+    // INSERT in chunks
+    const { records } = parseInfo
+    const total  = records.length
+    const errors = []
 
     for (let i = 0; i < total; i += CHUNK) {
-      const chunk = mapped.slice(i, i + CHUNK)
-      const { error } = await supabase.from('stores').upsert(chunk, { onConflict: 'store_name' })
+      const chunk = records.slice(i, i + CHUNK)
+      const { error } = await supabase.from('stores').insert(chunk)
       if (error) errors.push(error.message)
-      done = Math.min(i + CHUNK, total)
-      setProgress(Math.round((done / total) * 100))
+      setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
     }
 
     setUploading(false)
     if (errors.length) {
       setStatus({ type: 'error', msg: `${errors.length} batch(es) failed: ${errors[0]}` })
     } else {
-      setStatus({ type: 'success', msg: `${total} store${total !== 1 ? 's' : ''} uploaded successfully!` })
+      setStatus({ type: 'success', msg: `${total} store${total !== 1 ? 's' : ''} uploaded successfully.` })
     }
-    setStep(3)
+    setStep(2)
   }
 
-  function reset() {
-    setStep(0); setFileName(''); setHeaders([]); setRows([])
-    setMapping({}); setProgress(0); setStatus(null); setUploading(false)
-    if (fileRef.current) fileRef.current.value = ''
-  }
-
-  const previewRows = buildMappedRows().slice(0, 8)
-  const mappedFields = DB_FIELDS.filter(f => mapping[f.key])
+  const preview3 = parseInfo?.records?.slice(0, 3).map(r => r.store_name).filter(Boolean)
 
   return (
     <div className="upload-page">
-      {/* Step progress bar */}
+
+      {/* Step progress */}
       <div className="upload-steps">
         {STEPS.map((s, i) => (
           <div key={s} className={`upload-step ${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`}>
@@ -146,8 +167,10 @@ export default function DataUpload() {
       {/* ── Step 0: Upload ── */}
       {step === 0 && (
         <div className="upload-card">
-          <h2 className="upload-card-title">Upload Store Data</h2>
-          <p className="upload-card-sub">Upload an Excel file (.xlsx) to import stores into Supabase.</p>
+          <h2 className="upload-card-title">Upload Master Store Key</h2>
+          <p className="upload-card-sub">
+            Upload the Master Store Key .xlsx file. All existing stores will be replaced with the new data.
+          </p>
 
           <div
             className="drop-zone"
@@ -161,140 +184,72 @@ export default function DataUpload() {
             <input
               ref={fileRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx"
               style={{ display: 'none' }}
               onChange={handleFile}
             />
           </div>
 
           <div className="upload-sql-hint">
-            <strong>First time?</strong> Run this SQL in Supabase to create the stores table:
-            <pre>{`create table stores (
-  id            bigserial primary key,
-  store_name    text unique not null,
-  address       text,
-  suburb        text,
-  state         text,
-  postcode      text,
-  latitude      double precision,
-  longitude     double precision,
-  client        text,
-  rep           text,
-  store_type    text,
-  phone         text,
-  contact_name  text,
-  created_at    timestamptz default now()
-);`}</pre>
+            <strong>Expected sheet:</strong> <code>Master Store Key</code> — headers in row 1.<br />
+            Required column: <code>Store ID</code>. Rows missing Store ID are skipped and counted.
           </div>
         </div>
       )}
 
-      {/* ── Step 1: Map Columns ── */}
-      {step === 1 && (
+      {/* ── Step 1: Preview ── */}
+      {step === 1 && parseInfo && (
         <div className="upload-card">
-          <h2 className="upload-card-title">Map Columns</h2>
-          <p className="upload-card-sub">
-            <strong>{fileName}</strong> — {rows.length} rows found. Match your Excel columns to the store fields below.
-          </p>
-
-          <div className="mapping-table-wrap">
-            <table className="mapping-table">
-              <thead>
-                <tr>
-                  <th>Store Field</th>
-                  <th>Excel Column</th>
-                  <th>Sample Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {DB_FIELDS.map(({ key, label, required }) => (
-                  <tr key={key}>
-                    <td>
-                      {label}
-                      {required && <span className="required-badge">required</span>}
-                    </td>
-                    <td>
-                      <select
-                        className="map-select"
-                        value={mapping[key] || ''}
-                        onChange={e => updateMapping(key, e.target.value)}
-                      >
-                        <option value="">— skip —</option>
-                        {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
-                    </td>
-                    <td className="sample-val">
-                      {mapping[key] && rows[0] ? String(rows[0][mapping[key]] ?? '—') : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="upload-actions">
-            <button className="btn-secondary" onClick={reset}>Back</button>
-            <button
-              className="btn-primary"
-              disabled={!mapping.store_name}
-              onClick={() => setStep(2)}
-            >
-              Preview Data →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step 2: Preview ── */}
-      {step === 2 && (
-        <div className="upload-card wide">
           <h2 className="upload-card-title">Preview</h2>
-          <p className="upload-card-sub">
-            Showing first {previewRows.length} of {rows.length} rows. Confirm to upload all rows to Supabase.
-          </p>
+          <p className="upload-card-sub"><strong>{fileName}</strong></p>
 
-          <div className="preview-table-wrap">
-            <table className="preview-table">
-              <thead>
-                <tr>
-                  {mappedFields.map(f => <th key={f.key}>{f.label}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row, i) => (
-                  <tr key={i}>
-                    {mappedFields.map(f => (
-                      <td key={f.key}>{String(row[f.key] ?? '')}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="upload-sql-hint" style={{ marginBottom: 16 }}>
+            <div><strong>Rows detected:</strong> {parseInfo.records.length.toLocaleString()}</div>
+            {parseInfo.skipped > 0 && (
+              <div style={{ color: '#b45309', marginTop: 6 }}>
+                ⚠ {parseInfo.skipped} row{parseInfo.skipped !== 1 ? 's' : ''} skipped (missing Store ID)
+              </div>
+            )}
+            {preview3?.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <strong>First {preview3.length} stores:</strong>
+                <ol style={{ margin: '4px 0 0 18px', padding: 0, fontSize: 12, color: '#444' }}>
+                  {preview3.map((name, i) => <li key={i}>{name}</li>)}
+                </ol>
+              </div>
+            )}
           </div>
 
-          <div className="upload-actions">
-            <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>
-            <button className="btn-primary" onClick={handleUpload} disabled={uploading}>
-              {uploading ? `Uploading… ${progress}%` : `Upload ${rows.length} Stores`}
-            </button>
+          <div style={{ background: '#fff5f5', border: '1px solid #ffcccc', borderRadius: 8, padding: '11px 14px', fontSize: 13, color: '#CC0000', marginBottom: 20 }}>
+            ⚠ This will <strong>delete all existing stores</strong> and replace them with{' '}
+            <strong>{parseInfo.records.length.toLocaleString()}</strong> new records.
           </div>
 
           {uploading && (
-            <div className="progress-wrap">
+            <div className="progress-wrap" style={{ marginBottom: 16 }}>
               <div className="progress-bar" style={{ width: `${progress}%` }} />
               <span className="progress-label">{progress}%</span>
             </div>
           )}
+
+          <div className="upload-actions">
+            <button className="btn-secondary" onClick={reset} disabled={uploading}>Cancel</button>
+            <button className="btn-primary" onClick={handleUpload} disabled={uploading}>
+              {uploading ? `Uploading… ${progress}%` : `Upload ${parseInfo.records.length.toLocaleString()} Stores`}
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── Step 3: Done ── */}
-      {step === 3 && status && (
+      {/* ── Step 2: Done ── */}
+      {step === 2 && status && (
         <div className="upload-card center">
-          <div className={`done-icon ${status.type}`}>
+          <div className="done-icon">
             {status.type === 'success' ? '✅' : '❌'}
           </div>
-          <h2 className="upload-card-title">{status.type === 'success' ? 'Upload Complete!' : 'Upload Failed'}</h2>
+          <h2 className="upload-card-title">
+            {status.type === 'success' ? 'Upload Complete!' : 'Upload Failed'}
+          </h2>
           <p className="upload-card-sub">{status.msg}</p>
 
           {status.type === 'success' && (
@@ -303,11 +258,12 @@ export default function DataUpload() {
             </div>
           )}
 
-          <div className="upload-actions center">
+          <div className="upload-actions center" style={{ marginTop: 20 }}>
             <button className="btn-primary" onClick={reset}>Upload Another File</button>
           </div>
         </div>
       )}
+
     </div>
   )
 }
