@@ -4,9 +4,7 @@
   margin: 0 auto;
 }
 
-.du-header {
-  margin-bottom: 20px;
-}
+.du-header { margin-bottom: 20px; }
 
 .du-title {
   font-size: 20px;
@@ -21,7 +19,6 @@
   margin: 0;
 }
 
-/* ── Card ── */
 .du-card {
   background: #fff;
   border-radius: 12px;
@@ -44,10 +41,7 @@
   background: #fff8f8;
 }
 
-.du-drop-icon {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-}
+.du-drop-icon { font-size: 2.2rem; margin-bottom: 10px; }
 
 .du-drop-main {
   font-size: 14px;
@@ -56,10 +50,7 @@
   margin-bottom: 6px;
 }
 
-.du-drop-hint {
-  font-size: 12px;
-  color: #999;
-}
+.du-drop-hint { font-size: 12px; color: #999; }
 
 .du-drop-hint code {
   background: #f0f0f0;
@@ -84,16 +75,8 @@
 .du-alert-error   { background: #fff0f0; border: 1px solid #ffd0d0; color: #CC0000; }
 .du-alert-success { background: #f0fff4; border: 1px solid #b6e8c8; color: #1a6636; }
 
-.du-warn {
-  color: #b45309;
-  font-size: 12px;
-}
-
-.du-preview-names {
-  font-size: 12px;
-  color: #555;
-  margin-top: 2px;
-}
+.du-warn          { color: #b45309; font-size: 12px; }
+.du-preview-names { font-size: 12px; color: #555; margin-top: 2px; }
 
 .du-link {
   background: none;
@@ -126,7 +109,7 @@
   transition: background 0.15s;
 }
 
-.du-btn-pri:hover { background: #a30000; }
+.du-btn-pri:hover    { background: #a30000; }
 .du-btn-pri:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .du-btn-sec {
@@ -144,10 +127,7 @@
 .du-btn-sec:hover { background: #ebebeb; }
 
 /* ── Progress ── */
-.du-uploading {
-  text-align: center;
-  padding: 8px 0;
-}
+.du-uploading { text-align: center; padding: 8px 0; }
 
 .du-prog-wrap {
   height: 8px;
@@ -164,7 +144,4 @@
   transition: width 0.3s ease;
 }
 
-.du-prog-label {
-  font-size: 12px;
-  color: #888;
-}
+.du-prog-label { font-size: 12px; color: #888; }

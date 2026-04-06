@@ -4,9 +4,7 @@
   margin: 0 auto;
 }
 
-.wu-header {
-  margin-bottom: 24px;
-}
+.wu-header { margin-bottom: 24px; }
 
 .wu-title {
   font-size: 20px;
@@ -43,13 +41,13 @@
   margin-bottom: 4px;
 }
 
-.wu-card-hint {
+.wu-card-meta {
   font-size: 12px;
   color: #999;
   margin-bottom: 14px;
 }
 
-.wu-card-hint code {
+.wu-card-meta code {
   background: #f0f0f0;
   padding: 1px 5px;
   border-radius: 4px;
@@ -73,45 +71,40 @@
   background: #fff8f8;
 }
 
-.wu-drop-icon {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
+.wu-drop-icon { font-size: 1.4rem; flex-shrink: 0; }
+.wu-drop-text { font-size: 13px; color: #666; }
 
-.wu-drop-text {
-  font-size: 13px;
-  color: #666;
-}
-
-/* ── Parsed row ── */
+/* ── Parsed ── */
 .wu-parsed {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .wu-parsed-info {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
   font-size: 13px;
   min-width: 0;
 }
 
 .wu-file-name {
-  color: #333;
   font-weight: 600;
-  max-width: 260px;
+  color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 340px;
 }
 
-.wu-row-count {
-  color: #888;
-  white-space: nowrap;
+.wu-row-count { color: #888; }
+
+.wu-preview-names {
+  font-size: 12px;
+  color: #555;
 }
 
 /* ── Actions ── */
@@ -119,6 +112,7 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  align-items: flex-start;
 }
 
 .wu-btn-pri {
@@ -134,7 +128,7 @@
   white-space: nowrap;
 }
 
-.wu-btn-pri:hover { background: #a30000; }
+.wu-btn-pri:hover    { background: #a30000; }
 .wu-btn-pri:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .wu-btn-sec {
@@ -152,9 +146,7 @@
 .wu-btn-sec:hover { background: #ebebeb; }
 
 /* ── Progress ── */
-.wu-uploading {
-  padding: 2px 0;
-}
+.wu-uploading { padding: 2px 0; }
 
 .wu-prog-wrap {
   height: 7px;
@@ -171,10 +163,7 @@
   transition: width 0.3s ease;
 }
 
-.wu-prog-label {
-  font-size: 12px;
-  color: #888;
-}
+.wu-prog-label { font-size: 12px; color: #888; }
 
 /* ── Alerts ── */
 .wu-alert {
@@ -204,6 +193,6 @@
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
-  .wu-page { padding: 12px; }
-  .wu-parsed { flex-direction: column; align-items: flex-start; }
+  .wu-page  { padding: 12px; }
+  .wu-parsed { flex-direction: column; }
 }

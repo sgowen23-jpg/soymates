@@ -56,11 +56,11 @@ function parseFile(arrayBuffer) {
 }
 
 export default function DataUpload() {
-  const [phase,     setPhase]     = useState('idle') // idle | parsed | uploading | done | error
+  const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
   const [progress,  setProgress]  = useState(0)
-  const [result,    setResult]    = useState(null)   // { count, errors }
+  const [result,    setResult]    = useState(null)
   const [errMsg,    setErrMsg]    = useState('')
   const fileRef = useRef()
 

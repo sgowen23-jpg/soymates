@@ -32,23 +32,23 @@ const BNB_COLS = [
 ]
 
 const DIST_COLS = [
-  { src: 'RepName',            dest: 'rep_name',          parse: toStr   },
-  { src: 'Location ID',        dest: 'location_id',       parse: toInt   },
-  { src: 'Store Name',         dest: 'store_name',        parse: toStr   },
-  { src: 'State',              dest: 'state',             parse: toStr   },
-  { src: 'Banner Group',       dest: 'banner_group',      parse: toStr   },
-  { src: 'Code',               dest: 'item_code',         parse: toStr   },
-  { src: 'Name',               dest: 'item_name',         parse: toStr   },
-  { src: 'Latest Distribution',dest: 'latest_distribution',parse: toInt  },
-  { src: 'Total Gains (Gross)',dest: 'total_gains_gross', parse: toFloat },
-  { src: 'Total Losses',       dest: 'total_losses',      parse: toFloat },
-  { src: 'Total Net Gains',    dest: 'total_net_gains',   parse: toFloat },
-  { src: 'Movement Type',      dest: 'movement_type',     parse: toStr   },
+  { src: 'RepName',             dest: 'rep_name',           parse: toStr   },
+  { src: 'Location ID',         dest: 'location_id',        parse: toInt   },
+  { src: 'Store Name',          dest: 'store_name',         parse: toStr   },
+  { src: 'State',               dest: 'state',              parse: toStr   },
+  { src: 'Banner Group',        dest: 'banner_group',       parse: toStr   },
+  { src: 'Code',                dest: 'item_code',          parse: toStr   },
+  { src: 'Name',                dest: 'item_name',          parse: toStr   },
+  { src: 'Latest Distribution', dest: 'latest_distribution',parse: toInt   },
+  { src: 'Total Gains (Gross)', dest: 'total_gains_gross',  parse: toFloat },
+  { src: 'Total Losses',        dest: 'total_losses',       parse: toFloat },
+  { src: 'Total Net Gains',     dest: 'total_net_gains',    parse: toFloat },
+  { src: 'Movement Type',       dest: 'movement_type',      parse: toStr   },
 ]
 
 // ── Parser ────────────────────────────────────────────────────────────────────
 
-function parseSheet(arrayBuffer, colMap) {
+function parseExport(arrayBuffer, colMap) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
   const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'export')
   if (!sheetName) return { error: `Sheet "Export" not found. Found: ${wb.SheetNames.join(', ')}` }
@@ -75,7 +75,7 @@ function parseSheet(arrayBuffer, colMap) {
 // ── Uploader component ────────────────────────────────────────────────────────
 
 function Uploader({ label, colMap, table, deleteQuery }) {
-  const [phase,     setPhase]     = useState('idle') // idle | parsed | uploading | done | error
+  const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
   const [progress,  setProgress]  = useState(0)
@@ -95,7 +95,7 @@ function Uploader({ label, colMap, table, deleteQuery }) {
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const res = parseSheet(evt.target.result, colMap)
+      const res = parseExport(evt.target.result, colMap)
       if (res.error) { setErrMsg(res.error); setPhase('error'); return }
       if (!res.records.length) { setErrMsg('No rows found in Export sheet.'); setPhase('error'); return }
       setParseInfo(res)
@@ -114,7 +114,6 @@ function Uploader({ label, colMap, table, deleteQuery }) {
     setPhase('uploading')
     setProgress(0)
 
-    // Delete existing rows
     const { error: delErr } = await deleteQuery()
     if (delErr) {
       setErrMsg(`Delete failed: ${delErr.message}`)
@@ -122,7 +121,6 @@ function Uploader({ label, colMap, table, deleteQuery }) {
       return
     }
 
-    // Insert in chunks
     const { records } = parseInfo
     const total = records.length
     const errors = []
@@ -138,10 +136,12 @@ function Uploader({ label, colMap, table, deleteQuery }) {
     setPhase('done')
   }
 
+  const preview3 = parseInfo?.records?.slice(0, 3).map(r => r.store_name).filter(Boolean)
+
   return (
     <div className="wu-card">
       <div className="wu-card-label">{label}</div>
-      <div className="wu-card-hint">Sheet: <code>Export</code> → <code>{table}</code></div>
+      <div className="wu-card-meta">Sheet: <code>Export</code> → <code>{table}</code></div>
 
       {phase === 'idle' && (
         <div
@@ -166,8 +166,11 @@ function Uploader({ label, colMap, table, deleteQuery }) {
       {phase === 'parsed' && parseInfo && (
         <div className="wu-parsed">
           <div className="wu-parsed-info">
-            <span className="wu-file-name">{fileName}</span>
-            <span className="wu-row-count">{parseInfo.records.length.toLocaleString()} rows</span>
+            <div className="wu-file-name">{fileName}</div>
+            <div className="wu-row-count">{parseInfo.records.length.toLocaleString()} rows</div>
+            {preview3?.length > 0 && (
+              <div className="wu-preview-names">First {preview3.length}: {preview3.join(' · ')}</div>
+            )}
           </div>
           <div className="wu-actions">
             <button className="wu-btn-sec" onClick={reset}>Cancel</button>
