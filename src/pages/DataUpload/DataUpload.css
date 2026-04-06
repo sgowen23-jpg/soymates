@@ -1,307 +1,120 @@
-.upload-page {
-  padding: 20px;
-  max-width: 900px;
+.du-page {
+  padding: 24px;
+  max-width: 640px;
   margin: 0 auto;
-  height: 100%;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
-/* ── Step Progress ── */
-.upload-steps {
-  display: flex;
-  align-items: center;
-  gap: 0;
+.du-header {
+  margin-bottom: 20px;
 }
 
-.upload-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  font-size: 12px;
-  font-weight: 600;
-  color: #bbb;
-  position: relative;
-}
-
-.upload-step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: calc(100% - 90px);
-  height: 2px;
-  background: #e0e0e0;
-  left: 80px;
-}
-
-.upload-step.done::after  { background: #CC0000; }
-
-.upload-step-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  color: #999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
+.du-title {
+  font-size: 20px;
   font-weight: 700;
-  flex-shrink: 0;
-  z-index: 1;
+  color: #1a1a1a;
+  margin: 0 0 4px;
 }
 
-.upload-step.active .upload-step-dot {
-  background: #CC0000;
-  color: #fff;
+.du-sub {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
 }
-
-.upload-step.done .upload-step-dot {
-  background: #1a2b5e;
-  color: #fff;
-}
-
-.upload-step.active { color: #CC0000; }
-.upload-step.done   { color: #1a2b5e; }
 
 /* ── Card ── */
-.upload-card {
+.du-card {
   background: #fff;
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 
-.upload-card.wide {
-  max-width: 100%;
-}
-
-.upload-card.center {
-  text-align: center;
-}
-
-.upload-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 6px;
-}
-
-.upload-card-sub {
-  font-size: 13px;
-  color: #666;
-  margin: 0 0 20px;
-}
-
-/* ── Drop Zone ── */
-.drop-zone {
+/* ── Drop zone ── */
+.du-drop {
   border: 2px dashed #ddd;
   border-radius: 10px;
-  padding: 40px 20px;
+  padding: 48px 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.15s;
-  margin-bottom: 20px;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.drop-zone:hover {
+.du-drop:hover {
   border-color: #CC0000;
-  background: #fff5f5;
+  background: #fff8f8;
 }
 
-.drop-icon {
-  font-size: 2.5rem;
+.du-drop-icon {
+  font-size: 2.2rem;
   margin-bottom: 10px;
 }
 
-.drop-main {
-  font-size: 15px;
+.du-drop-main {
+  font-size: 14px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 4px;
+  margin-bottom: 6px;
 }
 
-.drop-sub {
-  font-size: 13px;
+.du-drop-hint {
+  font-size: 12px;
   color: #999;
-  margin: 0;
 }
 
-/* ── SQL Hint ── */
-.upload-sql-hint {
-  background: #f8f8f8;
-  border: 1px solid #e0e0e0;
+.du-drop-hint code {
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ── Alerts ── */
+.du-alert {
   border-radius: 8px;
   padding: 14px 16px;
-  font-size: 12px;
-  color: #555;
-}
-
-.upload-sql-hint pre {
-  margin: 8px 0 0;
-  background: #1a1a1a;
-  color: #a8ff78;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  overflow-x: auto;
-  line-height: 1.6;
-}
-
-/* ── Mapping Table ── */
-.mapping-table-wrap {
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.mapping-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
 }
 
-.mapping-table th {
-  text-align: left;
-  padding: 8px 12px;
-  background: #f5f5f5;
+.du-alert-info    { background: #f0f4ff; border: 1px solid #c7d5f8; color: #1a2b5e; }
+.du-alert-error   { background: #fff0f0; border: 1px solid #ffd0d0; color: #CC0000; }
+.du-alert-success { background: #f0fff4; border: 1px solid #b6e8c8; color: #1a6636; }
+
+.du-warn {
+  color: #b45309;
+  font-size: 12px;
+}
+
+.du-preview-names {
+  font-size: 12px;
   color: #555;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid #e0e0e0;
+  margin-top: 2px;
 }
 
-.mapping-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #333;
-}
-
-.mapping-table tr:last-child td {
-  border-bottom: none;
-}
-
-.required-badge {
-  font-size: 10px;
-  background: #fff0f0;
-  color: #CC0000;
-  border: 1px solid #ffcccc;
-  border-radius: 4px;
-  padding: 1px 5px;
-  margin-left: 6px;
-  font-weight: 600;
-}
-
-.map-select {
-  padding: 5px 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+.du-link {
+  background: none;
+  border: none;
+  padding: 0;
   font-size: 12px;
-  color: #333;
-  background: #fff;
-  outline: none;
-  min-width: 160px;
-}
-
-.map-select:focus {
-  border-color: #CC0000;
-}
-
-.sample-val {
-  color: #999;
-  font-size: 12px;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Preview Table ── */
-.preview-table-wrap {
-  overflow-x: auto;
-  margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-
-.preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.preview-table th {
-  background: #1a2b5e;
-  color: #fff;
-  padding: 8px 12px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.preview-table td {
-  padding: 7px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #333;
-  white-space: nowrap;
-}
-
-.preview-table tr:last-child td {
-  border-bottom: none;
-}
-
-.preview-table tr:nth-child(even) td {
-  background: #fafafa;
-}
-
-/* ── Progress ── */
-.progress-wrap {
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 12px;
-  position: relative;
-}
-
-.progress-wrap.done {
-  margin-top: 16px;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #CC0000;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.progress-label {
-  position: absolute;
-  right: 0;
-  top: -18px;
-  font-size: 11px;
-  color: #999;
+  cursor: pointer;
+  text-decoration: underline;
+  color: inherit;
+  margin-top: 6px;
+  align-self: flex-start;
 }
 
 /* ── Actions ── */
-.upload-actions {
+.du-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
 
-.upload-actions.center {
-  justify-content: center;
-}
-
-.btn-primary {
+.du-btn-pri {
   padding: 9px 20px;
   background: #CC0000;
   color: #fff;
@@ -313,16 +126,10 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #a30000;
-}
+.du-btn-pri:hover { background: #a30000; }
+.du-btn-pri:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
+.du-btn-sec {
   padding: 9px 20px;
   background: #f5f5f5;
   color: #555;
@@ -331,25 +138,33 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s;
 }
 
-.btn-secondary:hover {
-  background: #ebebeb;
+.du-btn-sec:hover { background: #ebebeb; }
+
+/* ── Progress ── */
+.du-uploading {
+  text-align: center;
+  padding: 8px 0;
 }
 
-/* ── Done ── */
-.done-icon {
-  font-size: 3rem;
-  margin-bottom: 12px;
+.du-prog-wrap {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
 }
 
-/* ── Mobile ── */
-@media (max-width: 600px) {
-  .upload-page { padding: 12px; }
-  .upload-step span { display: none; }
-  .upload-step-dot { width: 24px; height: 24px; font-size: 11px; }
-  .upload-card { padding: 16px; }
-  .mapping-table th:last-child,
-  .mapping-table td:last-child { display: none; }
+.du-prog-bar {
+  height: 100%;
+  background: #CC0000;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.du-prog-label {
+  font-size: 12px;
+  color: #888;
 }

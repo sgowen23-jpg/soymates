@@ -1,287 +1,209 @@
-/* ── Page ──────────────────────────────────────────────────────────────────── */
 .wu-page {
-  padding: 20px;
+  padding: 24px;
   max-width: 960px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-height: 100%;
-  box-sizing: border-box;
 }
 
-.wu-page-header { display: flex; flex-direction: column; gap: 6px; }
-.wu-page-title {
-  font-size: 22px;
+.wu-header {
+  margin-bottom: 24px;
+}
+
+.wu-title {
+  font-size: 20px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0;
+  margin: 0 0 4px;
 }
-.wu-page-sub {
+
+.wu-sub {
   font-size: 13px;
-  color: #666;
+  color: #888;
   margin: 0;
 }
 
-/* ── Uploader cards ─────────────────────────────────────────────────────────── */
-.wu-uploaders {
+/* ── Grid ── */
+.wu-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* ── Card ── */
 .wu-card {
   background: #fff;
   border-radius: 12px;
   padding: 20px 24px;
   box-shadow: 0 1px 6px rgba(0,0,0,0.07);
-  border: 1.5px solid #e8e8e8;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
-.wu-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.wu-icon {
-  font-size: 1.8rem;
-  line-height: 1;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.wu-card-title {
+.wu-card-label {
   font-size: 15px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0 0 3px;
+  margin-bottom: 4px;
 }
 
-.wu-card-desc {
+.wu-card-hint {
   font-size: 12px;
-  color: #777;
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* ── Sheet spec badge ───────────────────────────────────────────────────────── */
-.wu-sheet-spec {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-}
-.wu-spec-label {
   color: #999;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.wu-spec-code {
-  background: #f0f4ff;
-  color: #1a2b5e;
-  border: 1px solid #d0d8f0;
-  border-radius: 5px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-family: monospace;
+  margin-bottom: 14px;
 }
 
-/* ── Drop zone ──────────────────────────────────────────────────────────────── */
+.wu-card-hint code {
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ── Drop zone ── */
 .wu-drop {
   border: 2px dashed #ddd;
-  border-radius: 10px;
-  padding: 24px 20px;
-  text-align: center;
-  cursor: pointer;
+  border-radius: 8px;
+  padding: 18px 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  transition: all 0.15s;
-  background: #fafafa;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .wu-drop:hover {
   border-color: #CC0000;
-  background: #fff5f5;
+  background: #fff8f8;
 }
 
-.wu-drop-icon { font-size: 1.3rem; }
-.wu-drop-text { font-size: 13px; color: #666; font-weight: 500; }
+.wu-drop-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
 
-/* ── Alerts ─────────────────────────────────────────────────────────────────── */
-.wu-alert {
+.wu-drop-text {
   font-size: 13px;
-  border-radius: 8px;
-  padding: 12px 14px;
-  line-height: 1.6;
+  color: #666;
 }
-.wu-alert code {
-  background: rgba(0,0,0,0.07);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-size: 11px;
-}
-.wu-alert-info    { background: #eef4ff; border: 1px solid #c5d8ff; color: #1a2b5e; }
-.wu-alert-success { background: #edfaf1; border: 1px solid #b2dfc0; color: #1a5e2a; }
-.wu-alert-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #8b0000; }
 
-.wu-warn { color: #b35c00; }
-.wu-link-btn {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid currentColor;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  color: inherit;
-  font-weight: 600;
-}
-.wu-link-btn:hover { opacity: 0.7; }
-
-/* ── Preview ────────────────────────────────────────────────────────────────── */
-.wu-preview-wrap {
+/* ── Parsed row ── */
+.wu-parsed {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.wu-preview-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+
+.wu-parsed-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  min-width: 0;
 }
-.wu-preview-scroll {
-  overflow-x: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-.wu-preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-.wu-preview-table th {
-  background: #1a2b5e;
-  color: #fff;
-  padding: 6px 10px;
-  text-align: left;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.wu-preview-table td {
-  padding: 5px 10px;
-  border-bottom: 1px solid #f0f0f0;
+
+.wu-file-name {
   color: #333;
+  font-weight: 600;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wu-preview-table tr:last-child td { border-bottom: none; }
-.wu-preview-table tr:nth-child(even) td { background: #fafafa; }
-.wu-null { color: #ccc; font-style: italic; }
 
-/* ── Upload progress ────────────────────────────────────────────────────────── */
-.wu-uploading {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.wu-row-count {
+  color: #888;
+  white-space: nowrap;
 }
-.wu-progress-wrap {
-  height: 8px;
+
+/* ── Actions ── */
+.wu-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wu-btn-pri {
+  padding: 8px 18px;
+  background: #CC0000;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.wu-btn-pri:hover { background: #a30000; }
+.wu-btn-pri:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.wu-btn-sec {
+  padding: 8px 14px;
+  background: #f5f5f5;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wu-btn-sec:hover { background: #ebebeb; }
+
+/* ── Progress ── */
+.wu-uploading {
+  padding: 2px 0;
+}
+
+.wu-prog-wrap {
+  height: 7px;
   background: #e0e0e0;
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 6px;
 }
-.wu-progress-bar {
+
+.wu-prog-bar {
   height: 100%;
   background: #CC0000;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
-.wu-progress-label {
+
+.wu-prog-label {
   font-size: 12px;
   color: #888;
-  text-align: right;
 }
 
-/* ── Actions ────────────────────────────────────────────────────────────────── */
-.wu-actions {
+/* ── Alerts ── */
+.wu-alert {
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
   display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.wu-btn-primary {
-  padding: 9px 18px;
-  background: #CC0000;
-  color: #fff;
+.wu-alert-error   { background: #fff0f0; border: 1px solid #ffd0d0; color: #CC0000; }
+.wu-alert-success { background: #f0fff4; border: 1px solid #b6e8c8; color: #1a6636; }
+
+.wu-link {
+  background: none;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 0;
+  font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s;
-}
-.wu-btn-primary:hover:not(:disabled) { background: #a30000; }
-.wu-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.wu-btn-secondary {
-  padding: 9px 18px;
-  background: #f5f5f5;
-  color: #555;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.wu-btn-secondary:hover { background: #ebebeb; }
-
-/* ── SQL Setup block ────────────────────────────────────────────────────────── */
-.wu-sql-block {
-  background: #fff;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.wu-sql-toggle {
-  width: 100%;
-  text-align: left;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a2b5e;
-  transition: background 0.15s;
-}
-.wu-sql-toggle:hover { background: #eef2ff; }
-.wu-sql-pre {
-  margin: 0;
-  padding: 16px;
-  background: #1a1a1a;
-  color: #a8ff78;
-  font-size: 11px;
-  line-height: 1.7;
-  overflow-x: auto;
-  white-space: pre;
-  font-family: 'Consolas', 'Courier New', monospace;
-  border-top: 1px solid #333;
+  text-decoration: underline;
+  color: inherit;
+  margin-top: 4px;
+  align-self: flex-start;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* ── Mobile ── */
+@media (max-width: 600px) {
   .wu-page { padding: 12px; }
-  .wu-card { padding: 14px 16px; }
-  .wu-drop { flex-direction: column; gap: 6px; }
-  .wu-btn-primary, .wu-btn-secondary { font-size: 12px; padding: 8px 14px; }
+  .wu-parsed { flex-direction: column; align-items: flex-start; }
 }
