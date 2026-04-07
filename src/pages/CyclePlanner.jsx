@@ -820,13 +820,7 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
 
   useEffect(() => {
     setC1Loading(true)
-    const cols = [
-      'store_id','store_name','strategy_c4','total_ranging','focus_store','location_type',
-      'focus_store_status','call_fqy_target','cycle_1_calls',
-      'first_order_gsv','total_gsv_opportunity','annual_gsv_opportunity',
-      'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap','total_ranging_gap',
-      'planogram_to_do','planogram_completed','ofl_secured','ofl_secured_ctns','ofl_gsv_value',
-    ].join(',')
+    const cols = '*'
     async function fetchPs() {
       let all = [], from = 0
       while (true) {
