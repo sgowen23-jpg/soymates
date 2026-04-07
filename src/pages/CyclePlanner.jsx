@@ -829,7 +829,8 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
         'planogram_to_do','planogram_completed','ofl_secured','ofl_secured_ctns','ofl_gsv_value',
       ].join(','))
       .eq('cycle', 1)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        console.log('psC1 rows:', data?.length, 'first:', data?.[0], 'error:', error)
         const map = {}
         ;(data || []).forEach(r => { map[String(r.store_id)] = r })
         setPsC1(map)
