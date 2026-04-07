@@ -869,6 +869,71 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
     return <div className="cp-loading"><div className="cp-spinner" /><p>Loading cycle view…</p></div>
   }
 
+  // ── Export Excel ─────────────────────────────────────────────────────────────
+  function exportExcel() {
+    const repStates = REP_STATES[rep] || []
+    const stateLabel = repStates.join(' / ').toUpperCase() || 'ALL STATES'
+    const title = `CYCLE ${cycle} — 12 WEEK PLANNER — ${rep.toUpperCase()} — ${stateLabel}`
+
+    const headers = [
+      'WEEK', 'DAY', 'STORE',
+      'Dist %',
+      'UHT Core Gap', 'Non-Core Gap', 'Chilled Gap', 'RTD Gap', 'Yoghurt Gap',
+      'Total Ranging Gap',
+      'First Order GSV', 'Annual $ Opp',
+      'SOS',
+      'Planogram',
+      'Prev OFL (CTNS)', 'OFL Opp CTNS',
+    ]
+
+    const rows = []
+    weeks.forEach((week, wi) => {
+      week.forEach(date => {
+        const ds      = toDS(date)
+        const isLeave = leaveDates.has(ds)
+        if (isLeave) return
+        const filled = Array.from({ length: 8 }, (_, i) => slots[`${ds}_${i}`]).filter(Boolean)
+        if (!filled.length) return
+        const dayLabel = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+        filled.forEach(sid => {
+          const s    = psC1[sid] || {}
+          const name = s.store_name || STORES.find(st => st.id === sid)?.name || `Store ${sid}`
+          rows.push([
+            `Week ${wi + 1}`,
+            dayLabel,
+            name,
+            s.distribution         ?? null,
+            s.uht_core_gap         ?? null,
+            s.non_core_gap         ?? null,
+            s.chilled_gap          ?? null,
+            s.rtd_gap              ?? null,
+            s.yoghurt_gap          ?? null,
+            s.total_ranging_gap    ?? null,
+            s.first_order_gsv      ?? null,
+            s.annual_gsv_opportunity ?? null,
+            s.uht_sos              ?? null,
+            s.planogram_to_do      ?? null,
+            s.ofl_secured_ctns     ?? null,
+            s.ofl_gsv_value        ?? null,
+          ])
+        })
+      })
+    })
+
+    const wsData = [[title], headers, ...rows]
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
+    ws['!cols'] = [
+      { wch: 8 },  { wch: 14 }, { wch: 34 }, { wch: 8 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+      { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 8 },  { wch: 12 }, { wch: 14 }, { wch: 14 },
+    ]
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, `Cycle ${cycle}`)
+    XLSX.writeFile(wb, `CyclePlan_${rep.replace(/\s+/g, '')}_Cycle${cycle}.xlsx`)
+  }
+
   return (
     <div className="cv-wrap">
       {/* Summary bar */}
@@ -877,6 +942,7 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
           <strong>{totalPlanned}</strong> unique stores planned — Cycle {cycle}
         </span>
         <span className="cv-summary-item cv-rep-label">Rep: {rep}</span>
+        <button className="cp-export-btn" onClick={exportExcel} disabled={c1Loading}>⬇ Export Excel</button>
         <span className="cv-summary-item cv-ro-badge">Read-only view</span>
       </div>
 
@@ -1443,82 +1509,6 @@ export default function CyclePlanner() {
     setTimeout(() => { win.focus(); win.print() }, 400)
   }
 
-  // ── Export Excel ─────────────────────────────────────────────────────────────
-  function exportExcel() {
-    const repStates = REP_STATES[rep] || []
-    const stateLabel = repStates.join(' / ').toUpperCase() || 'ALL STATES'
-    const title = `CYCLE ${cycle} — 12 WEEK PLANNER — ${rep.toUpperCase()} — ${stateLabel}`
-
-    const headers = [
-      'WEEK', 'DAY', 'STORE',
-      'Dist %',
-      'UHT Core Gap', 'Non-Core Gap', 'Chilled Gap', 'RTD Gap', 'Yoghurt Gap',
-      'Total Ranging Gap',
-      'First Order GSV', 'Annual $ Opp',
-      'SOS',
-      'Planogram',
-      'Prev OFL (CTNS)', 'OFL Opp CTNS',
-    ]
-
-    const rows = []
-    weeks.forEach((week, wi) => {
-      week.forEach(date => {
-        const ds      = toDS(date)
-        const isLeave = leaveDates.has(ds)
-        if (isLeave) return
-        const filled = Array.from({ length: 8 }, (_, i) => slots[`${ds}_${i}`]).filter(Boolean)
-        if (!filled.length) return
-        const dayLabel = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-        filled.forEach(sid => {
-          const s    = psC1[sid] || {}
-          const name = s.store_name || STORES.find(st => st.id === sid)?.name || `Store ${sid}`
-          rows.push([
-            `Week ${wi + 1}`,
-            dayLabel,
-            name,
-            s.distribution   ?? null,
-            s.uht_core_gap   ?? null,
-            s.non_core_gap   ?? null,
-            s.chilled_gap    ?? null,
-            s.rtd_gap        ?? null,
-            s.yoghurt_gap    ?? null,
-            s.total_ranging_gap    ?? null,
-            s.first_order_gsv      ?? null,
-            s.annual_gsv_opportunity ?? null,
-            s.uht_sos        ?? null,
-            s.planogram_to_do ?? null,
-            s.ofl_secured_ctns ?? null,
-            s.ofl_gsv_value  ?? null,
-          ])
-        })
-      })
-    })
-
-    const wsData = [[title], headers, ...rows]
-    const ws = XLSX.utils.aoa_to_sheet(wsData)
-
-    // Column widths
-    ws['!cols'] = [
-      { wch: 8 },  // WEEK
-      { wch: 14 }, // DAY
-      { wch: 34 }, // STORE
-      { wch: 8 },  // Dist %
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, // gaps
-      { wch: 14 }, // Total Ranging Gap
-      { wch: 14 }, { wch: 12 }, // GSV
-      { wch: 8 },  // SOS
-      { wch: 12 }, // Planogram
-      { wch: 14 }, { wch: 14 }, // OFL
-    ]
-
-    // Merge title row across all columns
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }]
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, `Cycle ${cycle}`)
-    XLSX.writeFile(wb, `CyclePlan_${rep.replace(/\s+/g, '')}_Cycle${cycle}.xlsx`)
-  }
-
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="cp-page">
@@ -1529,7 +1519,6 @@ export default function CyclePlanner() {
           <h1 className="cp-title">Cycle Planner</h1>
           <div className="cp-header-actions">
             {saving && <span className="cp-autosave">● Saving…</span>}
-            <button className="cp-export-btn" onClick={exportExcel} disabled={loading}>⬇ Export Excel</button>
             <button className="cp-export-btn" onClick={exportPDF} disabled={loading}>⬇ Export PDF</button>
           </div>
         </div>
