@@ -110,7 +110,7 @@ export default function ByProductView({ state, rep }) {
       while (true) {
         let q = supabase
           .from('store_distribution')
-          .select('store_id, store_name, state, mso, rep_name, product, ranging')
+          .select('location_id, store_name, state, banner_group, rep_name, item_name, latest_distribution')
           .range(from, from + 999)
         if (state !== 'All') q = q.eq('state', state)
         if (rep   !== 'All') q = q.eq('rep_name', rep)
@@ -131,7 +131,7 @@ export default function ByProductView({ state, rep }) {
     const seen = new Set()
     const list = []
     allData.forEach(r => {
-      if (!seen.has(r.product)) { seen.add(r.product); list.push(r.product) }
+      if (!seen.has(r.item_name)) { seen.add(r.item_name); list.push(r.item_name) }
     })
     return list
   }, [allData])
@@ -151,8 +151,8 @@ export default function ByProductView({ state, rep }) {
   const storeMap = useMemo(() => {
     const map = {}
     allData.forEach(r => {
-      if (!map[r.store_id]) {
-        map[r.store_id] = { store_id: r.store_id, store_name: r.store_name, state: r.state, mso: r.mso, rep_name: r.rep_name }
+      if (!map[r.location_id]) {
+        map[r.location_id] = { store_id: r.location_id, store_name: r.store_name, state: r.state, mso: r.banner_group, rep_name: r.rep_name }
       }
     })
     return map
@@ -162,8 +162,8 @@ export default function ByProductView({ state, rep }) {
   const rangingMap = useMemo(() => {
     const map = {}
     allData.forEach(r => {
-      if (!map[r.store_id]) map[r.store_id] = {}
-      map[r.store_id][r.product] = !!r.ranging
+      if (!map[r.location_id]) map[r.location_id] = {}
+      map[r.location_id][r.item_name] = !!r.latest_distribution
     })
     return map
   }, [allData])
