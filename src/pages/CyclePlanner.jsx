@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import * as XLSX from 'xlsx'
+import XLSX from 'xlsx-js-style'
 import { supabase } from '../lib/supabase'
 import { STORES } from '../data/stores'
 import './CyclePlanner.css'
@@ -871,64 +871,146 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
 
   // ── Export Excel ─────────────────────────────────────────────────────────────
   function exportExcel() {
-    const repStates = REP_STATES[rep] || []
+    const repStates  = REP_STATES[rep] || []
     const stateLabel = repStates.join(' / ').toUpperCase() || 'ALL STATES'
-    const title = `CYCLE ${cycle} — 12 WEEK PLANNER — ${rep.toUpperCase()} — ${stateLabel}`
+    const title      = `CYCLE ${cycle} — 12 WEEK PLANNER — ${rep.toUpperCase()} — ${stateLabel}`
 
-    const headers = [
+    const COL_HDRS = [
       'WEEK', 'DAY', 'STORE',
-      'Dist %',
-      'UHT Core Gap', 'Non-Core Gap', 'Chilled Gap', 'RTD Gap', 'Yoghurt Gap',
-      'Total Ranging Gap',
-      'First Order GSV', 'Annual $ Opp',
-      'SOS',
-      'Planogram',
+      'Dist %', 'UHT Core Gap', 'Non-Core Gap', 'Chilled Gap', 'RTD Gap', 'Yoghurt Gap',
+      'Total Ranging Gap', 'First Order GSV', 'Annual $ Opp', 'SOS', 'Planogram',
       'Prev OFL (CTNS)', 'OFL Opp CTNS',
     ]
+    const NC = COL_HDRS.length  // 16 cols → A–P
 
+    const colLetter = c => String.fromCharCode(65 + c)
+
+    // ── Styles ────────────────────────────────────────────────────────────────
+    const titleSty = {
+      font:      { bold: true, sz: 13, color: { rgb: 'FFFFFF' } },
+      fill:      { patternType: 'solid', fgColor: { rgb: '1A2B5E' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+    }
+    const hdrSty = {
+      font:      { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+      fill:      { patternType: 'solid', fgColor: { rgb: 'CC0000' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    }
+    const weekSty = {
+      font:      { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+      fill:      { patternType: 'solid', fgColor: { rgb: '1A2B5E' } },
+      alignment: { vertical: 'center' },
+    }
+    const daySty = {
+      font:      { bold: true, sz: 10, color: { rgb: '1A1A1A' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+    }
+    const storeSty = {
+      font:      { bold: true, sz: 10, color: { rgb: '1A2B5E' } },
+      alignment: { vertical: 'center' },
+    }
+    const numSty = {
+      font:      { sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+    }
+    const blankSty = { fill: { patternType: 'solid', fgColor: { rgb: 'F5F5F5' } } }
+
+    // ── Build row descriptors ─────────────────────────────────────────────────
+    // Each: { vals[], type: 'title'|'header'|'week'|'data'|'blank', meta }
     const rows = []
+    rows.push({ type: 'title',  vals: [title,   ...Array(NC - 1).fill('')] })
+    rows.push({ type: 'header', vals: COL_HDRS })
+
     weeks.forEach((week, wi) => {
+      rows.push({ type: 'week', vals: [`WEEK ${wi + 1}`, ...Array(NC - 1).fill('')] })
+
       week.forEach(date => {
         const ds      = toDS(date)
         const isLeave = leaveDates.has(ds)
         if (isLeave) return
         const filled = Array.from({ length: 8 }, (_, i) => slots[`${ds}_${i}`]).filter(Boolean)
         if (!filled.length) return
-        const dayLabel = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-        filled.forEach(sid => {
+        const dayLabel = date.toLocaleDateString('en-AU', { weekday: 'short' })
+
+        filled.forEach((sid, idx) => {
           const s    = psC1[sid] || {}
           const name = s.store_name || STORES.find(st => st.id === sid)?.name || `Store ${sid}`
-          rows.push([
-            `Week ${wi + 1}`,
-            dayLabel,
-            name,
-            s.distribution         ?? null,
-            s.uht_core_gap         ?? null,
-            s.non_core_gap         ?? null,
-            s.chilled_gap          ?? null,
-            s.rtd_gap              ?? null,
-            s.yoghurt_gap          ?? null,
-            s.total_ranging_gap    ?? null,
-            s.first_order_gsv      ?? null,
-            s.annual_gsv_opportunity ?? null,
-            s.uht_sos              ?? null,
-            s.planogram_to_do      ?? null,
-            s.ofl_secured_ctns     ?? null,
-            s.ofl_gsv_value        ?? null,
-          ])
+          rows.push({
+            type: 'data',
+            firstInDay: idx === 0,
+            vals: [
+              idx === 0 ? `Week ${wi + 1}` : '',
+              idx === 0 ? dayLabel : '',
+              name,
+              s.distribution           ?? null,
+              s.uht_core_gap           ?? null,
+              s.non_core_gap           ?? null,
+              s.chilled_gap            ?? null,
+              s.rtd_gap                ?? null,
+              s.yoghurt_gap            ?? null,
+              s.total_ranging_gap      ?? null,
+              s.first_order_gsv        ?? null,
+              s.annual_gsv_opportunity ?? null,
+              s.uht_sos                ?? null,
+              s.planogram_to_do        ?? null,
+              s.ofl_secured_ctns       ?? null,
+              s.ofl_gsv_value          ?? null,
+            ],
+          })
         })
       })
+
+      rows.push({ type: 'blank', vals: Array(NC).fill('') })
     })
 
-    const wsData = [[title], headers, ...rows]
-    const ws = XLSX.utils.aoa_to_sheet(wsData)
-    ws['!cols'] = [
-      { wch: 8 },  { wch: 14 }, { wch: 34 }, { wch: 8 },
+    // ── Write cells ───────────────────────────────────────────────────────────
+    const ws      = {}
+    const merges  = []
+    const heights = []
+
+    rows.forEach((row, ri) => {
+      heights.push({ hpt: row.type === 'title' ? 28 : row.type === 'blank' ? 6 : 18 })
+
+      row.vals.forEach((val, ci) => {
+        const ref  = `${colLetter(ci)}${ri + 1}`
+        const cell = (val === null || val === undefined)
+          ? { v: '', t: 's' }
+          : typeof val === 'number'
+            ? { v: val, t: 'n' }
+            : { v: String(val), t: 's' }
+
+        switch (row.type) {
+          case 'title':  cell.s = titleSty; break
+          case 'header': cell.s = hdrSty;   break
+          case 'week':   cell.s = weekSty;  break
+          case 'blank':  cell.s = blankSty; break
+          case 'data':
+            if      (ci === 0) cell.s = { font: { sz: 9, color: { rgb: '888888' } }, alignment: { horizontal: 'center' } }
+            else if (ci === 1) cell.s = daySty
+            else if (ci === 2) cell.s = storeSty
+            else               cell.s = numSty
+            break
+          default: break
+        }
+
+        ws[ref] = cell
+      })
+
+      if (row.type === 'title' || row.type === 'week') {
+        merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: NC - 1 } })
+      }
+    })
+
+    ws['!ref']   = `A1:${colLetter(NC - 1)}${rows.length}`
+    ws['!merges'] = merges
+    ws['!rows']   = heights
+    ws['!cols']   = [
+      { wch: 8 },  { wch: 10 }, { wch: 34 }, { wch: 8 },
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
       { wch: 14 }, { wch: 14 }, { wch: 12 },
       { wch: 8 },  { wch: 12 }, { wch: 14 }, { wch: 14 },
     ]
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }]
+
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, `Cycle ${cycle}`)
     XLSX.writeFile(wb, `CyclePlan_${rep.replace(/\s+/g, '')}_Cycle${cycle}.xlsx`)
