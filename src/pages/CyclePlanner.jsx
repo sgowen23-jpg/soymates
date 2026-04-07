@@ -841,6 +841,8 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
       }
       const map = {}
       all.forEach(r => { map[String(r.store_id)] = r })
+      const psKeys = Object.keys(map).slice(0, 3)
+      console.log('psC1 built:', all.length, 'rows. Sample keys:', psKeys, 'Sample entry:', map[psKeys[0]])
       setPsC1(map)
       setC1Loading(false)
     }
@@ -930,6 +932,7 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
                           <p className="cv-empty">No stores</p>
                         )}
                         {storeIds.map((storeId, slotIdx) => {
+                          if (slotIdx === 0) console.log('slot storeId:', storeId, 'psC1 hit:', !!psC1[storeId], 'psC1 sample key:', Object.keys(psC1)[0])
                           const s      = psC1[storeId] || {}
                           const name   = s.store_name || STORES.find(st => st.id === storeId)?.name || `Store ${storeId}`
                           const meta   = STRATEGY_META[s.strategy_c4] || {}
