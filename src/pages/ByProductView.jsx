@@ -4,6 +4,7 @@ import './ByProductView.css'
 
 // Segment classification from product name
 function getSegment(p) {
+  if (!p)                           return 'Other'
   if (/ygt/i.test(p))              return 'Yoghurt'
   if (/frsh|esl/i.test(p))         return 'Fresh'
   if (p.trimStart().startsWith('*') && /uht/i.test(p)) return 'UHT Core'
@@ -131,7 +132,7 @@ export default function ByProductView({ state, rep }) {
     const seen = new Set()
     const list = []
     allData.forEach(r => {
-      if (!seen.has(r.item_name)) { seen.add(r.item_name); list.push(r.item_name) }
+      if (r.item_name && !seen.has(r.item_name)) { seen.add(r.item_name); list.push(r.item_name) }
     })
     return list
   }, [allData])
