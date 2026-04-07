@@ -820,23 +820,32 @@ function CycleViewTab({ rep, cycle, slots, weeks, leaveDates, loading }) {
 
   useEffect(() => {
     setC1Loading(true)
-    supabase.from('perfect_store')
-      .select([
-        'store_id','store_name','strategy_c4','total_ranging','focus_store','location_type',
-        'focus_store_status','call_fqy_target','cycle_1_calls',
-        'first_order_gsv','total_gsv_opportunity','annual_gsv_opportunity',
-        'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap','total_ranging_gap',
-        'planogram_to_do','planogram_completed','ofl_secured','ofl_secured_ctns','ofl_gsv_value',
-      ].join(','))
-      .eq('cycle', 1)
-      .then(({ data, error }) => {
-        console.log('psC1 rows:', data?.length, 'first:', data?.[0], 'error:', error)
-        const map = {}
-        ;(data || []).forEach(r => { map[String(r.store_id)] = r })
-        setPsC1(map)
-        setC1Loading(false)
-      })
-  }, [])
+    const cols = [
+      'store_id','store_name','strategy_c4','total_ranging','focus_store','location_type',
+      'focus_store_status','call_fqy_target','cycle_1_calls',
+      'first_order_gsv','total_gsv_opportunity','annual_gsv_opportunity',
+      'uht_core_gap','non_core_gap','chilled_gap','rtd_gap','yoghurt_gap','total_ranging_gap',
+      'planogram_to_do','planogram_completed','ofl_secured','ofl_secured_ctns','ofl_gsv_value',
+    ].join(',')
+    async function fetchPs() {
+      let all = [], from = 0
+      while (true) {
+        const { data, error } = await supabase.from('perfect_store')
+          .select(cols)
+          .eq('cycle', cycle)
+          .range(from, from + 499)
+        if (error || !data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 500) break
+        from += 500
+      }
+      const map = {}
+      all.forEach(r => { map[String(r.store_id)] = r })
+      setPsC1(map)
+      setC1Loading(false)
+    }
+    fetchPs()
+  }, [cycle])
 
   // Count unique planned stores for summary bar
   const totalPlanned = useMemo(() => {
