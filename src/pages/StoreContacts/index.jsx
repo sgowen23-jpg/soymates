@@ -29,8 +29,20 @@ function getExt(name) {
 
 export default function StoreContacts() {
   const { session } = useAuth()
-  const repName = session?.user?.user_metadata?.rep_name ?? null
-  const isAdmin = session?.user?.user_metadata?.is_admin ?? false
+  const [userProfile, setUserProfile] = useState(null)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    supabase
+      .from('rep_profiles')
+      .select('rep_name, state, is_admin')
+      .eq('user_id', session.user.id)
+      .single()
+      .then(({ data }) => setUserProfile(data))
+  }, [session])
+
+  const repName = userProfile?.rep_name ?? null
+  const isAdmin = userProfile?.is_admin ?? false
 
   const [tab, setTab] = useState('contacts')
 
@@ -122,7 +134,7 @@ export default function StoreContacts() {
 
   const allVisibleSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id))
   const selectedContacts   = contacts.filter(c => selected.has(c.id))
-  const selectedEmails     = selectedContacts.filter(c => c.email).map(c => c.email)
+  const selectedEmails     = selectedContacts.filter(c => c.contact_email).map(c => c.contact_email)
 
   // ─── Attachment helpers ───────────────────────────────────────────────────────
   function toggleAttachment(name) {
@@ -316,13 +328,13 @@ export default function StoreContacts() {
                           : '—'}
                       </td>
                       <td>
-                        {c.phone
-                          ? <a href={`tel:${c.phone}`} className="sc-link">{c.phone}</a>
+                        {c.contact_phone
+                          ? <a href={`tel:${c.contact_phone}`} className="sc-link">{c.contact_phone}</a>
                           : '—'}
                       </td>
                       <td>
-                        {c.email
-                          ? <a href={`mailto:${c.email}`} className="sc-link">{c.email}</a>
+                        {c.contact_email
+                          ? <a href={`mailto:${c.contact_email}`} className="sc-link">{c.contact_email}</a>
                           : '—'}
                       </td>
                     </tr>
