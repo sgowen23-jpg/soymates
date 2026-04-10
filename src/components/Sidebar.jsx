@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { label: 'Home', icon: '🏠' },
   { label: 'Store Map', icon: '🗺️' },
   { label: 'Distribution', icon: '📦' },
+  { label: 'Store Contacts', icon: '📇' },
   { label: 'Targets', icon: '🎯' },
   { label: 'MSO Pipeline', icon: '📋' },
   { label: 'Perfect Store', icon: '⭐' },

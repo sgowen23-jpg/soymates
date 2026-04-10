@@ -15,7 +15,8 @@ const Targets      = lazy(() => import('./Targets'))
 const MSOPipeline  = lazy(() => import('./MSOPipeline'))
 const PerfectStore = lazy(() => import('./PerfectStore'))
 const CyclePlanner = lazy(() => import('./CyclePlanner'))
-const Promotions   = lazy(() => import('./Promotions'))
+const Promotions      = lazy(() => import('./Promotions'))
+const StoreContacts   = lazy(() => import('./StoreContacts'))
 
 function PageSpinner() {
   return (
@@ -63,7 +64,8 @@ export default function Dashboard() {
         <Suspense fallback={<PageSpinner />}>
           {activePage === 'Home'          && <Home onNavigate={handleNavigate} />}
           {activePage === 'Store Map'     && <StoreMap />}
-          {activePage === 'Distribution'  && <Distribution />}
+          {activePage === 'Distribution'   && <Distribution />}
+          {activePage === 'Store Contacts' && <StoreContacts />}
           {activePage === 'Tools'         && <Tools />}
           {activePage === 'Admin'         && <Admin />}
           {activePage === 'Data Upload'    && <DataUpload />}

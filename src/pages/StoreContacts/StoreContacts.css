@@ -1,0 +1,523 @@
+/* ── StoreContacts page ──────────────────────────────────────────────────────── */
+
+.sc-page {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────────── */
+
+.sc-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e0e0e0;
+  background: #fff;
+  padding: 0 16px;
+}
+
+.sc-tab {
+  position: relative;
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-tab:hover {
+  color: #c0392b;
+}
+
+.sc-tab.active {
+  color: #c0392b;
+  border-bottom-color: #c0392b;
+  font-weight: 600;
+}
+
+.sc-tab-badge {
+  background: #c0392b;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Filter bar ──────────────────────────────────────────────────────────────── */
+
+.sc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sc-universe-toggle {
+  display: flex;
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sc-utbtn {
+  padding: 7px 14px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #c0392b;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.sc-utbtn:first-child {
+  border-right: 1px solid #c0392b;
+}
+
+.sc-utbtn.active {
+  background: #c0392b;
+  color: #fff;
+}
+
+.sc-select {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.sc-select:focus {
+  outline: none;
+  border-color: #c0392b;
+}
+
+.sc-search {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #333;
+  min-width: 200px;
+  flex: 1;
+}
+
+.sc-search:focus {
+  outline: none;
+  border-color: #c0392b;
+}
+
+/* ── Selection bar ───────────────────────────────────────────────────────────── */
+
+.sc-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.875rem;
+}
+
+.sc-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #555;
+  user-select: none;
+}
+
+.sc-select-all-label input {
+  cursor: pointer;
+  accent-color: #c0392b;
+}
+
+.sc-selected-count {
+  font-weight: 600;
+  color: #c0392b;
+}
+
+.sc-add-email-btn {
+  padding: 6px 14px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sc-add-email-btn:hover {
+  background: #a93226;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────────── */
+
+.sc-contacts {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sc-table-wrap {
+  overflow: auto;
+  flex: 1;
+}
+
+.sc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.sc-table thead {
+  position: sticky;
+  top: 0;
+  background: #f0f0f0;
+  z-index: 1;
+}
+
+.sc-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #444;
+  border-bottom: 2px solid #ddd;
+  white-space: nowrap;
+}
+
+.sc-th-check {
+  width: 36px;
+}
+
+.sc-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+  color: #333;
+}
+
+.sc-row:hover td {
+  background: #fafafa;
+}
+
+.sc-row-selected td {
+  background: #fff5f5 !important;
+}
+
+.sc-table input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: #c0392b;
+}
+
+.sc-td-store {
+  font-weight: 500;
+}
+
+.sc-role-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.sc-link {
+  color: #c0392b;
+  text-decoration: none;
+}
+
+.sc-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Status / empty ──────────────────────────────────────────────────────────── */
+
+.sc-status {
+  padding: 32px 16px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.sc-empty {
+  color: #aaa;
+}
+
+/* ── Email Builder ────────────────────────────────────────────────────────────── */
+
+.sc-email-builder {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+}
+
+.sc-eb-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  padding: 24px;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sc-eb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-eb-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.sc-eb-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #888;
+}
+
+.sc-eb-to-box {
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #333;
+  line-height: 1.5;
+  min-height: 40px;
+  word-break: break-all;
+}
+
+.sc-eb-emails {
+  color: #666;
+}
+
+.sc-eb-no-contacts {
+  color: #aaa;
+  font-style: italic;
+}
+
+.sc-eb-input {
+  padding: 9px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sc-eb-input:focus {
+  outline: none;
+  border-color: #c0392b;
+}
+
+.sc-eb-textarea {
+  padding: 9px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.55;
+}
+
+.sc-eb-textarea:focus {
+  outline: none;
+  border-color: #c0392b;
+}
+
+/* ── Attachments ─────────────────────────────────────────────────────────────── */
+
+.sc-eb-attach-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-upload-btn {
+  padding: 7px 14px;
+  background: #1a2b5e;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.sc-upload-btn:hover {
+  background: #14224a;
+}
+
+.sc-upload-btn.uploading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.sc-error {
+  padding: 8px 12px;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 6px;
+  color: #c0392b;
+  font-size: 0.85rem;
+}
+
+.sc-attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-attach-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ececec;
+  background: #fafafa;
+  font-size: 0.875rem;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.sc-attach-row.checked {
+  background: #fff5f5;
+  border-color: #f5c6c6;
+}
+
+.sc-attach-row input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: #c0392b;
+  flex-shrink: 0;
+}
+
+.sc-attach-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.sc-attach-name {
+  flex: 1;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-attach-size {
+  color: #999;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sc-attach-delete {
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #999;
+  font-size: 0.8rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.sc-attach-delete:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+/* ── Open in Outlook button ──────────────────────────────────────────────────── */
+
+.sc-outlook-btn {
+  padding: 12px 24px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-start;
+}
+
+.sc-outlook-btn:hover:not(:disabled) {
+  background: #a93226;
+}
+
+.sc-outlook-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .sc-filters {
+    padding: 10px 12px;
+  }
+
+  .sc-search {
+    min-width: 100%;
+  }
+
+  .sc-table {
+    font-size: 0.8rem;
+  }
+
+  .sc-table th,
+  .sc-table td {
+    padding: 8px 8px;
+  }
+
+  .sc-eb-card {
+    padding: 16px;
+  }
+
+  .sc-outlook-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
