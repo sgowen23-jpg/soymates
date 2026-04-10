@@ -190,10 +190,13 @@ export default function StoreContacts() {
       }
     }
 
-    const bcc     = selectedEmails.join(',')
+    const bcc        = selectedEmails.join(';')
     const subjectEnc = encodeURIComponent(subject)
     const bodyEnc    = encodeURIComponent(message)
-    window.location.href = `mailto:?bcc=${bcc}&subject=${subjectEnc}&body=${bodyEnc}`
+    window.open(
+      `https://outlook.office.com/mail/deeplink/compose?bcc=${encodeURIComponent(bcc)}&subject=${subjectEnc}&body=${bodyEnc}`,
+      '_blank'
+    )
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -462,7 +465,7 @@ export default function StoreContacts() {
               onClick={handleOpenOutlook}
               disabled={selectedEmails.length === 0}
             >
-              Open in Outlook ({selectedEmails.length} contact{selectedEmails.length !== 1 ? 's' : ''}, {checkedAttachments.size} attachment{checkedAttachments.size !== 1 ? 's' : ''})
+              Open in Outlook Web ({selectedEmails.length} contact{selectedEmails.length !== 1 ? 's' : ''}, {checkedAttachments.size} attachment{checkedAttachments.size !== 1 ? 's' : ''})
             </button>
           </div>
         </div>
