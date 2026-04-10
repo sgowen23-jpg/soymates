@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useState } from 'react'
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api'
-import { STORES } from '../../data/stores'
+import { supabase } from '../../lib/supabase'
 import { BNB_DATA } from '../../data/bnbData'
 import { chainColor } from './chainColors'
 
@@ -13,8 +13,8 @@ function gapCount(name) {
   return Object.values(data.products).filter(p => p.dis === 0).length
 }
 
-function applyFilters(filters) {
-  return STORES.filter(s => {
+function applyFilters(stores, filters) {
+  return stores.filter(s => {
     if (filters.state !== 'All' && s.state !== filters.state) return false
     if (filters.rep !== 'All' && s.rep !== filters.rep) return false
     return true
@@ -25,17 +25,47 @@ export default function MapView({ onStoreClick, filters, search }) {
   const mapRef = useRef(null)
   const markersRef = useRef([])
   const searchMarkerRef = useRef(null)
+  // Store data kept in a ref so addMarkers/applySearch always see the latest
+  // value without needing to be re-created on every render.
+  const storesRef = useRef([])
+  const [storesLoading, setStoresLoading] = useState(true)
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
     libraries: MAP_LIBRARIES,
   })
 
+  // Fetch stores from Supabase once on mount, map to the shape the rest of
+  // the component (and StoreProfile) already expects.
+  useEffect(() => {
+    async function fetchStores() {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('store_id, store_name, state, store_region, rep_name, mso, banner, latitude, longitude, address, suburb')
+      if (!error && data) {
+        storesRef.current = data.map(s => ({
+          id:      s.store_id,
+          name:    s.store_name,
+          rep:     s.rep_name,
+          state:   s.state,
+          region:  s.store_region,
+          chain:   s.banner,
+          lat:     s.latitude,
+          lng:     s.longitude,
+          address: s.address,
+          suburb:  s.suburb,
+        }))
+      }
+      setStoresLoading(false)
+    }
+    fetchStores()
+  }, [])
+
   function addMarkers(map, filters) {
     markersRef.current.forEach(m => m.setMap(null))
     markersRef.current = []
 
-    const filtered = applyFilters(filters)
+    const filtered = applyFilters(storesRef.current, filters)
     const bounds = new window.google.maps.LatLngBounds()
 
     filtered.forEach(store => {
@@ -75,7 +105,7 @@ export default function MapView({ onStoreClick, filters, search }) {
     if (!search.trim()) return
 
     const term = search.trim().toLowerCase()
-    const match = STORES.find(s => s.name.toLowerCase().includes(term))
+    const match = storesRef.current.find(s => s.name.toLowerCase().includes(term))
     if (!match) return
 
     // Dim all regular markers, highlight match
@@ -95,6 +125,8 @@ export default function MapView({ onStoreClick, filters, search }) {
     map.setZoom(14)
   }
 
+  // GoogleMap only mounts after both isLoaded and !storesLoading, so by the
+  // time onLoad fires storesRef.current is already populated.
   const onLoad = useCallback((map) => {
     mapRef.current = map
     addMarkers(map, filters)
@@ -109,7 +141,7 @@ export default function MapView({ onStoreClick, filters, search }) {
   }, [search])
 
   if (loadError) return <div className="map-error">Failed to load Google Maps</div>
-  if (!isLoaded) return <div className="map-loading">Loading map…</div>
+  if (!isLoaded || storesLoading) return <div className="map-loading">Loading map…</div>
 
   return (
     <GoogleMap
