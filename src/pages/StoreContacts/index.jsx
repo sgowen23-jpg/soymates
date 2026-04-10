@@ -191,19 +191,24 @@ export default function StoreContacts() {
       }
     }
 
-    // Outlook Web deeplink doesn't support the bcc= parameter — copy to clipboard instead
-    const bcc = selectedEmails.join('; ')
-    try { await navigator.clipboard.writeText(bcc) } catch { /* clipboard unavailable */ }
-
+    const bcc        = selectedEmails.join(',')
     const subjectEnc = encodeURIComponent(subject)
     const bodyEnc    = encodeURIComponent(message)
-    window.open(
-      `https://outlook.office.com/mail/deeplink/compose?subject=${subjectEnc}&body=${bodyEnc}`,
-      '_blank'
-    )
+    const isMobile   = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent)
 
-    setBccCopied(true)
-    setTimeout(() => setBccCopied(false), 10000)
+    if (isMobile) {
+      // Mobile: mailto: opens the Outlook app directly
+      window.location.href = `mailto:?bcc=${bcc}&subject=${subjectEnc}&body=${bodyEnc}`
+    } else {
+      // Desktop: Outlook Web deeplink (bcc= unsupported, copy to clipboard)
+      try { await navigator.clipboard.writeText(selectedEmails.join('; ')) } catch { /* unavailable */ }
+      window.open(
+        `https://outlook.office.com/mail/deeplink/compose?subject=${subjectEnc}&body=${bodyEnc}`,
+        '_blank'
+      )
+      setBccCopied(true)
+      setTimeout(() => setBccCopied(false), 10000)
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
