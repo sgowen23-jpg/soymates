@@ -65,6 +65,7 @@ export default function StoreContacts() {
   const [attachLoading, setAttachLoading]       = useState(false)
   const [uploading, setUploading]               = useState(false)
   const [uploadError, setUploadError]           = useState(null)
+  const [bccCopied, setBccCopied]               = useState(false)
 
   // ─── Fetch contacts ───────────────────────────────────────────────────────────
   const fetchContacts = useCallback(async () => {
@@ -190,13 +191,19 @@ export default function StoreContacts() {
       }
     }
 
-    const bcc        = selectedEmails.join(';')
+    // Outlook Web deeplink doesn't support the bcc= parameter — copy to clipboard instead
+    const bcc = selectedEmails.join('; ')
+    try { await navigator.clipboard.writeText(bcc) } catch { /* clipboard unavailable */ }
+
     const subjectEnc = encodeURIComponent(subject)
     const bodyEnc    = encodeURIComponent(message)
     window.open(
-      `https://outlook.office.com/mail/deeplink/compose?bcc=${encodeURIComponent(bcc)}&subject=${subjectEnc}&body=${bodyEnc}`,
+      `https://outlook.office.com/mail/deeplink/compose?subject=${subjectEnc}&body=${bodyEnc}`,
       '_blank'
     )
+
+    setBccCopied(true)
+    setTimeout(() => setBccCopied(false), 10000)
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -458,6 +465,13 @@ export default function StoreContacts() {
                 </div>
               )}
             </div>
+
+            {/* BCC clipboard notice */}
+            {bccCopied && (
+              <div className="sc-bcc-notice">
+                ✅ <strong>{selectedEmails.length} BCC addresses copied to clipboard</strong> — click the <strong>Bcc</strong> field in Outlook and press <kbd>Ctrl+V</kbd> to paste
+              </div>
+            )}
 
             {/* Open in Outlook */}
             <button

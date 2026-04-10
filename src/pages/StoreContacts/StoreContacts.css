@@ -468,6 +468,28 @@
   color: #c0392b;
 }
 
+/* ── BCC clipboard notice ────────────────────────────────────────────────────── */
+
+.sc-bcc-notice {
+  padding: 10px 14px;
+  background: #eafaf1;
+  border: 1px solid #a9dfbf;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #1e8449;
+  line-height: 1.5;
+}
+
+.sc-bcc-notice kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: #fff;
+  border: 1px solid #a9dfbf;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.82rem;
+}
+
 /* ── Open in Outlook button ──────────────────────────────────────────────────── */
 
 .sc-outlook-btn {
