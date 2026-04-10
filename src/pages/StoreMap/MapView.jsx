@@ -50,8 +50,8 @@ export default function MapView({ onStoreClick, filters, search }) {
           state:   s.state,
           region:  s.store_region,
           chain:   s.banner,
-          lat:     s.latitude,
-          lng:     s.longitude,
+          lat:     parseFloat(s.latitude),
+          lng:     parseFloat(s.longitude),
           address: s.address,
           suburb:  s.suburb,
         }))
