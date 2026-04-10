@@ -46,15 +46,37 @@ const DIST_COLS = [
   { src: 'Movement Type',       dest: 'movement_type',      parse: toStr   },
 ]
 
+// ── Column map — Store Contacts ───────────────────────────────────────────────
+
+const CONTACTS_COLS = [
+  { src: 'Store ID',            dest: 'store_id',        parse: toInt  },
+  { src: 'Store ID (26)',       dest: 'store_id_26',     parse: toInt  },
+  { src: 'Location ID (Dist)',  dest: 'location_id_dist',parse: toInt  },
+  { src: 'Metcash ID',          dest: 'metcash_id',      parse: toStr  },
+  { src: 'Store Name',          dest: 'store_name',      parse: toStr  },
+  { src: 'Store Name Clean',    dest: 'store_name_clean',parse: toStr  },
+  { src: 'State',               dest: 'state',           parse: toStr  },
+  { src: 'Classification',      dest: 'classification',  parse: toStr  },
+  { src: 'Banner',              dest: 'banner',          parse: toStr  },
+  { src: 'MSO',                 dest: 'mso',             parse: toStr  },
+  { src: 'Rep Name',            dest: 'rep_name',        parse: toStr  },
+  { src: 'Role',                dest: 'role',            parse: toStr  },
+  { src: 'Contact Name',        dest: 'contact_name',    parse: toStr  },
+  { src: 'Contact Phone',       dest: 'contact_phone',   parse: toStr  },
+  { src: 'Contact Email',       dest: 'contact_email',   parse: toStr  },
+  { src: 'Notes',               dest: 'notes',           parse: toStr  },
+  { src: 'Match Score',         dest: 'match_score',     parse: toInt  },
+]
+
 // ── Parser ────────────────────────────────────────────────────────────────────
 
-function parseExport(arrayBuffer, colMap) {
+function parseSheet(arrayBuffer, sheetTarget, colMap) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
-  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'export')
-  if (!sheetName) return { error: `Sheet "Export" not found. Found: ${wb.SheetNames.join(', ')}` }
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === sheetTarget.toLowerCase())
+  if (!sheetName) return { error: `Sheet "${sheetTarget}" not found. Found: ${wb.SheetNames.join(', ')}` }
 
   const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null })
-  if (!raw.length) return { error: 'Export sheet is empty.' }
+  if (!raw.length) return { error: `Sheet "${sheetTarget}" is empty.` }
 
   const norm = h => String(h).trim().toLowerCase()
   const lookup = {}
@@ -69,12 +91,12 @@ function parseExport(arrayBuffer, colMap) {
     return rec
   })
 
-  return { records, totalRows: raw.length }
+  return { records, sheetName, totalRows: raw.length }
 }
 
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, colMap, table, deleteQuery }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -95,7 +117,7 @@ function Uploader({ label, colMap, table, deleteQuery }) {
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const res = parseExport(evt.target.result, colMap)
+      const res = parseSheet(evt.target.result, sheetName, colMap)
       if (res.error) { setErrMsg(res.error); setPhase('error'); return }
       if (!res.records.length) { setErrMsg('No rows found in Export sheet.'); setPhase('error'); return }
       setParseInfo(res)
@@ -141,7 +163,8 @@ function Uploader({ label, colMap, table, deleteQuery }) {
   return (
     <div className="wu-card">
       <div className="wu-card-label">{label}</div>
-      <div className="wu-card-meta">Sheet: <code>Export</code> → <code>{table}</code></div>
+      <div className="wu-card-meta">Sheet: <code>{sheetName}</code> → <code>{table}</code></div>
+      {description && <div className="wu-card-desc">{description}</div>}
 
       {phase === 'idle' && (
         <div
@@ -167,6 +190,7 @@ function Uploader({ label, colMap, table, deleteQuery }) {
         <div className="wu-parsed">
           <div className="wu-parsed-info">
             <div className="wu-file-name">{fileName}</div>
+            <div className="wu-card-meta">Sheet detected: <code>{parseInfo.sheetName}</code></div>
             <div className="wu-row-count">{parseInfo.records.length.toLocaleString()} rows</div>
             {preview3?.length > 0 && (
               <div className="wu-preview-names">First {preview3.length}: {preview3.join(' · ')}</div>
@@ -216,7 +240,7 @@ export default function WeeklyUpload() {
     <div className="wu-page">
       <div className="wu-header">
         <h1 className="wu-title">Weekly Data Upload</h1>
-        <p className="wu-sub">Upload all three files each week.</p>
+        <p className="wu-sub">Upload all files each week.</p>
       </div>
 
       <div className="wu-grid">
@@ -237,6 +261,14 @@ export default function WeeklyUpload() {
           colMap={DIST_COLS}
           table="store_distribution"
           deleteQuery={() => supabase.from('store_distribution').delete().gte('id', 0)}
+        />
+        <Uploader
+          label="Store Contacts"
+          description="Upload the In Territory sheet from StoreContacts master file."
+          sheetName="In Territory"
+          colMap={CONTACTS_COLS}
+          table="store_contacts"
+          deleteQuery={() => supabase.from('store_contacts').delete().gte('id', 0)}
         />
       </div>
     </div>
