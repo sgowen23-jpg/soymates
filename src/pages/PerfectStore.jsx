@@ -835,7 +835,7 @@ export default function PerfectStore() {
   const [sortKey, setSortKey]       = useState('vitasoy_rank')
   const [sortDir, setSortDir]       = useState('asc')
   const [page, setPage]             = useState(0)
-  const [view, setView]             = useState('4')
+  const [view, setView]             = useState(String(CURRENT_CYCLE))
   const PAGE_SIZE = 50
 
   async function fetchCycle(cycleNum) {
