@@ -326,6 +326,17 @@
   font-size: 0.82rem;
   cursor: pointer;
 }
+.ps-export-btn {
+  padding: 8px 14px;
+  background: #ebf5fb;
+  color: #1a2b5e;
+  border: 1px solid #a9cce3;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ps-export-btn:hover { background: #1a2b5e; color: #fff; border-color: #1a2b5e; }
 .ps-result-count {
   font-size: 0.82rem;
   color: #888;

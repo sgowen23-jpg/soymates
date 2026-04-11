@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
+import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
 import { CURRENT_CYCLE, CYCLE_YEAR_MAP } from '../constants'
 import './PerfectStore.css'
@@ -952,6 +953,31 @@ export default function PerfectStore() {
   const viewLabel = VIEW_OPTIONS.find(o => o.value === view)?.label || ''
   const isCompare = view === 'c3-c4'
 
+  function exportExcel() {
+    const rows = filtered.map(s => ({
+      'Store Name':         s.store_name || '',
+      'State':              s.state || '',
+      'MSO':                s.mso || '',
+      'Banner':             s.banner || '',
+      'Rep':                s.rep_name || '',
+      'Strategy':           s.strategy_c4 || '',
+      'Total Ranging':      s.total_ranging ?? '',
+      'UHT Core':           s.uht_core ?? '',
+      'Chilled':            s.chilled ?? '',
+      'Yoghurt':            s.yoghurt ?? '',
+      'VS Rank':            s.vitasoy_rank ?? '',
+      'Call FQY':           s.call_fqy_target ?? '',
+      'First Order GSV ($)': s.first_order_gsv ?? '',
+      'Total GSV Opp ($)':  s.total_gsv_opportunity ?? '',
+      'POG':                s.planogram_to_do ? 'Yes' : '',
+      'Focus Store':        s.focus_store || '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Perfect Store')
+    XLSX.writeFile(wb, `Perfect_Store_${viewLabel.replace(/ /g, '_')}.xlsx`)
+  }
+
   return (
     <div className="ps-page">
 
@@ -1081,6 +1107,7 @@ export default function PerfectStore() {
             Clear filters
           </button>
         )}
+        <button className="ps-export-btn" onClick={exportExcel}>↓ Export Excel</button>
         <span className="ps-result-count">{filtered.length} stores</span>
       </div>
 
