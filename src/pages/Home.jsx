@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
+import { CYCLE_YEAR_MAP } from '../constants'
 import './Home.css'
 
 // Cycle 1 starts March 30, 2026
@@ -140,7 +141,7 @@ export default function Home({ onNavigate }) {
         <div className="home-cycle-badge">
           {daysLeft != null
             ? `Cycle starts in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
-            : `Cycle 1 — ${label}`}
+            : `Cycle ${CYCLE_NUMBER} ${CYCLE_YEAR_MAP[CYCLE_NUMBER]} — ${label}`}
         </div>
       </div>
 

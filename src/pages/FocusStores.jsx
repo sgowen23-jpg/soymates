@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { CURRENT_CYCLE, CURRENT_YEAR } from '../constants'
 import GsvPlannerTab from './GsvPlannerTab'
 import './FocusStores.css'
 
@@ -181,7 +182,7 @@ function GsvTab({ stores }) {
       </div>
 
       <p className="fs-gsv-note">
-        GSV Opportunity = potential first-order GSV from ranging gaps. Source: Cycle 4 Perfect Store Pipeline.
+        GSV Opportunity = potential first-order GSV from ranging gaps. Source: Cycle {CURRENT_CYCLE} {CURRENT_YEAR} Perfect Store Pipeline.
       </p>
     </div>
   )
@@ -301,8 +302,8 @@ export default function FocusStores() {
       {/* ── Page header ── */}
       <div className="fs-header">
         <div>
-          <h1 className="fs-title">Focus Stores — Cycle 4</h1>
-          <p className="fs-sub">{stores.length} stores · Cycle 4 pipeline</p>
+          <h1 className="fs-title">Focus Stores — Cycle {CURRENT_CYCLE} {CURRENT_YEAR}</h1>
+          <p className="fs-sub">{stores.length} stores · Cycle {CURRENT_CYCLE} {CURRENT_YEAR} pipeline</p>
         </div>
         <div className="fs-tabs">
           <button className={`fs-tab${tab === 'tracker' ? ' active' : ''}`} onClick={() => setTab('tracker')}>

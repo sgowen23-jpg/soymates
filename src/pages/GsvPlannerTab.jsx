@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
+import { CURRENT_CYCLE, CURRENT_YEAR } from '../constants'
 import './GsvPlannerTab.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const PS_CYCLE = '4' // Perfect Store cycle — separate from planner cycle (1,2,3)
+const PS_CYCLE = String(CURRENT_CYCLE) // Perfect Store cycle — separate from planner cycle (1,2,3)
 
 const REP_STATES = {
   'Sam Gowen':          ['South Australia'],
@@ -329,7 +330,7 @@ export default function GsvPlannerTab({ rep, cycleNum }) {
       {/* ── Page header ── */}
       <div className="gp-header gp-print-hide">
         <div>
-          <h2 className="gp-title">GSV Planner — Cycle 4</h2>
+          <h2 className="gp-title">GSV Planner — Cycle {CURRENT_CYCLE} {CURRENT_YEAR}</h2>
           <p className="gp-sub">
             {rep} · {activeStores.length} active focus stores · {plannedActions.length} actions planned
           </p>
@@ -342,7 +343,7 @@ export default function GsvPlannerTab({ rep, cycleNum }) {
 
       {/* PDF-only title */}
       <div className="gp-print-only gp-pdf-title">
-        GSV Planner — Cycle 4 — {rep} — {today()}
+        GSV Planner — Cycle {CURRENT_CYCLE} {CURRENT_YEAR} — {rep} — {today()}
       </div>
 
       {/* ════ Section A: Planned Actions ════ */}
@@ -473,7 +474,7 @@ export default function GsvPlannerTab({ rep, cycleNum }) {
 
       {/* ════ Section B: Achieved ════ */}
       <section className="gp-section">
-        <h3 className="gp-section-title">B — Achieved (Cycle 4)</h3>
+        <h3 className="gp-section-title">B — Achieved (Cycle {CURRENT_CYCLE} {CURRENT_YEAR})</h3>
 
         {/* KPI bar */}
         <div className="gp-kpi-bar">

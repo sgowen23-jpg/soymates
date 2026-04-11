@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { supabase } from '../lib/supabase'
+import { CURRENT_CYCLE, CYCLE_YEAR_MAP } from '../constants'
 import './PerfectStore.css'
 
 const FocusStores = lazy(() => import('./FocusStores'))
@@ -197,9 +198,9 @@ function StorePanel({ store, onClose }) {
 
 // ─── View options (add future cycles here) ───────────────────────────────────
 const VIEW_OPTIONS = [
-  { value: '1',      label: 'Cycle 1' },
-  { value: '4',      label: 'Cycle 4' },
-  { value: '3',      label: 'Cycle 3' },
+  { value: '1',      label: `Cycle 1 ${CYCLE_YEAR_MAP[1]}` },
+  { value: '4',      label: `Cycle 4 ${CYCLE_YEAR_MAP[4]}` },
+  { value: '3',      label: `Cycle 3 ${CYCLE_YEAR_MAP[3]}` },
   { value: 'c3-c4', label: 'C3 → C4 Comparison' },
 ]
 
@@ -520,7 +521,7 @@ function StoreSlot({ slotNum, slot, storeList, psData, visitCounts, onSelect, on
 // ─── PS Builder tab ───────────────────────────────────────────────────────────
 function PSBuilder() {
   const [rep, setRep]         = useState('Sam Gowen')
-  const [cycle, setCycle]     = useState(3)
+  const [cycle, setCycle]     = useState(CURRENT_CYCLE)
   const [slots, setSlots]     = useState({})       // { slotNum: { store_id, store_name } }
   const [psData, setPsData]   = useState({})       // { store_id: ps row }
   const [visitCounts, setVisitCounts] = useState({}) // { store_id: count }

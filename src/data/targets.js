@@ -1,4 +1,5 @@
-export const CYCLE_NUMBER = 4
+import { CURRENT_CYCLE } from '../constants'
+export const CYCLE_NUMBER = CURRENT_CYCLE
 
 export const CATEGORIES = ['UHT Core', 'UHT Non Core', 'Chilled', 'Yoghurt']
 
