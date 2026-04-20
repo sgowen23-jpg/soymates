@@ -3,6 +3,7 @@ import ListView from './StoreMap/ListView'
 import StoreProfile from './StoreMap/StoreProfile'
 import StoreSearchInput from '../components/StoreSearchInput'
 import ByProductView from './ByProductView'
+import Targets from './Targets'
 import './Distribution.css'
 
 const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
@@ -31,6 +32,10 @@ export default function Distribution() {
             className={`view-btn ${view === 'product' ? 'active' : ''}`}
             onClick={() => setView('product')}
           >By Product</button>
+          <button
+            className={`view-btn ${view === 'targets' ? 'active' : ''}`}
+            onClick={() => setView('targets')}
+          >Targets</button>
         </div>
 
         {view === 'store' && (
@@ -63,18 +68,20 @@ export default function Distribution() {
         <span className="distribution-title">Distribution</span>
       </div>
 
-      {view === 'store' ? (
+      {view === 'store' && (
         <>
           <div className="distribution-content">
             <ListView onStoreClick={s => setSelectedStore(s)} filters={filters} hideSearch bnbPeriod={bnbPeriod} />
           </div>
           <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} bnbPeriod={bnbPeriod} />
         </>
-      ) : (
+      )}
+      {view === 'product' && (
         <div className="distribution-content">
           <ByProductView state={state} rep={rep} />
         </div>
       )}
+      {view === 'targets' && <Targets />}
     </div>
   )
 }
