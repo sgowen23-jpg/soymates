@@ -137,6 +137,11 @@ export default function ByProductView({ state, rep }) {
         }
       })
 
+      // TEMP DEBUG — remove after diagnosis
+      console.log('[BPV] pogMap:', nameMap)
+      console.log('[BPV] pogMap lookup:', nameMap['* VITASOY MILK ALMOND CHOC 330ML'])
+      console.log('[BPV] getProductCategory result:', getProductCategory('* VITASOY MILK ALMOND CHOC 330ML', nameMap['* VITASOY MILK ALMOND CHOC 330ML']))
+
       setAllData(distData)
       setPogMap(nameMap)
       setLoading(false)
