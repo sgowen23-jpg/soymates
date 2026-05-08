@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { PROD_CATEGORIES } from '../../data/prodCategories'
+import { getProductCategory } from '../../utils/productCategory'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
@@ -27,10 +27,15 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
       const table = bnbPeriod === '26wk' ? 'bnb_26wk' : 'bnb_13wk'
       const [distRes, bnbRes] = await Promise.all([
         supabase.from('store_distribution').select('item_name, latest_distribution').eq('location_id', store.id),
-        supabase.from(table).select('item_name, ranging_gap').eq('store_id', store.id),
+        supabase.from(table).select('item_name, ranging_gap, pog_category').eq('store_id', store.id),
       ])
       const bnbMap = {}
-      bnbRes.data?.forEach(r => { bnbMap[clean(r.item_name)] = r.ranging_gap })
+      const pogMap = {}
+      bnbRes.data?.forEach(r => {
+        const name = clean(r.item_name)
+        bnbMap[name] = r.ranging_gap
+        if (r.pog_category) pogMap[name] = r.pog_category
+      })
 
       const gaps = [], nbt = [], good = []
       distRes.data?.forEach(r => {
@@ -42,15 +47,16 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
           else good.push(name)
         }
       })
-      setProductData({ gaps, nbt, good })
+      setProductData({ gaps, nbt, good, pogMap })
       setLoading(false)
     }
     fetchData()
   }, [store, bnbPeriod])
 
-  const gaps = productData?.gaps || []
-  const nbt  = productData?.nbt  || []
-  const good = productData?.good || []
+  const gaps   = productData?.gaps   || []
+  const nbt    = productData?.nbt    || []
+  const good   = productData?.good   || []
+  const pogMap = productData?.pogMap || {}
 
   return (
     <div className={`store-profile ${store ? 'open' : ''}`}>
@@ -87,9 +93,9 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
               </div>
 
               <div className="sp-body">
-                <ProfileSection title="🔴 Not Ranged" items={gaps} type="gap" />
-                <ProfileSection title={`🟡 Not Bought (${bnbPeriod})`} items={nbt} type="nbt" />
-                <ProfileSection title="🟢 Ranged & Buying" items={good} type="good" />
+                <ProfileSection title="🔴 Not Ranged" items={gaps} pogMap={pogMap} type="gap" />
+                <ProfileSection title={`🟡 Not Bought (${bnbPeriod})`} items={nbt} pogMap={pogMap} type="nbt" />
+                <ProfileSection title="🟢 Ranged & Buying" items={good} pogMap={pogMap} type="good" />
               </div>
             </>
           ) : (
@@ -101,17 +107,18 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
   )
 }
 
-function ProfileSection({ title, items, type }) {
+const CATEGORY_ORDER = ['UHT Core', 'UHT', 'Fresh', 'Yoghurt']
+
+function ProfileSection({ title, items, pogMap, type }) {
   if (!items.length) return null
 
-  const byCategory = []
-  for (const [cat, skus] of Object.entries(PROD_CATEGORIES)) {
-    const catItems = items.filter(k => skus.includes(k))
-    if (catItems.length) byCategory.push({ cat, items: catItems })
-  }
-  const allCatSkus = Object.values(PROD_CATEGORIES).flat()
-  const uncategorised = items.filter(k => !allCatSkus.includes(k))
-  if (uncategorised.length) byCategory.push({ cat: 'Other', items: uncategorised })
+  const grouped = {}
+  items.forEach(k => {
+    const cat = getProductCategory(k, pogMap[k])
+    if (!grouped[cat]) grouped[cat] = []
+    grouped[cat].push(k)
+  })
+  const byCategory = CATEGORY_ORDER.filter(c => grouped[c]).map(c => ({ cat: c, items: grouped[c] }))
 
   return (
     <div className="sp-section">

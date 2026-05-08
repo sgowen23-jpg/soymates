@@ -42,14 +42,9 @@ function getCurrentWeek(weeks) {
   // If today is before the first week, highlight the first week anyway
   return current || weeks[0]
 }
-function isUHT(p) { return /uht/i.test(p) }
+import { getProductCategory } from '../utils/productCategory'
 
-function getSegment(p) {
-  if (/ygt/i.test(p))       return 'Yoghurt'
-  if (/frsh|esl/i.test(p))  return 'Fresh'
-  if (/uht/i.test(p))       return 'UHT'
-  return 'Other'
-}
+function isUHT(p) { return /uht/i.test(p) }
 
 function segClass(seg) {
   if (seg === 'UHT')     return 'seg-uht'
@@ -91,7 +86,7 @@ function PromoListView({ productRows, orderedProducts, lookup, filteredWeeks, cu
   return (
     <div className="promo-list-view">
       {cards.map(({ p, types, activeWeeks }) => {
-        const seg = isUHT(p) ? 'UHT' : getSegment(p)
+        const seg = getProductCategory(p)
         return (
           <div key={p} className="promo-card">
             <div className="promo-card-header">

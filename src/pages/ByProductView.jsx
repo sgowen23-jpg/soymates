@@ -1,16 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { getProductCategory } from '../utils/productCategory'
 import './ByProductView.css'
-
-// Segment classification from product name
-function getSegment(p) {
-  if (!p)                           return 'Other'
-  if (/ygt/i.test(p))              return 'Yoghurt'
-  if (/frsh|esl/i.test(p))         return 'Fresh'
-  if (p.trimStart().startsWith('*') && /uht/i.test(p)) return 'UHT Core'
-  if (/uht/i.test(p))              return 'UHT'
-  return 'Other'
-}
 
 const SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
 
@@ -26,7 +17,7 @@ function ProductPicker({ allProducts, selected, onChange, segment }) {
   const filtered = useMemo(() => {
     const s = search.toLowerCase()
     return allProducts
-      .filter(p => (segment === 'All' || getSegment(p) === segment))
+      .filter(p => (segment === 'All' || getProductCategory(p) === segment))
       .filter(p => !s || cleanName(p).toLowerCase().includes(s))
   }, [allProducts, segment, search])
 
@@ -81,8 +72,8 @@ function ProductPicker({ allProducts, selected, onChange, segment }) {
                     checked={selected.includes(p)}
                     onChange={() => toggle(p)}
                   />
-                  <span className="bpv-picker-seg" data-seg={getSegment(p)}>
-                    {getSegment(p)}
+                  <span className="bpv-picker-seg" data-seg={getProductCategory(p)}>
+                    {getProductCategory(p)}
                   </span>
                   <span className="bpv-picker-name">{cleanName(p)}</span>
                 </label>
@@ -139,7 +130,7 @@ export default function ByProductView({ state, rep }) {
 
   // Products available for the selected segment
   const segmentProducts = useMemo(() =>
-    allProducts.filter(p => segment === 'All' || getSegment(p) === segment),
+    allProducts.filter(p => segment === 'All' || getProductCategory(p) === segment),
     [allProducts, segment]
   )
 
