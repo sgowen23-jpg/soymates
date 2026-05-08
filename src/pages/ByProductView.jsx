@@ -100,8 +100,8 @@ export default function ByProductView({ state, rep }) {
     async function load() {
       setLoading(true)
 
-      // Fetch store_distribution (paginated) and bnb_26wk pog lookup in parallel
-      const [distData, { data: pogRows }] = await Promise.all([
+      // Fetch store_distribution and bnb_26wk pog lookup in parallel, both paginated
+      const [distData, pogRows] = await Promise.all([
         (async () => {
           let all = [], from = 0
           while (true) {
@@ -119,12 +119,25 @@ export default function ByProductView({ state, rep }) {
           }
           return all
         })(),
-        supabase.from('bnb_26wk').select('item_id, pog_category'),
+        (async () => {
+          let all = [], from = 0
+          while (true) {
+            const { data } = await supabase
+              .from('bnb_26wk')
+              .select('item_id, pog_category')
+              .range(from, from + 999)
+            if (!data || data.length === 0) break
+            all = [...all, ...data]
+            if (data.length < 1000) break
+            from += 1000
+          }
+          return all
+        })(),
       ])
 
       // Build item_code (string) → pog_category from bnb_26wk
       const itemCodeToPog = {}
-      pogRows?.forEach(r => {
+      pogRows.forEach(r => {
         if (r.item_id && r.pog_category) itemCodeToPog[String(r.item_id)] = r.pog_category
       })
 
@@ -136,11 +149,6 @@ export default function ByProductView({ state, rep }) {
           if (pog) nameMap[r.item_name] = pog
         }
       })
-
-      // TEMP DEBUG — remove after diagnosis
-      console.log('[BPV] pogMap:', nameMap)
-      console.log('[BPV] pogMap lookup:', nameMap['* VITASOY MILK ALMOND CHOC 330ML'])
-      console.log('[BPV] getProductCategory result:', getProductCategory('* VITASOY MILK ALMOND CHOC 330ML', nameMap['* VITASOY MILK ALMOND CHOC 330ML']))
 
       setAllData(distData)
       setPogMap(nameMap)
