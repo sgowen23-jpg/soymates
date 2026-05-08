@@ -9,7 +9,7 @@ const SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
 function cleanName(p) { return p.replace(/^\*\s*/, '').trim() }
 
 // ─── Product multi-select dropdown ───────────────────────────────────────────
-function ProductPicker({ allProducts, selected, onChange, segment }) {
+function ProductPicker({ allProducts, selected, onChange, segment, pogMap }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const ref = useRef(null)
@@ -17,9 +17,9 @@ function ProductPicker({ allProducts, selected, onChange, segment }) {
   const filtered = useMemo(() => {
     const s = search.toLowerCase()
     return allProducts
-      .filter(p => (segment === 'All' || getProductCategory(p) === segment))
+      .filter(p => (segment === 'All' || getProductCategory(p, pogMap[p]) === segment))
       .filter(p => !s || cleanName(p).toLowerCase().includes(s))
-  }, [allProducts, segment, search])
+  }, [allProducts, segment, search, pogMap])
 
   useEffect(() => {
     function handler(e) {
@@ -72,8 +72,8 @@ function ProductPicker({ allProducts, selected, onChange, segment }) {
                     checked={selected.includes(p)}
                     onChange={() => toggle(p)}
                   />
-                  <span className="bpv-picker-seg" data-seg={getProductCategory(p)}>
-                    {getProductCategory(p)}
+                  <span className="bpv-picker-seg" data-seg={getProductCategory(p, pogMap[p])}>
+                    {getProductCategory(p, pogMap[p])}
                   </span>
                   <span className="bpv-picker-name">{cleanName(p)}</span>
                 </label>
@@ -90,29 +90,55 @@ function ProductPicker({ allProducts, selected, onChange, segment }) {
 export default function ByProductView({ state, rep }) {
   const [segment, setSegment]             = useState('All')
   const [selectedProducts, setSelectedProducts] = useState([])
-  const [allData, setAllData]             = useState([])   // all store_distribution rows
+  const [allData, setAllData]             = useState([])
+  const [pogMap, setPogMap]               = useState({})   // item_name → pog_category
   const [loading, setLoading]             = useState(false)
   const [sortDir, setSortDir]             = useState('desc')
 
-  // Load all distribution data for state/rep filter
+  // Load distribution data and pog_category lookup in parallel
   useEffect(() => {
     async function load() {
       setLoading(true)
-      let all = [], from = 0
-      while (true) {
-        let q = supabase
-          .from('store_distribution')
-          .select('location_id, store_name, state, banner_group, rep_name, item_name, latest_distribution')
-          .range(from, from + 999)
-        if (state !== 'All') q = q.eq('state', state)
-        if (rep   !== 'All') q = q.eq('rep_name', rep)
-        const { data } = await q
-        if (!data || data.length === 0) break
-        all = [...all, ...data]
-        if (data.length < 1000) break
-        from += 1000
-      }
-      setAllData(all)
+
+      // Fetch store_distribution (paginated) and bnb_26wk pog lookup in parallel
+      const [distData, { data: pogRows }] = await Promise.all([
+        (async () => {
+          let all = [], from = 0
+          while (true) {
+            let q = supabase
+              .from('store_distribution')
+              .select('location_id, store_name, state, banner_group, rep_name, item_name, item_code, latest_distribution')
+              .range(from, from + 999)
+            if (state !== 'All') q = q.eq('state', state)
+            if (rep   !== 'All') q = q.eq('rep_name', rep)
+            const { data } = await q
+            if (!data || data.length === 0) break
+            all = [...all, ...data]
+            if (data.length < 1000) break
+            from += 1000
+          }
+          return all
+        })(),
+        supabase.from('bnb_26wk').select('item_id, pog_category'),
+      ])
+
+      // Build item_code (string) → pog_category from bnb_26wk
+      const itemCodeToPog = {}
+      pogRows?.forEach(r => {
+        if (r.item_id && r.pog_category) itemCodeToPog[String(r.item_id)] = r.pog_category
+      })
+
+      // Build item_name → pog_category for use in getProductCategory calls
+      const nameMap = {}
+      distData.forEach(r => {
+        if (r.item_name && r.item_code && !nameMap[r.item_name]) {
+          const pog = itemCodeToPog[String(r.item_code)]
+          if (pog) nameMap[r.item_name] = pog
+        }
+      })
+
+      setAllData(distData)
+      setPogMap(nameMap)
       setLoading(false)
     }
     load()
@@ -130,8 +156,8 @@ export default function ByProductView({ state, rep }) {
 
   // Products available for the selected segment
   const segmentProducts = useMemo(() =>
-    allProducts.filter(p => segment === 'All' || getProductCategory(p) === segment),
-    [allProducts, segment]
+    allProducts.filter(p => segment === 'All' || getProductCategory(p, pogMap[p]) === segment),
+    [allProducts, segment, pogMap]
   )
 
   // Clear product selection when segment changes
@@ -194,6 +220,7 @@ export default function ByProductView({ state, rep }) {
           selected={selectedProducts}
           onChange={setSelectedProducts}
           segment={segment}
+          pogMap={pogMap}
         />
         {selectedProducts.length > 0 && (
           <button className="bpv-clear-btn" onClick={() => setSelectedProducts([])}>
