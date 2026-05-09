@@ -47,13 +47,21 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       if (!visibleIds.length) { setGapMap({}); setLoading(false); return }
 
-      const { data } = await supabase
-        .from('store_distribution')
-        .select('location_id, latest_distribution')
-        .in('location_id', visibleIds)
+      let data = [], from = 0
+      while (true) {
+        const { data: batch } = await supabase
+          .from('store_distribution')
+          .select('location_id, latest_distribution')
+          .in('location_id', visibleIds)
+          .range(from, from + 999)
+        if (!batch || batch.length === 0) break
+        data = [...data, ...batch]
+        if (batch.length < 1000) break
+        from += 1000
+      }
 
       const map = {}
-      data?.forEach(r => {
+      data.forEach(r => {
         const id = String(r.location_id)
         if (map[id] === undefined) map[id] = 0
         if (r.latest_distribution === 0) map[id]++
