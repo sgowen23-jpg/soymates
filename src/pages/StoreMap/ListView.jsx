@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { getProductCategory } from '../../utils/productCategory'
+import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
@@ -48,24 +50,64 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       if (!visibleIds.length) { setGapMap({}); setLoading(false); return }
 
-      let data = [], from = 0
-      while (true) {
-        const { data: batch } = await supabase
-          .from('store_distribution')
-          .select('location_id, latest_distribution')
-          .in('location_id', visibleIds)
-          .range(from, from + 999)
-        if (!batch || batch.length === 0) break
-        data = [...data, ...batch]
-        if (batch.length < 1000) break
-        from += 1000
-      }
+      const [distData, pogRows, rules] = await Promise.all([
+        (async () => {
+          let all = [], from = 0
+          while (true) {
+            const { data: batch } = await supabase
+              .from('store_distribution')
+              .select('location_id, item_name, item_code, latest_distribution')
+              .in('location_id', visibleIds)
+              .range(from, from + 999)
+            if (!batch || batch.length === 0) break
+            all = [...all, ...batch]
+            if (batch.length < 1000) break
+            from += 1000
+          }
+          return all
+        })(),
+        (async () => {
+          let all = [], from = 0
+          while (true) {
+            const { data } = await supabase
+              .from('bnb_26wk')
+              .select('item_id, pog_category')
+              .range(from, from + 999)
+            if (!data || data.length === 0) break
+            all = [...all, ...data]
+            if (data.length < 1000) break
+            from += 1000
+          }
+          return all
+        })(),
+        getRules(),
+      ])
+
+      const itemCodeToPog = {}
+      pogRows.forEach(r => {
+        if (r.item_id && r.pog_category) itemCodeToPog[String(r.item_id)] = r.pog_category
+      })
+      const pogMap = {}
+      distData.forEach(r => {
+        if (r.item_name && r.item_code && !pogMap[r.item_name]) {
+          const pog = itemCodeToPog[String(r.item_code)]
+          if (pog) pogMap[r.item_name] = pog
+        }
+      })
+
+      const storeById = {}
+      stores.forEach(s => { storeById[String(s.id)] = s })
 
       const map = {}
-      data.forEach(r => {
+      distData.forEach(r => {
         const id = String(r.location_id)
         if (map[id] === undefined) map[id] = 0
-        if (r.latest_distribution === 0) map[id]++
+        if (r.latest_distribution !== 0) return
+        const store = storeById[id]
+        if (!store) return
+        const cat = getProductCategory(r.item_name, pogMap[r.item_name])
+        if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
+          map[id]++
       })
       setGapMap(map)
       setLoading(false)
