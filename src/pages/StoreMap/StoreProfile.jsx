@@ -102,6 +102,23 @@ export default function StoreProfile({ store, onClose }) {
             </div>
           </div>
 
+          {!loading && rows.length > 0 && (
+            <div className="sp-stats">
+              <div className="sp-stat">
+                <strong>{rows.filter(r => r.dis === 0).length}</strong>
+                <span>DIS gaps</span>
+              </div>
+              <div className="sp-stat">
+                <strong>{rows.filter(r => r.bnb13 === 0).length}</strong>
+                <span>13wk gaps</span>
+              </div>
+              <div className="sp-stat">
+                <strong>{rows.filter(r => r.bnb26 === 0).length}</strong>
+                <span>26wk gaps</span>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="sp-no-data">Loading…</div>
           ) : rows.length === 0 ? (

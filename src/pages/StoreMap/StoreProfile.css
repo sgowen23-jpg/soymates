@@ -85,6 +85,32 @@
   opacity: 1;
 }
 
+.sp-stats {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.sp-stat {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px;
+  border-right: 1px solid #eee;
+  font-size: 11px;
+  color: #666;
+}
+
+.sp-stat:last-child {
+  border-right: none;
+}
+
+.sp-stat strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: #e53935;
+}
+
 .sp-body {
   overflow-y: auto;
   flex: 1;
