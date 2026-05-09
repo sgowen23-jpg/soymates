@@ -1,16 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getProductCategory } from '../../utils/productCategory'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
-// Strip leading asterisk from product names (raw data uses * prefix for core range)
 function clean(name) {
   return name.replace(/^\*\s*/, '').trim()
 }
 
-export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
-  const [productData, setProductData] = useState(null)
+const CATEGORY_ORDER = ['UHT Core', 'UHT', 'Fresh', 'Yoghurt']
+
+function Indicator({ val }) {
+  if (val === null) return <span className="sp-ind-none">—</span>
+  return val === 1
+    ? <span className="sp-ind-tick">✓</span>
+    : <span className="sp-ind-dot">●</span>
+}
+
+function latestBatch(data) {
+  if (!data || data.length === 0) return []
+  const max = data.reduce((m, r) => (r.uploaded_at > m ? r.uploaded_at : m), '')
+  return data.filter(r => r.uploaded_at === max)
+}
+
+export default function StoreProfile({ store, onClose }) {
+  const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -20,43 +34,58 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
   }, [onClose])
 
   useEffect(() => {
-    if (!store) { setProductData(null); return }
+    if (!store) { setRows([]); return }
     async function fetchData() {
       setLoading(true)
-      setProductData(null)
-      const table = bnbPeriod === '26wk' ? 'bnb_26wk' : 'bnb_13wk'
-      const [distRes, bnbRes] = await Promise.all([
-        supabase.from('store_distribution').select('item_name, latest_distribution').eq('location_id', store.id),
-        supabase.from(table).select('item_name, ranging_gap, pog_category').eq('store_id', store.id),
-      ])
-      const bnbMap = {}
-      const pogMap = {}
-      bnbRes.data?.forEach(r => {
-        const name = clean(r.item_name)
-        bnbMap[name] = r.ranging_gap
-        if (r.pog_category) pogMap[name] = r.pog_category
-      })
+      setRows([])
 
-      const gaps = [], nbt = [], good = []
-      distRes.data?.forEach(r => {
+      const [distRes, bnb26Res, bnb13Res] = await Promise.all([
+        supabase.from('store_distribution')
+          .select('item_name, item_code, latest_distribution')
+          .eq('location_id', store.id),
+        supabase.from('bnb_26wk')
+          .select('item_id, sum_of_ranging, pog_category, uploaded_at')
+          .eq('store_id', store.id),
+        supabase.from('bnb_13wk')
+          .select('item_id, sum_of_ranging, uploaded_at')
+          .eq('store_id', store.id),
+      ])
+
+      const bnb26 = latestBatch(bnb26Res.data)
+      const bnb13 = latestBatch(bnb13Res.data)
+
+      const bnb26Map = {}
+      bnb26.forEach(r => { bnb26Map[String(r.item_id)] = r })
+      const bnb13Map = {}
+      bnb13.forEach(r => { bnb13Map[String(r.item_id)] = r })
+
+      const merged = (distRes.data || []).map(r => {
+        const b26 = bnb26Map[String(r.item_code)] ?? null
+        const b13 = bnb13Map[String(r.item_code)] ?? null
+        const pog = b26?.pog_category ?? null
         const name = clean(r.item_name)
-        if (r.latest_distribution === 0) {
-          gaps.push(name)
-        } else {
-          if (bnbMap[name] === 1) nbt.push(name)
-          else good.push(name)
+        return {
+          name,
+          category: getProductCategory(name, pog),
+          dis:   r.latest_distribution ?? null,
+          bnb13: b13 !== null ? (b13.sum_of_ranging > 0 ? 1 : 0) : null,
+          bnb26: b26 !== null ? (b26.sum_of_ranging > 0 ? 1 : 0) : null,
         }
       })
-      setProductData({ gaps, nbt, good, pogMap })
+
+      setRows(merged)
       setLoading(false)
     }
     fetchData()
-  }, [store, bnbPeriod])
+  }, [store])
 
-  const gaps   = productData?.gaps   || []
-  const nbt    = productData?.nbt    || []
-  const good   = productData?.good   || []
-  const pogMap = productData?.pogMap || {}
+  const grouped = CATEGORY_ORDER
+    .map(cat => ({ cat, items: rows.filter(r => r.category === cat) }))
+    .filter(g => g.items.length > 0)
+
+  const knownCats = new Set(CATEGORY_ORDER)
+  const others = rows.filter(r => !knownCats.has(r.category))
+  if (others.length) grouped.push({ cat: 'Other', items: others })
 
   return (
     <div className={`store-profile ${store ? 'open' : ''}`}>
@@ -75,65 +104,41 @@ export default function StoreProfile({ store, onClose, bnbPeriod = '13wk' }) {
 
           {loading ? (
             <div className="sp-no-data">Loading…</div>
-          ) : productData ? (
-            <>
-              <div className="sp-stats">
-                <div className="sp-stat gap">
-                  <strong>{gaps.length}</strong>
-                  <span>Not Ranged</span>
-                </div>
-                <div className="sp-stat nbt">
-                  <strong>{nbt.length}</strong>
-                  <span>Not Bought</span>
-                </div>
-                <div className="sp-stat good">
-                  <strong>{good.length}</strong>
-                  <span>Buying</span>
-                </div>
-              </div>
-
-              <div className="sp-body">
-                <ProfileSection title="🔴 Not Ranged" items={gaps} pogMap={pogMap} type="gap" />
-                <ProfileSection title={`🟡 Not Bought (${bnbPeriod})`} items={nbt} pogMap={pogMap} type="nbt" />
-                <ProfileSection title="🟢 Ranged & Buying" items={good} pogMap={pogMap} type="good" />
-              </div>
-            </>
-          ) : (
+          ) : rows.length === 0 ? (
             <div className="sp-no-data">No distribution data for this store.</div>
+          ) : (
+            <div className="sp-body">
+              <table className="sp-table">
+                <thead>
+                  <tr>
+                    <th className="sp-th-name">Product</th>
+                    <th className="sp-th-ind">DIS</th>
+                    <th className="sp-th-ind">13wk</th>
+                    <th className="sp-th-ind">26wk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped.map(({ cat, items }) => (
+                    <Fragment key={cat}>
+                      <tr className="sp-cat-row">
+                        <td colSpan={4} className="sp-cat-header">{cat}</td>
+                      </tr>
+                      {items.map(row => (
+                        <tr key={row.name} className="sp-product-row">
+                          <td className="sp-td-name">{row.name}</td>
+                          <td className="sp-td-ind"><Indicator val={row.dis} /></td>
+                          <td className="sp-td-ind"><Indicator val={row.bnb13} /></td>
+                          <td className="sp-td-ind"><Indicator val={row.bnb26} /></td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
-    </div>
-  )
-}
-
-const CATEGORY_ORDER = ['UHT Core', 'UHT', 'Fresh', 'Yoghurt']
-
-function ProfileSection({ title, items, pogMap, type }) {
-  if (!items.length) return null
-
-  const grouped = {}
-  items.forEach(k => {
-    const cat = getProductCategory(k, pogMap[k])
-    if (!grouped[cat]) grouped[cat] = []
-    grouped[cat].push(k)
-  })
-  const byCategory = CATEGORY_ORDER.filter(c => grouped[c]).map(c => ({ cat: c, items: grouped[c] }))
-
-  return (
-    <div className="sp-section">
-      <div className={`sp-section-title ${type}`}>{title} ({items.length})</div>
-      {byCategory.map(({ cat, items: catItems }) => (
-        <div key={cat}>
-          <div className="sp-cat-label">{cat}</div>
-          {catItems.map(k => (
-            <div key={k} className={`sp-row ${type}`}>
-              <div className="sp-dot" />
-              <span>{k}</span>
-            </div>
-          ))}
-        </div>
-      ))}
     </div>
   )
 }
