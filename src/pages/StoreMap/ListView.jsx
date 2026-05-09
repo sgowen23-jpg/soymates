@@ -50,70 +50,110 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       if (!visibleIds.length) { setGapMap({}); setLoading(false); return }
 
-      const [distData, pogRows, rules] = await Promise.all([
-        (async () => {
-          let all = [], from = 0
-          while (true) {
-            const { data: batch } = await supabase
-              .from('store_distribution')
-              .select('location_id, item_name, item_code, latest_distribution')
-              .in('location_id', visibleIds)
-              .range(from, from + 999)
-            if (!batch || batch.length === 0) break
-            all = [...all, ...batch]
-            if (batch.length < 1000) break
-            from += 1000
-          }
-          return all
-        })(),
-        (async () => {
-          let all = [], from = 0
-          while (true) {
-            const { data } = await supabase
-              .from('bnb_26wk')
-              .select('item_id, pog_category')
-              .range(from, from + 999)
-            if (!data || data.length === 0) break
-            all = [...all, ...data]
-            if (data.length < 1000) break
-            from += 1000
-          }
-          return all
-        })(),
-        getRules(),
-      ])
-
-      const itemCodeToPog = {}
-      pogRows.forEach(r => {
-        if (r.item_id && r.pog_category) itemCodeToPog[String(r.item_id)] = r.pog_category
-      })
-      const pogMap = {}
-      distData.forEach(r => {
-        if (r.item_name && r.item_code && !pogMap[r.item_name]) {
-          const pog = itemCodeToPog[String(r.item_code)]
-          if (pog) pogMap[r.item_name] = pog
-        }
-      })
-
       const storeById = {}
       stores.forEach(s => { storeById[String(s.id)] = s })
 
       const map = {}
-      distData.forEach(r => {
-        const id = String(r.location_id)
-        if (map[id] === undefined) map[id] = 0
-        if (r.latest_distribution !== 0) return
-        const store = storeById[id]
-        if (!store) return
-        const cat = getProductCategory(r.item_name, pogMap[r.item_name])
-        if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
-          map[id]++
-      })
+
+      if (bnbPeriod === 'dis' || !bnbPeriod) {
+        const [distData, pogRows, rules] = await Promise.all([
+          (async () => {
+            let all = [], from = 0
+            while (true) {
+              const { data: batch } = await supabase
+                .from('store_distribution')
+                .select('location_id, item_name, item_code, latest_distribution')
+                .in('location_id', visibleIds)
+                .range(from, from + 999)
+              if (!batch || batch.length === 0) break
+              all = [...all, ...batch]
+              if (batch.length < 1000) break
+              from += 1000
+            }
+            return all
+          })(),
+          (async () => {
+            let all = [], from = 0
+            while (true) {
+              const { data } = await supabase
+                .from('bnb_26wk')
+                .select('item_id, pog_category')
+                .range(from, from + 999)
+              if (!data || data.length === 0) break
+              all = [...all, ...data]
+              if (data.length < 1000) break
+              from += 1000
+            }
+            return all
+          })(),
+          getRules(),
+        ])
+
+        const itemCodeToPog = {}
+        pogRows.forEach(r => {
+          if (r.item_id && r.pog_category) itemCodeToPog[String(r.item_id)] = r.pog_category
+        })
+        const pogMap = {}
+        distData.forEach(r => {
+          if (r.item_name && r.item_code && !pogMap[r.item_name]) {
+            const pog = itemCodeToPog[String(r.item_code)]
+            if (pog) pogMap[r.item_name] = pog
+          }
+        })
+
+        distData.forEach(r => {
+          const id = String(r.location_id)
+          if (map[id] === undefined) map[id] = 0
+          if (r.latest_distribution !== 0) return
+          const store = storeById[id]
+          if (!store) return
+          const cat = getProductCategory(r.item_name, pogMap[r.item_name])
+          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
+            map[id]++
+        })
+      } else {
+        // 13wk or 26wk — BNB tables carry item_name and pog_category directly
+        const table = bnbPeriod === '13wk' ? 'bnb_13wk' : 'bnb_26wk'
+        const [bnbData, rules] = await Promise.all([
+          (async () => {
+            let all = [], from = 0
+            while (true) {
+              const { data: batch } = await supabase
+                .from(table)
+                .select('store_id, item_name, pog_category, sum_of_ranging, uploaded_at')
+                .in('store_id', visibleIds)
+                .range(from, from + 999)
+              if (!batch || batch.length === 0) break
+              all = [...all, ...batch]
+              if (batch.length < 1000) break
+              from += 1000
+            }
+            return all
+          })(),
+          getRules(),
+        ])
+
+        // Restrict to the latest upload batch
+        const maxAt = bnbData.reduce((m, r) => (r.uploaded_at > m ? r.uploaded_at : m), '')
+        const latest = bnbData.filter(r => r.uploaded_at === maxAt)
+
+        latest.forEach(r => {
+          const id = String(r.store_id)
+          if (map[id] === undefined) map[id] = 0
+          if (r.sum_of_ranging !== 0) return
+          const store = storeById[id]
+          if (!store) return
+          const cat = getProductCategory(r.item_name, r.pog_category)
+          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
+            map[id]++
+        })
+      }
+
       setGapMap(map)
       setLoading(false)
     }
     fetchGaps()
-  }, [stores, filters?.state, filters?.rep])
+  }, [stores, filters?.state, filters?.rep, bnbPeriod])
 
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()

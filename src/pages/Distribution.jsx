@@ -15,7 +15,7 @@ export default function Distribution() {
   const [state, setState]             = useState('All')
   const [rep, setRep]                 = useState('All')
   const [search, setSearch]           = useState('')
-  const [bnbPeriod, setBnbPeriod]     = useState('13wk')
+  const [bnbPeriod, setBnbPeriod]     = useState('dis')
 
   const filters = { state, rep, search }
 
@@ -46,6 +46,10 @@ export default function Distribution() {
               placeholder="Search store…"
             />
             <div className="bnb-toggle">
+              <button
+                className={`bnb-btn ${bnbPeriod === 'dis' ? 'active' : ''}`}
+                onClick={() => setBnbPeriod('dis')}
+              >DIS</button>
               <button
                 className={`bnb-btn ${bnbPeriod === '13wk' ? 'active' : ''}`}
                 onClick={() => setBnbPeriod('13wk')}
