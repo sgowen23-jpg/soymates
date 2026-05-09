@@ -20,7 +20,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   // Fetch store list from Supabase once on mount
   useEffect(() => {
     supabase.from('stores')
-      .select('store_id, store_name, state, store_region, rep_name, mso, suburb')
+      .select('store_id, store_name, state, store_region, rep_name, mso, suburb, banner')
       .then(({ data }) => {
         setStores((data || []).map(s => ({
           id:     s.store_id,
@@ -29,7 +29,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           region: s.store_region,
           rep:    s.rep_name,
           chain:  s.mso || '',
-          banner: s.mso || '',
+          banner: s.banner || '',
           suburb: s.suburb || '',
         })))
       })
@@ -108,7 +108,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           const store = storeById[id]
           if (!store) return
           const cat = getProductCategory(r.item_name, pogMap[r.item_name])
-          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
+          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.banner }, rules))
             map[id]++
         })
       } else {
@@ -140,7 +140,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           const store = storeById[id]
           if (!store) return
           const cat = getProductCategory(r.item_name, r.pog_category)
-          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.mso }, rules))
+          if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.banner }, rules))
             map[id]++
         })
       }
