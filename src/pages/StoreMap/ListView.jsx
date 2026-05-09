@@ -120,7 +120,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             while (true) {
               const { data: batch } = await supabase
                 .from(table)
-                .select('store_id, item_name, pog_category, sum_of_ranging, uploaded_at')
+                .select('store_id, item_name, pog_category, sum_of_ranging')
                 .in('store_id', visibleIds)
                 .range(from, from + 999)
               if (!batch || batch.length === 0) break
@@ -133,11 +133,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           getRules(),
         ])
 
-        // Restrict to the latest upload batch
-        const maxAt = bnbData.reduce((m, r) => (r.uploaded_at > m ? r.uploaded_at : m), '')
-        const latest = bnbData.filter(r => r.uploaded_at === maxAt)
-
-        latest.forEach(r => {
+        bnbData.forEach(r => {
           const id = String(r.store_id)
           if (map[id] === undefined) map[id] = 0
           if (r.sum_of_ranging !== 0) return
