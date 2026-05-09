@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { getProductCategory } from '../utils/productCategory'
+import { getRules, isProductValidForStore } from '../utils/rangingRules'
 import './ByProductView.css'
 
 const SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
@@ -92,6 +93,7 @@ export default function ByProductView({ state, rep }) {
   const [selectedProducts, setSelectedProducts] = useState([])
   const [allData, setAllData]             = useState([])
   const [pogMap, setPogMap]               = useState({})   // item_name → pog_category
+  const [rules, setRules]                 = useState([])
   const [loading, setLoading]             = useState(false)
   const [sortDir, setSortDir]             = useState('desc')
 
@@ -100,8 +102,8 @@ export default function ByProductView({ state, rep }) {
     async function load() {
       setLoading(true)
 
-      // Fetch store_distribution and bnb_26wk pog lookup in parallel, both paginated
-      const [distData, pogRows] = await Promise.all([
+      // Fetch store_distribution, bnb_26wk pog lookup, and ranging rules in parallel
+      const [distData, pogRows, loadedRules] = await Promise.all([
         (async () => {
           let all = [], from = 0
           while (true) {
@@ -133,6 +135,7 @@ export default function ByProductView({ state, rep }) {
           }
           return all
         })(),
+        getRules(),
       ])
 
       // Build item_code (string) → pog_category from bnb_26wk
@@ -152,6 +155,7 @@ export default function ByProductView({ state, rep }) {
 
       setAllData(distData)
       setPogMap(nameMap)
+      setRules(loadedRules)
       setLoading(false)
     }
     load()
@@ -199,18 +203,22 @@ export default function ByProductView({ state, rep }) {
     return map
   }, [allData])
 
-  // Gap rows — stores missing ≥1 selected product
+  // Gap rows — stores missing ≥1 selected product (respects ranging rules)
   const gapRows = useMemo(() => {
     if (!selectedProducts.length) return []
     return Object.values(storeMap)
       .map(store => {
-        const missing = selectedProducts.filter(p => !rangingMap[store.store_id]?.[p])
-        const ranged  = selectedProducts.filter(p =>  rangingMap[store.store_id]?.[p])
+        const storeCtx = { state: store.state, banner: store.mso || '' }
+        const validProducts = selectedProducts.filter(p =>
+          isProductValidForStore(p, getProductCategory(p, pogMap[p]), storeCtx, rules)
+        )
+        const missing = validProducts.filter(p => !rangingMap[store.store_id]?.[p])
+        const ranged  = validProducts.filter(p =>  rangingMap[store.store_id]?.[p])
         return { ...store, missing, ranged, gapCount: missing.length }
       })
       .filter(s => s.gapCount > 0)
       .sort((a, b) => sortDir === 'desc' ? b.gapCount - a.gapCount : a.gapCount - b.gapCount)
-  }, [storeMap, rangingMap, selectedProducts, sortDir])
+  }, [storeMap, rangingMap, selectedProducts, sortDir, rules, pogMap])
 
   const totalStores = Object.keys(storeMap).length
 

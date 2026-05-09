@@ -27,6 +27,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           region: s.store_region,
           rep:    s.rep_name,
           chain:  s.mso || '',
+          banner: s.mso || '',
           suburb: s.suburb || '',
         })))
       })

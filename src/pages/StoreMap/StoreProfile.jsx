@@ -1,6 +1,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getProductCategory } from '../../utils/productCategory'
+import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
@@ -39,7 +40,7 @@ export default function StoreProfile({ store, onClose }) {
       setLoading(true)
       setRows([])
 
-      const [distRes, bnb26Res, bnb13Res] = await Promise.all([
+      const [distRes, bnb26Res, bnb13Res, rules] = await Promise.all([
         supabase.from('store_distribution')
           .select('item_name, item_code, latest_distribution')
           .eq('location_id', store.id),
@@ -49,6 +50,7 @@ export default function StoreProfile({ store, onClose }) {
         supabase.from('bnb_13wk')
           .select('item_id, sum_of_ranging, uploaded_at')
           .eq('store_id', store.id),
+        getRules(),
       ])
 
       const bnb26 = latestBatch(bnb26Res.data)
@@ -73,7 +75,8 @@ export default function StoreProfile({ store, onClose }) {
         }
       })
 
-      setRows(merged)
+      const storeCtx = { state: store.state, banner: store.banner || store.chain || '' }
+      setRows(merged.filter(r => isProductValidForStore(r.name, r.category, storeCtx, rules)))
       setLoading(false)
     }
     fetchData()
