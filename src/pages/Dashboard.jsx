@@ -12,7 +12,6 @@ const DataUpload    = lazy(() => import('./DataUpload'))
 const WeeklyUpload  = lazy(() => import('./WeeklyUpload'))
 const LeaveCalendar = lazy(() => import('./LeaveCalendar'))
 const MSOPipeline  = lazy(() => import('./MSOPipeline'))
-const PerfectStore = lazy(() => import('./PerfectStore'))
 const CyclePlanner = lazy(() => import('./CyclePlanner'))
 const Promotions      = lazy(() => import('./Promotions'))
 const StoreContacts   = lazy(() => import('./StoreContacts'))
@@ -71,7 +70,6 @@ export default function Dashboard() {
           {activePage === 'Weekly Upload'  && <WeeklyUpload />}
           {activePage === 'Leave Calendar'&& <LeaveCalendar />}
           {activePage === 'MSO Pipeline'  && <MSOPipeline />}
-          {activePage === 'Perfect Store' && <PerfectStore />}
           {activePage === 'Cycle Planner' && <CyclePlanner />}
           {activePage === 'Promotions'   && <Promotions />}
           {PLACEHOLDER_PAGES.includes(activePage) && (
