@@ -115,6 +115,26 @@
   white-space: nowrap;
 }
 
+.ps-th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.ps-th-sortable:hover {
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+
+.ps-th-arrow {
+  margin-left: 5px;
+  font-size: 11px;
+  color: #ccc;
+}
+
+.ps-th-arrow.active {
+  color: #CC0000;
+}
+
 .ps-table td {
   padding: 8px 12px;
   border-bottom: 1px solid #f0f0f0;

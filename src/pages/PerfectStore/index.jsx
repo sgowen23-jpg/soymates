@@ -13,6 +13,53 @@ const fmtSos = v => {
   return `${(n * 100).toFixed(1)}%`
 }
 
+// Column definitions — label, data key, sort type ('str' | 'num')
+const COLS = [
+  { label: 'State',            key: 'state',            type: 'str' },
+  { label: 'Location',         key: 'location',         type: 'str' },
+  { label: 'Store ID',         key: 'store_id',         type: 'str' },
+  { label: 'Store Name',       key: 'store_name',       type: 'str' },
+  { label: 'Classification',   key: 'classification',   type: 'str' },
+  { label: 'Focus Store',      key: 'focus_store',      type: 'str' },
+  { label: 'Distribution %',   key: 'distribution_pct', type: 'num' },
+  { label: 'UHT Core Gaps',    key: 'uht_core_gaps',    type: 'num' },
+  { label: 'UHT NonCore Gaps', key: 'uht_noncore_gaps', type: 'num' },
+  { label: 'Chilled Opp',      key: 'chilled_opp',      type: 'num' },
+  { label: 'RTD Opp',          key: 'rtd_opp',          type: 'num' },
+  { label: 'Yoghurt Opp',      key: 'yoghurt_opp',      type: 'num' },
+  { label: 'Total Opp',        key: 'total_opp',        type: 'num' },
+  { label: 'UHT SOS',          key: 'uht_sos',          type: 'num' },
+  { label: 'T/Up Previous',    key: 'tup_previous',     type: 'str' },
+  { label: 'Call Freq Target', key: 'call_freq_target', type: 'num' },
+]
+
+function sortRows(rows, col, dir) {
+  if (!col) return rows
+  const colDef = COLS.find(c => c.key === col)
+  const mult = dir === 'asc' ? 1 : -1
+  return [...rows].sort((a, b) => {
+    let av = a[col], bv = b[col]
+    if (colDef?.type === 'num') {
+      // uht_sos is stored as text — parse for sort
+      if (col === 'uht_sos') { av = parseFloat(av); bv = parseFloat(bv) }
+      av = av ?? -Infinity
+      bv = bv ?? -Infinity
+      return (av - bv) * mult
+    }
+    av = (av ?? '').toString().toLowerCase()
+    bv = (bv ?? '').toString().toLowerCase()
+    return av < bv ? -mult : av > bv ? mult : 0
+  })
+}
+
+function renderCell(r, key) {
+  switch (key) {
+    case 'distribution_pct': return fmtPct(r[key])
+    case 'uht_sos':          return fmtSos(r[key])
+    default:                 return r[key] ?? '—'
+  }
+}
+
 export default function PerfectStore() {
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +69,8 @@ export default function PerfectStore() {
   const [classFilter, setClassFilter] = useState('All')
   const [search,      setSearch]      = useState('')
   const [page,        setPage]        = useState(1)
+  const [sortCol,     setSortCol]     = useState(null)
+  const [sortDir,     setSortDir]     = useState('asc')
 
   useEffect(() => {
     async function load() {
@@ -67,10 +116,27 @@ export default function PerfectStore() {
     })
   }, [rows, stateFilter, classFilter, search])
 
-  const visible = filtered.slice(0, page * PAGE_SIZE)
-  const hasMore = visible.length < filtered.length
+  const sorted = useMemo(() => sortRows(filtered, sortCol, sortDir), [filtered, sortCol, sortDir])
+
+  const visible = sorted.slice(0, page * PAGE_SIZE)
+  const hasMore = visible.length < sorted.length
 
   function resetPage() { setPage(1) }
+
+  function handleSort(key) {
+    if (sortCol === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortCol(key)
+      setSortDir('asc')
+    }
+    resetPage()
+  }
+
+  function thArrow(key) {
+    if (sortCol !== key) return <span className="ps-th-arrow">↕</span>
+    return <span className="ps-th-arrow active">{sortDir === 'asc' ? '↑' : '↓'}</span>
+  }
 
   return (
     <div className="ps-page">
@@ -121,43 +187,28 @@ export default function PerfectStore() {
             <table className="ps-table">
               <thead>
                 <tr>
-                  <th>State</th>
-                  <th>Location</th>
-                  <th>Store ID</th>
-                  <th>Store Name</th>
-                  <th>Classification</th>
-                  <th>Focus Store</th>
-                  <th>Distribution %</th>
-                  <th>UHT Core Gaps</th>
-                  <th>UHT NonCore Gaps</th>
-                  <th>Chilled Opp</th>
-                  <th>RTD Opp</th>
-                  <th>Yoghurt Opp</th>
-                  <th>Total Opp</th>
-                  <th>UHT SOS</th>
-                  <th>T/Up Previous</th>
-                  <th>Call Freq Target</th>
+                  {COLS.map(col => (
+                    <th
+                      key={col.key}
+                      className="ps-th-sortable"
+                      onClick={() => handleSort(col.key)}
+                    >
+                      {col.label}{thArrow(col.key)}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {visible.map(r => (
                   <tr key={r.store_id}>
-                    <td>{r.state          ?? '—'}</td>
-                    <td>{r.location       ?? '—'}</td>
-                    <td>{r.store_id}</td>
-                    <td>{r.store_name     ?? '—'}</td>
-                    <td>{r.classification ?? '—'}</td>
-                    <td>{r.focus_store    ?? '—'}</td>
-                    <td>{fmtPct(r.distribution_pct)}</td>
-                    <td>{fmtNum(r.uht_core_gaps)}</td>
-                    <td>{fmtNum(r.uht_noncore_gaps)}</td>
-                    <td>{fmtNum(r.chilled_opp)}</td>
-                    <td>{fmtNum(r.rtd_opp)}</td>
-                    <td>{fmtNum(r.yoghurt_opp)}</td>
-                    <td className="ps-total">{fmtNum(r.total_opp)}</td>
-                    <td>{fmtSos(r.uht_sos)}</td>
-                    <td>{r.tup_previous  ?? '—'}</td>
-                    <td>{fmtNum(r.call_freq_target)}</td>
+                    {COLS.map(col => (
+                      <td
+                        key={col.key}
+                        className={col.key === 'total_opp' ? 'ps-total' : undefined}
+                      >
+                        {renderCell(r, col.key)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -171,7 +222,7 @@ export default function PerfectStore() {
           {hasMore && (
             <div className="ps-load-more">
               <button className="ps-load-btn" onClick={() => setPage(p => p + 1)}>
-                Load more ({(filtered.length - visible.length).toLocaleString()} remaining)
+                Load more ({(sorted.length - visible.length).toLocaleString()} remaining)
               </button>
             </div>
           )}
