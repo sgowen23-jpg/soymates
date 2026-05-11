@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
+import StoreProfile from '../StoreMap/StoreProfile'
 import './PerfectStore.css'
 
 const PAGE_SIZE = 100
@@ -69,8 +70,9 @@ export default function PerfectStore() {
   const [classFilter, setClassFilter] = useState('All')
   const [search,      setSearch]      = useState('')
   const [page,        setPage]        = useState(1)
-  const [sortCol,     setSortCol]     = useState(null)
-  const [sortDir,     setSortDir]     = useState('asc')
+  const [sortCol,      setSortCol]      = useState(null)
+  const [sortDir,      setSortDir]      = useState('asc')
+  const [selectedStore, setSelectedStore] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -200,7 +202,20 @@ export default function PerfectStore() {
               </thead>
               <tbody>
                 {visible.map(r => (
-                  <tr key={r.store_id}>
+                  <tr
+                    key={r.store_id}
+                    className="ps-row-clickable"
+                    onClick={() => setSelectedStore({
+                      id:     parseInt(r.store_id, 10),
+                      name:   r.store_name  ?? '',
+                      state:  r.state       ?? '',
+                      chain:  '',
+                      banner: '',
+                      address:'',
+                      region: '',
+                      rep:    '',
+                    })}
+                  >
                     {COLS.map(col => (
                       <td
                         key={col.key}
@@ -228,6 +243,7 @@ export default function PerfectStore() {
           )}
         </>
       )}
+      <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} />
     </div>
   )
 }

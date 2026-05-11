@@ -146,6 +146,8 @@
   border-bottom: none;
 }
 
+.ps-row-clickable { cursor: pointer; }
+
 .ps-table tbody tr:hover td {
   background: #fff8f8;
 }
