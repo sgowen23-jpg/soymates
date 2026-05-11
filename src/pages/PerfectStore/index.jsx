@@ -66,9 +66,10 @@ export default function PerfectStore() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
 
-  const [stateFilter, setStateFilter] = useState('All')
-  const [classFilter, setClassFilter] = useState('All')
-  const [search,      setSearch]      = useState('')
+  const [stateFilter,    setStateFilter]    = useState('All')
+  const [locationFilter, setLocationFilter] = useState('All')
+  const [classFilter,    setClassFilter]    = useState('All')
+  const [search,         setSearch]         = useState('')
   const [page,        setPage]        = useState(1)
   const [sortCol,      setSortCol]      = useState(null)
   const [sortDir,      setSortDir]      = useState('asc')
@@ -103,6 +104,13 @@ export default function PerfectStore() {
     return ['All', ...unique]
   }, [rows])
 
+  // Location options scoped to the selected state so the list stays short
+  const locationOptions = useMemo(() => {
+    const source = stateFilter === 'All' ? rows : rows.filter(r => r.state === stateFilter)
+    const unique = [...new Set(source.map(r => r.location).filter(Boolean))].sort()
+    return ['All', ...unique]
+  }, [rows, stateFilter])
+
   const classOptions = useMemo(() => {
     const unique = [...new Set(rows.map(r => r.classification).filter(Boolean))].sort()
     return ['All', ...unique]
@@ -111,12 +119,13 @@ export default function PerfectStore() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return rows.filter(r => {
-      if (stateFilter !== 'All' && r.state !== stateFilter) return false
-      if (classFilter !== 'All' && r.classification !== classFilter) return false
+      if (stateFilter    !== 'All' && r.state        !== stateFilter)    return false
+      if (locationFilter !== 'All' && r.location     !== locationFilter) return false
+      if (classFilter    !== 'All' && r.classification !== classFilter)  return false
       if (q && !r.store_name?.toLowerCase().includes(q)) return false
       return true
     })
-  }, [rows, stateFilter, classFilter, search])
+  }, [rows, stateFilter, locationFilter, classFilter, search])
 
   const sorted = useMemo(() => sortRows(filtered, sortCol, sortDir), [filtered, sortCol, sortDir])
 
@@ -153,9 +162,17 @@ export default function PerfectStore() {
         <select
           className="ps-select"
           value={stateFilter}
-          onChange={e => { setStateFilter(e.target.value); resetPage() }}
+          onChange={e => { setStateFilter(e.target.value); setLocationFilter('All'); resetPage() }}
         >
           {stateOptions.map(s => <option key={s}>{s}</option>)}
+        </select>
+
+        <select
+          className="ps-select"
+          value={locationFilter}
+          onChange={e => { setLocationFilter(e.target.value); resetPage() }}
+        >
+          {locationOptions.map(l => <option key={l}>{l}</option>)}
         </select>
 
         <select
