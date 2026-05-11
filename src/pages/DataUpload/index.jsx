@@ -4,13 +4,16 @@ import { supabase } from '../../lib/supabase'
 import './DataUpload.css'
 
 const CHUNK = 200
-const SHEET = 'Master Store Key'
 
+// ── helpers ───────────────────────────────────────────────────────────────────
 const toInt   = v => { if (v == null || v === '') return null; const n = parseInt(v, 10); return isNaN(n) ? null : n }
 const toFloat = v => { if (v == null || v === '') return null; const n = parseFloat(v);   return isNaN(n) ? null : n }
 const toStr   = v => (v == null || v === '') ? null : String(v).trim()
 
-const COL_MAP = [
+// ── Store Key parser ──────────────────────────────────────────────────────────
+const STORE_SHEET = 'Master Store Key'
+
+const STORE_COL_MAP = [
   { src: 'Store ID',           dest: 'store_id',        parse: toInt   },
   { src: 'Store ID (26)',      dest: 'store_id_26',      parse: toInt   },
   { src: 'Location ID (Dist)', dest: 'location_id_dist', parse: toInt   },
@@ -28,13 +31,13 @@ const COL_MAP = [
   { src: 'Longitude',          dest: 'longitude',        parse: toFloat },
 ]
 
-function parseFile(arrayBuffer) {
+function parseStoreFile(arrayBuffer) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
-  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === SHEET.toLowerCase())
-  if (!sheetName) return { error: `Sheet "${SHEET}" not found. Found: ${wb.SheetNames.join(', ')}` }
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === STORE_SHEET.toLowerCase())
+  if (!sheetName) return { error: `Sheet "${STORE_SHEET}" not found. Found: ${wb.SheetNames.join(', ')}` }
 
   const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null })
-  if (!raw.length) return { error: `Sheet "${SHEET}" is empty.` }
+  if (!raw.length) return { error: `Sheet "${STORE_SHEET}" is empty.` }
 
   const norm = h => String(h).trim().toLowerCase()
   const lookup = {}
@@ -44,7 +47,7 @@ function parseFile(arrayBuffer) {
   const records = []
   raw.forEach(row => {
     const rec = {}
-    COL_MAP.forEach(col => {
+    STORE_COL_MAP.forEach(col => {
       const key = lookup[norm(col.src)]
       rec[col.dest] = key !== undefined ? col.parse(row[key]) : null
     })
@@ -55,7 +58,56 @@ function parseFile(arrayBuffer) {
   return { records, skipped, totalRows: raw.length }
 }
 
+// ── Perfect Store parser ──────────────────────────────────────────────────────
+const PS_SHEET = 'FY27 CYCLE 1 Team Target'
+
+// [colIndex, destField, parseFn] — column M (index 12) skipped: generated column in Supabase
+const PS_COL_MAP = [
+  [0,  'state',            toStr  ],
+  [1,  'location',         toStr  ],
+  [2,  'store_id',         toStr  ],
+  [3,  'store_name',       toStr  ],
+  [4,  'classification',   toStr  ],
+  [5,  'focus_store',      toStr  ],
+  [6,  'distribution_pct', toFloat],
+  [7,  'uht_core_gaps',    toInt  ],
+  [8,  'uht_noncore_gaps', toInt  ],
+  [9,  'chilled_opp',      toInt  ],
+  [10, 'rtd_opp',          toInt  ],
+  [11, 'yoghurt_opp',      toInt  ],
+  [13, 'uht_sos',          toStr  ],
+  [14, 'tup_previous',     toStr  ],
+  [15, 'call_freq_target', toInt  ],
+]
+
+function parsePsFile(arrayBuffer) {
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === PS_SHEET.toLowerCase())
+  if (!sheetName) return { error: `Sheet "${PS_SHEET}" not found. Found: ${wb.SheetNames.join(', ')}` }
+
+  // header:1 returns raw arrays; rows[0]=sheet row 1 (title), rows[1]=sheet row 2 (headers), rows[2+]=data
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: null })
+  const dataRows = rows.slice(2)
+  if (!dataRows.length) return { error: `Sheet "${PS_SHEET}" has no data rows.` }
+
+  let skipped = 0
+  const records = []
+  dataRows.forEach(row => {
+    const storeIdRaw = row[2]
+    if (storeIdRaw == null || storeIdRaw === '') { skipped++; return }
+    const rec = {}
+    PS_COL_MAP.forEach(([idx, dest, parse]) => {
+      rec[dest] = parse(row[idx])
+    })
+    records.push(rec)
+  })
+
+  return { records, skipped, totalRows: dataRows.length }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function DataUpload() {
+  const [activeTab, setActiveTab] = useState('store-key')
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -70,13 +122,20 @@ export default function DataUpload() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  function switchTab(tab) {
+    setActiveTab(tab)
+    reset()
+  }
+
   function handleFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const res = parseFile(evt.target.result)
+      const res = activeTab === 'store-key'
+        ? parseStoreFile(evt.target.result)
+        : parsePsFile(evt.target.result)
       if (res.error) { setErrMsg(res.error); setPhase('error'); return }
       if (!res.records.length) { setErrMsg('No valid rows found (all rows missing Store ID).'); setPhase('error'); return }
       setParseInfo(res)
@@ -97,10 +156,11 @@ export default function DataUpload() {
     const { records } = parseInfo
     const total = records.length
     const errors = []
+    const table = activeTab === 'store-key' ? 'stores' : 'perfect_store_v2'
 
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = records.slice(i, i + CHUNK)
-      const { error } = await supabase.from('stores').upsert(chunk, { onConflict: 'store_id' })
+      const { error } = await supabase.from(table).upsert(chunk, { onConflict: 'store_id' })
       if (error) errors.push(error.message)
       setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
     }
@@ -109,13 +169,31 @@ export default function DataUpload() {
     setPhase('done')
   }
 
+  const isPs = activeTab === 'perfect-store'
   const preview3 = parseInfo?.records?.slice(0, 3).map(r => r.store_name).filter(Boolean)
 
   return (
     <div className="du-page">
       <div className="du-header">
-        <h1 className="du-title">Store Key Upload</h1>
-        <p className="du-sub">One-time upload. Only redo if stores change.</p>
+        <h1 className="du-title">{isPs ? 'Perfect Store Pipeline Upload' : 'Store Key Upload'}</h1>
+        <p className="du-sub">
+          {isPs ? 'Upserts into perfect_store_v2. Admin only.' : 'One-time upload. Only redo if stores change.'}
+        </p>
+      </div>
+
+      <div className="du-tabs">
+        <button
+          className={`du-tab${activeTab === 'store-key' ? ' du-tab-active' : ''}`}
+          onClick={() => switchTab('store-key')}
+        >
+          Store Key
+        </button>
+        <button
+          className={`du-tab${activeTab === 'perfect-store' ? ' du-tab-active' : ''}`}
+          onClick={() => switchTab('perfect-store')}
+        >
+          Perfect Store Pipeline
+        </button>
       </div>
 
       <div className="du-card">
@@ -129,7 +207,9 @@ export default function DataUpload() {
           >
             <div className="du-drop-icon">📂</div>
             <div className="du-drop-main">Drop .xlsx here or click to browse</div>
-            <div className="du-drop-hint">Sheet: <code>Master Store Key</code></div>
+            <div className="du-drop-hint">
+              Sheet: <code>{isPs ? PS_SHEET : STORE_SHEET}</code>
+            </div>
             <input ref={fileRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={handleFile} />
           </div>
         )}
@@ -180,7 +260,8 @@ export default function DataUpload() {
               </>
             ) : (
               <>
-                <strong>✅ Done!</strong> {result.count.toLocaleString()} stores uploaded.
+                <strong>✅ Done!</strong>{' '}
+                {result.count.toLocaleString()} {isPs ? 'stores uploaded to Perfect Store Pipeline.' : 'stores uploaded.'}
                 <button className="du-link" onClick={reset}>Upload another file</button>
               </>
             )}

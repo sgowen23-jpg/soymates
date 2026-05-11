@@ -19,6 +19,33 @@
   margin: 0;
 }
 
+/* ── Tabs ── */
+.du-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.du-tab {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.du-tab:hover { background: #ebebeb; }
+
+.du-tab-active {
+  background: #CC0000;
+  color: #fff;
+  border-color: #CC0000;
+}
+
 .du-card {
   background: #fff;
   border-radius: 12px;
