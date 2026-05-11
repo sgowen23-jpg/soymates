@@ -9,7 +9,7 @@ function clean(name) {
   return name.replace(/^\*\s*/, '').trim()
 }
 
-const CATEGORY_ORDER = ['UHT Core', 'UHT', 'Fresh', 'Yoghurt']
+const CATEGORY_ORDER = ['UHT Core', 'UHT', 'Fresh', 'RTD', 'Yoghurt']
 
 function Indicator({ val }) {
   if (val === null) return <span className="sp-ind-none">—</span>
@@ -68,7 +68,7 @@ export default function StoreProfile({ store, onClose }) {
         const name = clean(r.item_name)
         return {
           name,
-          category: getProductCategory(name, pog),
+          category: getProductCategory(name, pog, r.item_code),
           dis:   r.latest_distribution ?? null,
           bnb13: b13 !== null ? (b13.sum_of_ranging > 0 ? 1 : 0) : null,
           bnb26: b26 !== null ? (b26.sum_of_ranging > 0 ? 1 : 0) : null,

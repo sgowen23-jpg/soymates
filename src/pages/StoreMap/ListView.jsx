@@ -107,7 +107,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           if (r.latest_distribution !== 0) return
           const store = storeById[id]
           if (!store) return
-          const cat = getProductCategory(r.item_name, pogMap[r.item_name])
+          const cat = getProductCategory(r.item_name, pogMap[r.item_name], r.item_code)
           if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.banner }, rules))
             map[id]++
         })
@@ -120,7 +120,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             while (true) {
               const { data: batch } = await supabase
                 .from(table)
-                .select('store_id, item_name, pog_category, sum_of_ranging')
+                .select('store_id, item_id, item_name, pog_category, sum_of_ranging')
                 .in('store_id', visibleIds)
                 .range(from, from + 999)
               if (!batch || batch.length === 0) break
@@ -139,7 +139,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           if (r.sum_of_ranging !== 0) return
           const store = storeById[id]
           if (!store) return
-          const cat = getProductCategory(r.item_name, r.pog_category)
+          const cat = getProductCategory(r.item_name, r.pog_category, r.item_id)
           if (isProductValidForStore(r.item_name, cat, { state: store.state, banner: store.banner }, rules))
             map[id]++
         })

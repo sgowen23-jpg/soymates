@@ -1,4 +1,7 @@
-export function getProductCategory(itemName, pogCategory = null) {
+const RTD_ITEM_IDS = ['849103', '289772']
+
+export function getProductCategory(itemName, pogCategory = null, itemId = null) {
+  if (itemId != null && RTD_ITEM_IDS.includes(String(itemId))) return 'RTD'
   if (pogCategory) {
     if (pogCategory === 'DAIRY - YOGHURTS & DESSERTS')        return 'Yoghurt'
     if (pogCategory === 'DAIRY - SPECIALTY & FLAVOURED MILK') return 'Fresh'
