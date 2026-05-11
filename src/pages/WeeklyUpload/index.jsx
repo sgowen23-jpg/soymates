@@ -96,7 +96,7 @@ function parseSheet(arrayBuffer, sheetTarget, colMap) {
 
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -156,6 +156,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
 
     setResult({ count: total, errors })
     setPhase('done')
+    if (!errors.length && onSuccess) await onSuccess()
   }
 
   const preview3 = parseInfo?.records?.slice(0, 3).map(r => r.store_name).filter(Boolean)
@@ -249,6 +250,7 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_26wk"
           deleteQuery={() => supabase.from('bnb_26wk').delete().gte('id', 0)}
+          onSuccess={() => supabase.rpc('sync_perfect_store_v2')}
         />
         <Uploader
           label="13 Week Buy Not Buy"
