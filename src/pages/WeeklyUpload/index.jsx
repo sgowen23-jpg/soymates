@@ -250,7 +250,10 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_26wk"
           deleteQuery={() => supabase.from('bnb_26wk').delete().gte('id', 0)}
-          onSuccess={() => supabase.rpc('sync_perfect_store_v2')}
+          onSuccess={async () => {
+            await supabase.rpc('sync_perfect_store_v2')
+            await supabase.rpc('sync_perfect_store_ranging')
+          }}
         />
         <Uploader
           label="13 Week Buy Not Buy"
