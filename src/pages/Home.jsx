@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
 import { CYCLE_YEAR_MAP } from '../constants'
+import { getProductCategory } from '../utils/productCategory'
 import './Home.css'
 
 // Cycle 1 starts March 30, 2026
@@ -17,32 +18,37 @@ const REPS = [
   'Shane Vandewardt',
 ]
 
-const PIE_DATA = [
-  {
-    label: 'Vitasoy UHT',
-    segments: [
-      { label: 'Listed', value: 68, color: '#1a2b5e' },
-      { label: 'Gap',    value: 22, color: '#CC0000' },
-      { label: 'NBT',    value: 10, color: '#fb8c00' },
-    ],
-  },
-  {
-    label: 'Vitasoy Chilled',
-    segments: [
-      { label: 'Listed', value: 55, color: '#1a2b5e' },
-      { label: 'Gap',    value: 30, color: '#CC0000' },
-      { label: 'NBT',    value: 15, color: '#fb8c00' },
-    ],
-  },
-  {
-    label: 'Yoghurt',
-    segments: [
-      { label: 'Listed', value: 40, color: '#1a2b5e' },
-      { label: 'Gap',    value: 35, color: '#CC0000' },
-      { label: 'NBT',    value: 25, color: '#fb8c00' },
-    ],
-  },
-]
+function buildPieData(rows) {
+  const buckets = {
+    UHT:     { listed: 0, gap: 0, nbt: 0 },
+    Chilled: { listed: 0, gap: 0, nbt: 0 },
+    Yoghurt: { listed: 0, gap: 0, nbt: 0 },
+  }
+  rows.forEach(r => {
+    const cat = getProductCategory(r.item_name, r.pog_category, r.item_id)
+    let key
+    if (cat === 'UHT' || cat === 'UHT Core') key = 'UHT'
+    else if (cat === 'Fresh' || cat === 'RTD') key = 'Chilled'
+    else if (cat === 'Yoghurt') key = 'Yoghurt'
+    else return
+    if (r.sum_of_ranging > 0) buckets[key].listed++
+    else if (r.ranging_gap > 0) buckets[key].gap++
+    else buckets[key].nbt++
+  })
+  const toSegments = b => {
+    const total = b.listed + b.gap + b.nbt || 1
+    return [
+      { label: 'Listed', value: b.listed, pct: Math.round((b.listed / total) * 100), color: '#1a2b5e' },
+      { label: 'Gap',    value: b.gap,    pct: Math.round((b.gap    / total) * 100), color: '#CC0000' },
+      { label: 'NBT',    value: b.nbt,    pct: Math.round((b.nbt    / total) * 100), color: '#fb8c00' },
+    ]
+  }
+  return [
+    { label: 'Vitasoy UHT',     segments: toSegments(buckets.UHT)     },
+    { label: 'Vitasoy Chilled', segments: toSegments(buckets.Chilled) },
+    { label: 'Yoghurt',         segments: toSegments(buckets.Yoghurt) },
+  ]
+}
 
 
 function toDateStr(d) {
@@ -100,9 +106,28 @@ function PieChart({ segments, size = 80 }) {
 
 export default function Home({ onNavigate }) {
   const [leaveEntries, setLeaveEntries] = useState([])
+  const [pieData,      setPieData]      = useState(null)
   const today     = new Date()
   const todayStr  = toDateStr(today)
   const { week, label, daysLeft } = getCycleInfo()
+
+  useEffect(() => {
+    async function fetchPieData() {
+      let all = [], from = 0
+      while (true) {
+        const { data } = await supabase
+          .from('bnb_26wk')
+          .select('item_id, item_name, pog_category, sum_of_ranging, ranging_gap')
+          .range(from, from + 999)
+        if (!data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 1000) break
+        from += 1000
+      }
+      if (all.length) setPieData(buildPieData(all))
+    }
+    fetchPieData()
+  }, [])
 
   useEffect(() => {
     async function fetchLeave() {
@@ -199,7 +224,7 @@ export default function Home({ onNavigate }) {
           <span className="home-section-hint"> — click to view details</span>
         </h2>
         <div className="pie-row">
-          {PIE_DATA.map(chart => (
+          {(pieData || []).map(chart => (
             <button key={chart.label} className="pie-card" onClick={() => onNavigate('Distribution')} title="View Distribution">
               <PieChart segments={chart.segments} size={90} />
               <div className="pie-label">{chart.label}</div>
@@ -207,12 +232,13 @@ export default function Home({ onNavigate }) {
                 {chart.segments.map(s => (
                   <div key={s.label} className="pie-legend-item">
                     <span className="pie-legend-dot" style={{ background: s.color }} />
-                    <span>{s.label} {s.value}%</span>
+                    <span>{s.label} {s.pct}%</span>
                   </div>
                 ))}
               </div>
             </button>
           ))}
+          {!pieData && <span className="home-section-hint">Loading…</span>}
         </div>
       </section>
 
