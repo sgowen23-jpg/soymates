@@ -13,8 +13,6 @@ const NAV_ITEMS = [
   { label: 'Data Upload',   icon: '📤' },
   { label: 'Weekly Upload', icon: '📥' },
   { label: 'Leave Calendar', icon: '📅' },
-  { label: 'Chat bot', icon: '💬', soon: true },
-  { label: 'Download', icon: '⬇️', soon: true },
 ]
 
 const ADMIN_ITEMS = [
