@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import StoreProfile from '../StoreMap/StoreProfile'
+import { useDataFreshness } from '../../hooks/useDataFreshness'
 import './PerfectStore.css'
 
 const PAGE_SIZE = 100
@@ -65,6 +66,7 @@ export default function PerfectStore() {
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
+  const freshness             = useDataFreshness()
 
   const [stateFilter,    setStateFilter]    = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
@@ -155,6 +157,7 @@ export default function PerfectStore() {
         <h1 className="ps-title">Perfect Store</h1>
         <p className="ps-sub">
           {loading ? 'Loading…' : `${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} stores`}
+          {freshness.bnb26 && <span className="data-freshness"> · 26wk data: {freshness.bnb26}</span>}
         </p>
       </div>
 

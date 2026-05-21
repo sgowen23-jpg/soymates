@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
 import { CYCLE_YEAR_MAP } from '../constants'
 import { getProductCategory } from '../utils/productCategory'
+import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Home.css'
 
 // Cycle 1 starts March 30, 2026
@@ -107,6 +108,7 @@ function PieChart({ segments, size = 80 }) {
 export default function Home({ onNavigate }) {
   const [leaveEntries, setLeaveEntries] = useState([])
   const [pieData,      setPieData]      = useState(null)
+  const freshness = useDataFreshness()
   const today     = new Date()
   const todayStr  = toDateStr(today)
   const { week, label, daysLeft } = getCycleInfo()
@@ -223,6 +225,13 @@ export default function Home({ onNavigate }) {
           Distribution Summary
           <span className="home-section-hint"> — click to view details</span>
         </h2>
+        {(freshness.bnb26 || freshness.bnb13 || freshness.dis) && (
+          <p className="home-freshness">
+            {freshness.dis   && <span>DIS: {freshness.dis}</span>}
+            {freshness.bnb13 && <span>13wk: {freshness.bnb13}</span>}
+            {freshness.bnb26 && <span>26wk: {freshness.bnb26}</span>}
+          </p>
+        )}
         <div className="pie-row">
           {(pieData || []).map(chart => (
             <button key={chart.label} className="pie-card" onClick={() => onNavigate('Distribution')} title="View Distribution">

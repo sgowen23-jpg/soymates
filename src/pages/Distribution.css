@@ -115,3 +115,9 @@
   background: #f5f5f5;
   color: #333;
 }
+
+.data-freshness {
+  font-size: 11px;
+  color: #aaa;
+  white-space: nowrap;
+}

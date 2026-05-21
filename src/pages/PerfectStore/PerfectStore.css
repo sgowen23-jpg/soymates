@@ -24,6 +24,11 @@
   margin: 0;
 }
 
+.ps-sub .data-freshness {
+  font-size: 12px;
+  color: #bbb;
+}
+
 /* ── Filters ── */
 .ps-filters {
   display: flex;

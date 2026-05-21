@@ -59,6 +59,14 @@
   letter-spacing: 0;
 }
 
+.home-freshness {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #bbb;
+  margin: 0 0 8px;
+}
+
 /* Rep Cards — all 6 in one row */
 .rep-cards {
   display: grid;

@@ -4,6 +4,7 @@ import StoreProfile from './StoreMap/StoreProfile'
 import StoreSearchInput from '../components/StoreSearchInput'
 import ByProductView from './ByProductView'
 import Targets from './Targets'
+import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Distribution.css'
 
 const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
@@ -16,8 +17,11 @@ export default function Distribution() {
   const [rep, setRep]                 = useState('All')
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
+  const freshness                     = useDataFreshness()
 
   const filters = { state, rep, search }
+
+  const activeDate = bnbPeriod === '26wk' ? freshness.bnb26 : bnbPeriod === '13wk' ? freshness.bnb13 : freshness.dis
 
   return (
     <div className="distribution-page">
@@ -59,6 +63,7 @@ export default function Distribution() {
                 onClick={() => setBnbPeriod('26wk')}
               >26 Wk</button>
             </div>
+            {activeDate && <span className="data-freshness">Data: {activeDate}</span>}
           </>
         )}
 
