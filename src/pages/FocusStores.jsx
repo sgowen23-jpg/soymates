@@ -6,7 +6,7 @@ import './FocusStores.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATES = ['All States', 'New South Wales', 'Queensland', 'South Australia', 'Victoria', 'Western Australia']
-const REPS = ['Sam Gowen', 'Dipen Surani', 'Ashleigh Tasdarian', 'David Kerr', 'Shane Vandewardt', 'Azra Horell']
+const REPS = ['Sam Gowen', 'Dipen Surani', 'David Saleeb', 'David Kerr', 'Shane Vandewardt', 'Azra Horell']
 const STATE_SHORT = { 'New South Wales': 'NSW', 'Queensland': 'QLD', 'South Australia': 'SA', 'Victoria': 'VIC', 'Western Australia': 'WA' }
 
 const STRATEGY_META = {

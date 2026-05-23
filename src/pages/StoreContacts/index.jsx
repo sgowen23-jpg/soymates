@@ -6,7 +6,7 @@ import './StoreContacts.css'
 const BANNERS = ['All', 'IGA', 'Foodland', 'Drakes', 'FoodWorks', 'Supa IGA', 'IGA Local Grocer', 'Fresh & Save', 'Friendly Grocer']
 const ROLES   = ['All', 'Store Manager', 'Owner', 'Grocery Manager', 'Dairy Freezer Manager', 'Key Contact', 'Buyer Ordering', 'Dairy/Freezer Manager', 'Assistant Manager']
 const STATES  = ['All', 'SA', 'NSW', 'QLD', 'VIC', 'WA']
-const REPS    = ['All', 'Azra Horell', 'Ashleigh Tasdarian', 'David Kerr', 'Dipen Surani', 'Sam Gowen', 'Shane Vandewardt']
+const REPS    = ['All', 'Azra Horell', 'David Kerr', 'David Saleeb', 'Dipen Surani', 'Sam Gowen', 'Shane Vandewardt']
 
 const EXT_META = {
   pdf:  { icon: '📄', color: '#c0392b' },

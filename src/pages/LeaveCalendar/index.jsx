@@ -4,7 +4,7 @@ import './LeaveCalendar.css'
 
 export const REPS = [
   'Azra Horell',
-  'Ashleigh Tasdarian',
+  'David Saleeb',
   'David Kerr',
   'Dipen Surani',
   'Sam Gowen',
@@ -15,7 +15,7 @@ const LEAVE_TYPES = ['Annual Leave', 'Sick Leave', 'RDO', 'Training', 'Regional 
 
 export const REP_COLORS = {
   'Azra Horell':        '#CC0000',
-  'Ashleigh Tasdarian': '#1a2b5e',
+  'David Saleeb':        '#1a2b5e',
   'David Kerr':         '#e67e22',
   'Dipen Surani':       '#8e44ad',
   'Sam Gowen':          '#16a085',

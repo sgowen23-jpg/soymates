@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { CURRENT_CYCLE } from '../constants'
 import './Targets.css'
 
-const REPS = ['Sam Gowen', 'Ashleigh Tasdarian', 'David Kerr', 'Dipen Surani', 'Shane Vandewardt']
+const REPS = ['Sam Gowen', 'David Saleeb', 'David Kerr', 'Dipen Surani', 'Shane Vandewardt']
 
 const CATEGORIES = [
   { key: 'BEVERAGES - MILK & CREAM LONG LIFE', label: 'UHT' },

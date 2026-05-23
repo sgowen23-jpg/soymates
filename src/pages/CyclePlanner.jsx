@@ -6,7 +6,7 @@ import './CyclePlanner.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const REPS = [
-  'Ashleigh Tasdarian',
+  'David Saleeb',
   'Shane Vandewardt',
   'David Kerr',
   'Sam Gowen',
@@ -24,7 +24,7 @@ const CYCLE_STARTS = {
 const REP_STATES = {
   'Sam Gowen':          ['South Australia'],
   'Dipen Surani':       ['Western Australia'],
-  'Ashleigh Tasdarian': ['New South Wales'],
+  'David Saleeb':        ['New South Wales'],
   'David Kerr':         ['Queensland'],
   'Shane Vandewardt':   ['Victoria'],
   'Azra Horell':        ['Victoria'],

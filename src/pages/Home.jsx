@@ -12,7 +12,7 @@ const CYCLE_WEEKS = 12
 
 const REPS = [
   'Azra Horell',
-  'Ashleigh Tasdarian',
+  'David Saleeb',
   'David Kerr',
   'Dipen Surani',
   'Sam Gowen',
