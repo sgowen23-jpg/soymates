@@ -194,3 +194,74 @@
   color: #ccc;
   font-size: 12px;
 }
+
+/* ── Beiersdorf collapsible sections ── */
+
+.sp-b-section {
+  border-bottom: 1px solid #eee;
+}
+
+.sp-b-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: #f5f5f5;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.sp-b-cat-header:hover {
+  background: #ececec;
+}
+
+.sp-b-cat-name {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+}
+
+.sp-b-gap-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #fdecea;
+  color: #c62828;
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.sp-b-chevron {
+  font-size: 9px;
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.sp-b-items {
+  background: #fff;
+}
+
+.sp-b-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-top: 1px solid #f5f5f5;
+}
+
+.sp-b-item:hover {
+  background: #f9f9f9;
+}
+
+.sp-b-item-name {
+  flex: 1;
+  font-size: 12px;
+  color: #222;
+  line-height: 1.3;
+}

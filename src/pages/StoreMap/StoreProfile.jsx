@@ -1,5 +1,6 @@
 import { useEffect, useState, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useClient } from '../../context/ClientContext'
 import { getProductCategory } from '../../utils/productCategory'
 import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { chainColor } from './chainColors'
@@ -25,8 +26,15 @@ function latestBatch(data) {
 }
 
 export default function StoreProfile({ store, onClose }) {
+  const { client } = useClient()
+
+  // Vitasoy state
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
+
+  // Beiersdorf state
+  const [bRows, setBRows]               = useState([])
+  const [expandedCats, setExpandedCats] = useState(new Set())
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -35,11 +43,49 @@ export default function StoreProfile({ store, onClose }) {
   }, [onClose])
 
   useEffect(() => {
-    if (!store) { setRows([]); return }
+    if (!store) {
+      setRows([])
+      setBRows([])
+      setExpandedCats(new Set())
+      return
+    }
+
     async function fetchData() {
       setLoading(true)
       setRows([])
+      setBRows([])
+      setExpandedCats(new Set())
 
+      // ── Beiersdorf path ──────────────────────────────────────────────────────
+      if (client === 'beiersdorf') {
+        const { data: raw } = await supabase
+          .from('bnb_26wk')
+          .select('item_name, pog_category, ranging_gap, sum_of_ranging, uploaded_at')
+          .eq('client', 'beiersdorf')
+          .eq('store_name', store.name)
+
+        const latest = latestBatch(raw || [])
+
+        const mapped = latest.map(r => ({
+          name:     r.item_name || '',
+          category: r.pog_category ? r.pog_category.toUpperCase() : 'OTHER',
+          isGap:    (r.ranging_gap ?? 0) > 0,
+        }))
+
+        // Auto-expand the category with the most gaps
+        const gapsByCat = {}
+        mapped.forEach(r => {
+          gapsByCat[r.category] = (gapsByCat[r.category] || 0) + (r.isGap ? 1 : 0)
+        })
+        const topCat = Object.entries(gapsByCat).sort((a, b) => b[1] - a[1])[0]
+        if (topCat && topCat[1] > 0) setExpandedCats(new Set([topCat[0]]))
+
+        setBRows(mapped)
+        setLoading(false)
+        return
+      }
+
+      // ── Vitasoy path (unchanged) ─────────────────────────────────────────────
       const [distRes, bnb26Res, bnb13Res, rules] = await Promise.all([
         supabase.from('store_distribution')
           .select('item_name, item_code, latest_distribution')
@@ -79,21 +125,46 @@ export default function StoreProfile({ store, onClose }) {
       setRows(merged.filter(r => isProductValidForStore(r.name, r.category, storeCtx, rules)))
       setLoading(false)
     }
-    fetchData()
-  }, [store])
 
+    fetchData()
+  }, [store, client])
+
+  // ── Vitasoy grouping (unchanged) ───────────────────────────────────────────
   const grouped = CATEGORY_ORDER
     .map(cat => ({ cat, items: rows.filter(r => r.category === cat) }))
     .filter(g => g.items.length > 0)
-
   const knownCats = new Set(CATEGORY_ORDER)
   const others = rows.filter(r => !knownCats.has(r.category))
   if (others.length) grouped.push({ cat: 'Other', items: others })
+
+  // ── Beiersdorf grouping ────────────────────────────────────────────────────
+  const bCatMap = {}
+  bRows.forEach(r => {
+    if (!bCatMap[r.category]) bCatMap[r.category] = []
+    bCatMap[r.category].push(r)
+  })
+  const bGrouped = Object.keys(bCatMap)
+    .sort((a, b) => a === 'OTHER' ? 1 : b === 'OTHER' ? -1 : a.localeCompare(b))
+    .map(cat => ({
+      cat,
+      items:    bCatMap[cat],
+      gapCount: bCatMap[cat].filter(r => r.isGap).length,
+    }))
+
+  function toggleCat(cat) {
+    setExpandedCats(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
 
   return (
     <div className={`store-profile ${store ? 'open' : ''}`}>
       {store && (
         <>
+          {/* ── Header — shared between both clients ── */}
           <div className="sp-header" style={{ background: chainColor(store.chain) }}>
             <button className="sp-close" onClick={onClose}>✕</button>
             <h2>{store.name}</h2>
@@ -105,57 +176,121 @@ export default function StoreProfile({ store, onClose }) {
             </div>
           </div>
 
-          {!loading && rows.length > 0 && (
-            <div className="sp-stats">
-              <div className="sp-stat">
-                <strong>{rows.filter(r => r.dis === 0).length}</strong>
-                <span>DIS gaps</span>
-              </div>
-              <div className="sp-stat">
-                <strong>{rows.filter(r => r.bnb13 === 0).length}</strong>
-                <span>13wk gaps</span>
-              </div>
-              <div className="sp-stat">
-                <strong>{rows.filter(r => r.bnb26 === 0).length}</strong>
-                <span>26wk gaps</span>
-              </div>
-            </div>
-          )}
+          {/* ── Beiersdorf render path ── */}
+          {client === 'beiersdorf' ? (
+            loading ? (
+              <div className="sp-no-data">Loading…</div>
+            ) : bRows.length === 0 ? (
+              <div className="sp-no-data">No Beiersdorf data for this store.</div>
+            ) : (
+              <>
+                <div className="sp-stats">
+                  <div className="sp-stat">
+                    <strong>{bRows.filter(r => r.isGap).length}</strong>
+                    <span>26wk gaps</span>
+                  </div>
+                  <div className="sp-stat">
+                    <strong>{bRows.length}</strong>
+                    <span>products</span>
+                  </div>
+                  <div className="sp-stat">
+                    <strong>{bGrouped.length}</strong>
+                    <span>categories</span>
+                  </div>
+                </div>
 
-          {loading ? (
-            <div className="sp-no-data">Loading…</div>
-          ) : rows.length === 0 ? (
-            <div className="sp-no-data">No distribution data for this store.</div>
-          ) : (
-            <div className="sp-body">
-              <table className="sp-table">
-                <thead>
-                  <tr>
-                    <th className="sp-th-name">Product</th>
-                    <th className="sp-th-ind">DIS</th>
-                    <th className="sp-th-ind">13wk</th>
-                    <th className="sp-th-ind">26wk</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {grouped.map(({ cat, items }) => (
-                    <Fragment key={cat}>
-                      <tr className="sp-cat-row">
-                        <td colSpan={4} className="sp-cat-header">{cat}</td>
-                      </tr>
-                      {items.map(row => (
-                        <tr key={row.name} className="sp-product-row">
-                          <td className="sp-td-name">{row.name}</td>
-                          <td className="sp-td-ind"><Indicator val={row.dis} /></td>
-                          <td className="sp-td-ind"><Indicator val={row.bnb13} /></td>
-                          <td className="sp-td-ind"><Indicator val={row.bnb26} /></td>
-                        </tr>
-                      ))}
-                    </Fragment>
+                <div className="sp-body">
+                  {bGrouped.map(({ cat, items, gapCount }) => (
+                    <div key={cat} className="sp-b-section">
+                      <button
+                        className="sp-b-cat-header"
+                        onClick={() => toggleCat(cat)}
+                      >
+                        <span className="sp-b-cat-name">{cat}</span>
+                        {gapCount > 0 && (
+                          <span className="sp-b-gap-badge">
+                            {gapCount} gap{gapCount !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        <span className="sp-b-chevron">
+                          {expandedCats.has(cat) ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {expandedCats.has(cat) && (
+                        <div className="sp-b-items">
+                          {items.map(r => (
+                            <div key={r.name} className="sp-b-item">
+                              <span className="sp-b-item-name">{r.name}</span>
+                              {r.isGap
+                                ? <span className="sp-ind-dot">●</span>
+                                : <span className="sp-ind-tick">✓</span>
+                              }
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </>
+            )
+          ) : (
+            /* ── Vitasoy render path (unchanged) ── */
+            <>
+              {!loading && rows.length > 0 && (
+                <div className="sp-stats">
+                  <div className="sp-stat">
+                    <strong>{rows.filter(r => r.dis === 0).length}</strong>
+                    <span>DIS gaps</span>
+                  </div>
+                  <div className="sp-stat">
+                    <strong>{rows.filter(r => r.bnb13 === 0).length}</strong>
+                    <span>13wk gaps</span>
+                  </div>
+                  <div className="sp-stat">
+                    <strong>{rows.filter(r => r.bnb26 === 0).length}</strong>
+                    <span>26wk gaps</span>
+                  </div>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="sp-no-data">Loading…</div>
+              ) : rows.length === 0 ? (
+                <div className="sp-no-data">No distribution data for this store.</div>
+              ) : (
+                <div className="sp-body">
+                  <table className="sp-table">
+                    <thead>
+                      <tr>
+                        <th className="sp-th-name">Product</th>
+                        <th className="sp-th-ind">DIS</th>
+                        <th className="sp-th-ind">13wk</th>
+                        <th className="sp-th-ind">26wk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grouped.map(({ cat, items }) => (
+                        <Fragment key={cat}>
+                          <tr className="sp-cat-row">
+                            <td colSpan={4} className="sp-cat-header">{cat}</td>
+                          </tr>
+                          {items.map(row => (
+                            <tr key={row.name} className="sp-product-row">
+                              <td className="sp-td-name">{row.name}</td>
+                              <td className="sp-td-ind"><Indicator val={row.dis} /></td>
+                              <td className="sp-td-ind"><Indicator val={row.bnb13} /></td>
+                              <td className="sp-td-ind"><Indicator val={row.bnb26} /></td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
