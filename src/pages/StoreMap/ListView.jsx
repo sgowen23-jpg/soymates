@@ -57,6 +57,48 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       const map = {}
 
+      // ── Beiersdorf 26wk gap path ───────────────────────────────────────────
+      if (client === 'beiersdorf' && bnbPeriod === '26wk') {
+        const visibleNames = stores
+          .filter(s => {
+            const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
+            const matchRep   = !filters?.rep   || filters.rep   === 'All' || s.rep   === filters.rep
+            return matchState && matchRep
+          })
+          .map(s => s.name)
+
+        const storeIdByName = {}
+        stores.forEach(s => { storeIdByName[s.name] = String(s.id) })
+
+        let all = [], from = 0
+        while (true) {
+          const { data: batch } = await supabase
+            .from('bnb_26wk')
+            .select('store_name, ranging_gap, uploaded_at')
+            .eq('client', 'beiersdorf')
+            .in('store_name', visibleNames)
+            .range(from, from + 999)
+          if (!batch || batch.length === 0) break
+          all = [...all, ...batch]
+          if (batch.length < 1000) break
+          from += 1000
+        }
+
+        if (all.length) {
+          const maxUploaded = all.reduce((m, r) => r.uploaded_at > m ? r.uploaded_at : m, '')
+          all.filter(r => r.uploaded_at === maxUploaded).forEach(r => {
+            const storeId = storeIdByName[r.store_name]
+            if (!storeId) return
+            if (map[storeId] === undefined) map[storeId] = 0
+            if ((r.ranging_gap ?? 0) > 0) map[storeId]++
+          })
+        }
+
+        setGapMap(map)
+        setLoading(false)
+        return
+      }
+
       if (bnbPeriod === 'dis' || !bnbPeriod) {
         const [distData, pogRows, rules] = await Promise.all([
           (async () => {
