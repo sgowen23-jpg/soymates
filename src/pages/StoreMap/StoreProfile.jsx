@@ -203,28 +203,12 @@ export default function StoreProfile({ store, onClose }) {
                     <span>26wk gaps</span>
                   </div>
                   <div className="sp-stat">
-                    <strong>{bRows.length}</strong>
-                    <span>products</span>
+                    <strong>{bRows.filter(r => r.isS && r.isGap).length}</strong>
+                    <span>Sea Salt gaps</span>
                   </div>
                   <div className="sp-stat">
-                    <strong>{bGrouped.length}</strong>
-                    <span>categories</span>
-                  </div>
-                </div>
-                <div className="sp-stats sp-stats-ranging">
-                  <div className="sp-stat">
-                    <strong>
-                      {bRows.filter(r => r.isS && r.isGap).length}
-                      <span className="sp-stat-of">/{bRows.filter(r => r.isS).length}</span>
-                    </strong>
-                    <span>Sea Salt (S) gaps</span>
-                  </div>
-                  <div className="sp-stat">
-                    <strong>
-                      {bRows.filter(r => r.isM && r.isGap).length}
-                      <span className="sp-stat-of">/{bRows.filter(r => r.isM).length}</span>
-                    </strong>
-                    <span>Must Have (M) gaps</span>
+                    <strong>{bRows.filter(r => r.isM && r.isGap).length}</strong>
+                    <span>Must Have gaps</span>
                   </div>
                 </div>
 
