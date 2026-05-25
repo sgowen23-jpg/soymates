@@ -236,6 +236,28 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     return sortAsc ? ' ↑' : ' ↓'
   }
 
+  async function handleExport() {
+    const XLSX = await import('xlsx')
+    const period = bnbPeriod === 'dis' ? 'DIS' : bnbPeriod === '13wk' ? '13Wk' : '26Wk'
+    const clientLabel = client === 'beiersdorf' ? 'Beiersdorf' : 'Vitasoy'
+    const date = new Date().toISOString().slice(0, 10)
+
+    const rows = sorted.map(store => ({
+      'Store':  store.name,
+      'Suburb': store.suburb,
+      'Chain':  store.chain,
+      'State':  store.state,
+      'Region': store.region,
+      'Gaps':   gapMap[store.id] ?? '',
+      'Rep':    store.rep,
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Distribution')
+    XLSX.writeFile(wb, `Distribution_${clientLabel}_${period}_${date}.xlsx`)
+  }
+
   return (
     <div className="list-view">
       <div className="list-toolbar">
@@ -262,6 +284,11 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           ))}
         </div>
         <span className="list-count">{sorted.length} stores</span>
+        <button
+          className="lv-export-btn"
+          onClick={handleExport}
+          disabled={loading || sorted.length === 0}
+        >Export</button>
       </div>
 
       <div className="list-wrap">

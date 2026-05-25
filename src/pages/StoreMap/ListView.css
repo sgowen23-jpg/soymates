@@ -72,6 +72,30 @@
   white-space: nowrap;
 }
 
+.lv-export-btn {
+  padding: 5px 12px;
+  border: 1px solid #1a4d2e;
+  border-radius: 5px;
+  background: #fff;
+  color: #1a4d2e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.lv-export-btn:hover:not(:disabled) {
+  background: #1a4d2e;
+  color: #fff;
+}
+
+.lv-export-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .list-wrap {
   flex: 1;
   overflow-y: auto;
