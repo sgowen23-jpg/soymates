@@ -195,6 +195,19 @@
   font-size: 12px;
 }
 
+/* ── Beiersdorf ranging stats row ── */
+
+.sp-stats-ranging {
+  background: #fafafa;
+  border-top: none;
+}
+
+.sp-stat-of {
+  font-size: 13px;
+  font-weight: 400;
+  color: #aaa;
+}
+
 /* ── Beiersdorf collapsible sections ── */
 
 .sp-b-section {

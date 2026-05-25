@@ -25,6 +25,14 @@ function latestBatch(data) {
   return data.filter(r => r.uploaded_at === max)
 }
 
+// Parse ( S ), ( M ), ( S / M ) ranging prefixes from Beiersdorf product names
+function parseRanging(name) {
+  const match = name.match(/^\(\s*([^)]+)\)/)
+  if (!match) return { isS: false, isM: false }
+  const prefix = match[1].toUpperCase()
+  return { isS: prefix.includes('S'), isM: prefix.includes('M') }
+}
+
 export default function StoreProfile({ store, onClose }) {
   const { client } = useClient()
 
@@ -66,11 +74,16 @@ export default function StoreProfile({ store, onClose }) {
 
         const latest = latestBatch(raw || [])
 
-        const mapped = latest.map(r => ({
-          name:     r.item_name || '',
-          category: r.pog_category ? r.pog_category.toUpperCase() : 'OTHER',
-          isGap:    (r.ranging_gap ?? 0) > 0,
-        }))
+        const mapped = latest.map(r => {
+          const { isS, isM } = parseRanging(r.item_name || '')
+          return {
+            name:     r.item_name || '',
+            category: r.pog_category ? r.pog_category.toUpperCase() : 'OTHER',
+            isGap:    (r.ranging_gap ?? 0) > 0,
+            isS,
+            isM,
+          }
+        })
 
         // Auto-expand the category with the most gaps
         const gapsByCat = {}
@@ -196,6 +209,22 @@ export default function StoreProfile({ store, onClose }) {
                   <div className="sp-stat">
                     <strong>{bGrouped.length}</strong>
                     <span>categories</span>
+                  </div>
+                </div>
+                <div className="sp-stats sp-stats-ranging">
+                  <div className="sp-stat">
+                    <strong>
+                      {bRows.filter(r => r.isS && r.isGap).length}
+                      <span className="sp-stat-of">/{bRows.filter(r => r.isS).length}</span>
+                    </strong>
+                    <span>Sea Salt (S) gaps</span>
+                  </div>
+                  <div className="sp-stat">
+                    <strong>
+                      {bRows.filter(r => r.isM && r.isGap).length}
+                      <span className="sp-stat-of">/{bRows.filter(r => r.isM).length}</span>
+                    </strong>
+                    <span>Must Have (M) gaps</span>
                   </div>
                 </div>
 
