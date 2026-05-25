@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { useClient } from '../context/ClientContext'
 import { getProductCategory } from '../utils/productCategory'
 import { getRules, isProductValidForStore } from '../utils/rangingRules'
 import './ByProductView.css'
@@ -89,6 +90,7 @@ function ProductPicker({ allProducts, selected, onChange, segment, pogMap }) {
 
 // ─── By Product View ──────────────────────────────────────────────────────────
 export default function ByProductView({ state, rep }) {
+  const { client } = useClient()
   const [segment, setSegment]             = useState('All')
   const [selectedProducts, setSelectedProducts] = useState([])
   const [allData, setAllData]             = useState([])
@@ -110,6 +112,7 @@ export default function ByProductView({ state, rep }) {
             let q = supabase
               .from('store_distribution')
               .select('location_id, store_name, state, banner_group, rep_name, item_name, item_code, latest_distribution')
+              .eq('client', client)
               .range(from, from + 999)
             if (state !== 'All') q = q.eq('state', state)
             if (rep   !== 'All') q = q.eq('rep_name', rep)
@@ -127,6 +130,7 @@ export default function ByProductView({ state, rep }) {
             const { data } = await supabase
               .from('bnb_26wk')
               .select('item_id, pog_category')
+              .eq('client', client)
               .range(from, from + 999)
             if (!data || data.length === 0) break
             all = [...all, ...data]
@@ -159,7 +163,7 @@ export default function ByProductView({ state, rep }) {
       setLoading(false)
     }
     load()
-  }, [state, rep])
+  }, [state, rep, client])
 
   // All unique products in original order
   const allProducts = useMemo(() => {

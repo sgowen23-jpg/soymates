@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useClient } from '../../context/ClientContext'
 import { getProductCategory } from '../../utils/productCategory'
 import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { chainColor } from './chainColors'
@@ -7,6 +8,7 @@ import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
 export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod }) {
+  const { client } = useClient()
   const [stores, setStores] = useState([])
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
@@ -78,6 +80,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
               const { data } = await supabase
                 .from('bnb_26wk')
                 .select('item_id, pog_category')
+                .eq('client', client)
                 .range(from, from + 999)
               if (!data || data.length === 0) break
               all = [...all, ...data]
@@ -149,7 +152,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       setLoading(false)
     }
     fetchGaps()
-  }, [stores, filters?.state, filters?.rep, bnbPeriod])
+  }, [stores, filters?.state, filters?.rep, bnbPeriod, client])
 
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()

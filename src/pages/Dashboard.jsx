@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from 'react'
 import Sidebar from '../components/Sidebar'
+import { ClientProvider } from '../context/ClientContext'
 import './Dashboard.css'
 
 // Lazy-load every page — they only download when first visited
@@ -39,6 +40,7 @@ export default function Dashboard() {
   }
 
   return (
+    <ClientProvider>
     <div className="app-layout">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -83,5 +85,6 @@ export default function Dashboard() {
         </Suspense>
       </main>
     </div>
+    </ClientProvider>
   )
 }

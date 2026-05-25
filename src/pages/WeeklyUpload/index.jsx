@@ -249,7 +249,7 @@ export default function WeeklyUpload() {
           label="26 Week Buy Not Buy"
           colMap={BNB_COLS}
           table="bnb_26wk"
-          deleteQuery={() => supabase.from('bnb_26wk').delete().gte('id', 0)}
+          deleteQuery={() => supabase.from('bnb_26wk').delete().eq('client', 'vitasoy')}
           onSuccess={async () => {
             await supabase.rpc('sync_perfect_store_v2')
             await supabase.rpc('sync_perfect_store_ranging')
@@ -259,13 +259,13 @@ export default function WeeklyUpload() {
           label="13 Week Buy Not Buy"
           colMap={BNB_COLS}
           table="bnb_13wk"
-          deleteQuery={() => supabase.from('bnb_13wk').delete().gte('id', 0)}
+          deleteQuery={() => supabase.from('bnb_13wk').delete().eq('client', 'vitasoy')}
         />
         <Uploader
           label="Distribution"
           colMap={DIST_COLS}
           table="store_distribution"
-          deleteQuery={() => supabase.from('store_distribution').delete().gte('id', 0)}
+          deleteQuery={() => supabase.from('store_distribution').delete().eq('client', 'vitasoy')}
         />
         <Uploader
           label="Store Contacts"
