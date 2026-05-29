@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useClient } from '../../context/ClientContext'
 import { getProductCategory } from '../../utils/productCategory'
@@ -7,11 +7,25 @@ import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
+const BDF_CATS = ['All', 'Deodorants', 'Lip Care', 'Medicinal', 'Men Grooming', 'Skincare', 'Sun Care', 'Sea Salt', 'Must Have', 'Other']
+const BDF_POG_SET = new Set(['deodorants', 'lip care', 'medicinal', 'men grooming', 'skincare', 'sun care'])
+
+function rowMatchesBdfCat(row, cat) {
+  if (cat === 'All') return true
+  const prefix = (row.item_name || '').match(/^\(\s*([^)]+)\)/i)
+  if (cat === 'Sea Salt')  return !!(prefix && prefix[1].toUpperCase().includes('S'))
+  if (cat === 'Must Have') return !!(prefix && prefix[1].toUpperCase().includes('M'))
+  if (cat === 'Other') return !BDF_POG_SET.has((row.pog_category || '').toLowerCase())
+  return (row.pog_category || '').toLowerCase() === cat.toLowerCase()
+}
+
 export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod }) {
   const { client } = useClient()
   const [stores, setStores] = useState([])
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
+  const [bdfCat, setBdfCat] = useState('All')
+  const bdfCacheRef = useRef([])
   const [sortCol, setSortCol] = useState('name')
   const [sortAsc, setSortAsc] = useState(true)
   const [gapMap, setGapMap] = useState({})
@@ -59,6 +73,8 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       // ── Beiersdorf 26wk gap path ───────────────────────────────────────────
       if (client === 'beiersdorf' && bnbPeriod === '26wk') {
+        bdfCacheRef.current = []  // reset cache before fresh fetch
+
         const visibleNames = stores
           .filter(s => {
             const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
@@ -74,7 +90,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
         while (true) {
           const { data: batch } = await supabase
             .from('bnb_26wk')
-            .select('store_name, ranging_gap, uploaded_at')
+            .select('store_name, item_name, pog_category, ranging_gap, uploaded_at')
             .eq('client', 'beiersdorf')
             .in('store_name', visibleNames)
             .range(from, from + 999)
@@ -86,7 +102,11 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
         if (all.length) {
           const maxUploaded = all.reduce((m, r) => r.uploaded_at > m ? r.uploaded_at : m, '')
-          all.filter(r => r.uploaded_at === maxUploaded).forEach(r => {
+          const latestRows = all.filter(r => r.uploaded_at === maxUploaded)
+          bdfCacheRef.current = latestRows  // cache for bdfCat changes
+
+          latestRows.forEach(r => {
+            if (!rowMatchesBdfCat(r, bdfCat)) return
             const storeId = storeIdByName[r.store_name]
             if (!storeId) return
             if (map[storeId] === undefined) map[storeId] = 0
@@ -196,6 +216,23 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     fetchGaps()
   }, [stores, filters?.state, filters?.rep, bnbPeriod, client])
 
+  // When bdfCat tab changes, recompute gaps from cached rows without re-fetching
+  useEffect(() => {
+    const rows = bdfCacheRef.current
+    if (!rows.length) return
+    const storeIdByName = {}
+    stores.forEach(s => { storeIdByName[s.name] = String(s.id) })
+    const map = {}
+    rows.forEach(r => {
+      if (!rowMatchesBdfCat(r, bdfCat)) return
+      const storeId = storeIdByName[r.store_name]
+      if (!storeId) return
+      if (map[storeId] === undefined) map[storeId] = 0
+      if ((r.ranging_gap ?? 0) > 0) map[storeId]++
+    })
+    setGapMap(map)
+  }, [bdfCat, stores])
+
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()
     return stores.filter(s => {
@@ -290,6 +327,18 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           disabled={loading || sorted.length === 0}
         >Export</button>
       </div>
+
+      {client === 'beiersdorf' && (
+        <div className="bdf-cat-bar">
+          {BDF_CATS.map(cat => (
+            <button
+              key={cat}
+              className={`bdf-cat-btn ${bdfCat === cat ? 'active' : ''}`}
+              onClick={() => setBdfCat(cat)}
+            >{cat}</button>
+          ))}
+        </div>
+      )}
 
       <div className="list-wrap">
         <table className="store-table">

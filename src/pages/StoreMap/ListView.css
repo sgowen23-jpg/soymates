@@ -5,6 +5,39 @@
   background: #fff;
 }
 
+.bdf-cat-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.bdf-cat-btn {
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: #444;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.bdf-cat-btn:hover {
+  border-color: #aaa;
+  background: #f0f0f0;
+}
+
+.bdf-cat-btn.active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+  font-weight: 600;
+}
+
 .list-toolbar {
   padding: 10px 14px;
   background: #fff;

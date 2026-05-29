@@ -135,7 +135,21 @@ export default function ByProductView({ state, rep }) {
       const loadedRules = await getRules()
 
       // Beiersdorf: data lives in bnb_26wk, not store_distribution
+      // State/rep filters are applied via the stores table (same approach as ListView)
+      // because Beiersdorf bnb_26wk rows may not have those columns populated.
       if (client === 'beiersdorf') {
+        let visibleNames = null  // null = no store-name filter (load all)
+        if (state !== 'All' || rep !== 'All') {
+          let storeQ = supabase.from('stores').select('store_name')
+          if (state !== 'All') storeQ = storeQ.eq('state', state)
+          if (rep   !== 'All') storeQ = storeQ.eq('rep_name', rep)
+          const { data: storeRows } = await storeQ
+          visibleNames = (storeRows || []).map(s => s.store_name).filter(Boolean)
+          if (!visibleNames.length) {
+            setAllData([]); setPogMap({}); setRules(loadedRules); setLoading(false); return
+          }
+        }
+
         let all = [], from = 0
         while (true) {
           let q = supabase
@@ -143,8 +157,7 @@ export default function ByProductView({ state, rep }) {
             .select('store_name, state, mso, rep_name, item_name, item_id, pog_category, sum_of_ranging, uploaded_at')
             .eq('client', 'beiersdorf')
             .range(from, from + 999)
-          if (state !== 'All') q = q.eq('state', state)
-          if (rep   !== 'All') q = q.eq('rep_name', rep)
+          if (visibleNames) q = q.in('store_name', visibleNames)
           const { data } = await q
           if (!data || data.length === 0) break
           all = [...all, ...data]
