@@ -5,13 +5,41 @@ import { getProductCategory } from '../utils/productCategory'
 import { getRules, isProductValidForStore } from '../utils/rangingRules'
 import './ByProductView.css'
 
-const SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
+const VITASOY_SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
+const BDF_SEGMENTS     = ['All', 'Sea Salt', 'Must Have']
 
 // Clean product display name (strip leading * and spaces)
 function cleanName(p) { return p.replace(/^\*\s*/, '').trim() }
 
+// Beiersdorf sub-range from product name prefix: (S), (M), (SM)
+function bdfPrefix(name) {
+  const m = name.match(/^\(\s*([^)]+)\)/i)
+  if (!m) return { isS: false, isM: false }
+  const p = m[1].toUpperCase()
+  return { isS: p.includes('S'), isM: p.includes('M') }
+}
+
+function bdfCategory(name) {
+  const { isS, isM } = bdfPrefix(name)
+  if (isS && isM) return 'SS+MH'
+  if (isS) return 'Sea Salt'
+  if (isM) return 'Must Have'
+  return ''
+}
+
+function productMatchesSegment(name, pog, segment, client) {
+  if (segment === 'All') return true
+  if (client === 'beiersdorf') {
+    const { isS, isM } = bdfPrefix(name)
+    if (segment === 'Sea Salt')  return isS
+    if (segment === 'Must Have') return isM
+    return false
+  }
+  return getProductCategory(name, pog) === segment
+}
+
 // ─── Product multi-select dropdown ───────────────────────────────────────────
-function ProductPicker({ allProducts, selected, onChange, segment, pogMap }) {
+function ProductPicker({ allProducts, selected, onChange, segment, pogMap, client }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const ref = useRef(null)
@@ -19,9 +47,9 @@ function ProductPicker({ allProducts, selected, onChange, segment, pogMap }) {
   const filtered = useMemo(() => {
     const s = search.toLowerCase()
     return allProducts
-      .filter(p => (segment === 'All' || getProductCategory(p, pogMap[p]) === segment))
+      .filter(p => productMatchesSegment(p, pogMap[p], segment, client))
       .filter(p => !s || cleanName(p).toLowerCase().includes(s))
-  }, [allProducts, segment, search, pogMap])
+  }, [allProducts, segment, search, pogMap, client])
 
   useEffect(() => {
     function handler(e) {
@@ -74,8 +102,8 @@ function ProductPicker({ allProducts, selected, onChange, segment, pogMap }) {
                     checked={selected.includes(p)}
                     onChange={() => toggle(p)}
                   />
-                  <span className="bpv-picker-seg" data-seg={getProductCategory(p, pogMap[p])}>
-                    {getProductCategory(p, pogMap[p])}
+                  <span className="bpv-picker-seg" data-seg={client === 'beiersdorf' ? bdfCategory(p) : getProductCategory(p, pogMap[p])}>
+                    {client === 'beiersdorf' ? bdfCategory(p) : getProductCategory(p, pogMap[p])}
                   </span>
                   <span className="bpv-picker-name">{cleanName(p)}</span>
                 </label>
@@ -104,8 +132,59 @@ export default function ByProductView({ state, rep }) {
     async function load() {
       setLoading(true)
 
-      // Fetch store_distribution, bnb_26wk pog lookup, and ranging rules in parallel
-      const [distData, pogRows, loadedRules] = await Promise.all([
+      const loadedRules = await getRules()
+
+      // Beiersdorf: data lives in bnb_26wk, not store_distribution
+      if (client === 'beiersdorf') {
+        let all = [], from = 0
+        while (true) {
+          let q = supabase
+            .from('bnb_26wk')
+            .select('store_name, state, mso, rep_name, item_name, item_id, pog_category, sum_of_ranging, uploaded_at')
+            .eq('client', 'beiersdorf')
+            .range(from, from + 999)
+          if (state !== 'All') q = q.eq('state', state)
+          if (rep   !== 'All') q = q.eq('rep_name', rep)
+          const { data } = await q
+          if (!data || data.length === 0) break
+          all = [...all, ...data]
+          if (data.length < 1000) break
+          from += 1000
+        }
+
+        // Keep only the latest upload snapshot
+        if (all.length) {
+          const maxUploaded = all.reduce((m, r) => r.uploaded_at > m ? r.uploaded_at : m, '')
+          all = all.filter(r => r.uploaded_at === maxUploaded)
+        }
+
+        // Map to the shape ByProductView expects, using store_name as location_id
+        const distData = all.map(r => ({
+          location_id:          r.store_name,
+          store_name:           r.store_name,
+          state:                r.state,
+          banner_group:         r.mso,
+          rep_name:             r.rep_name,
+          item_name:            r.item_name,
+          item_code:            r.item_id,
+          latest_distribution:  (r.sum_of_ranging ?? 0) > 0 ? 1 : 0,
+        }))
+
+        const nameMap = {}
+        all.forEach(r => {
+          if (r.item_name && r.pog_category && !nameMap[r.item_name])
+            nameMap[r.item_name] = r.pog_category
+        })
+
+        setAllData(distData)
+        setPogMap(nameMap)
+        setRules(loadedRules)
+        setLoading(false)
+        return
+      }
+
+      // Vitasoy: fetch store_distribution + bnb_26wk pog lookup in parallel
+      const [distData, pogRows] = await Promise.all([
         (async () => {
           let all = [], from = 0
           while (true) {
@@ -139,7 +218,6 @@ export default function ByProductView({ state, rep }) {
           }
           return all
         })(),
-        getRules(),
       ])
 
       // Build item_code (string) → pog_category from bnb_26wk
@@ -175,10 +253,15 @@ export default function ByProductView({ state, rep }) {
     return list
   }, [allData])
 
+  const segments = client === 'beiersdorf' ? BDF_SEGMENTS : VITASOY_SEGMENTS
+
+  // Reset segment when switching clients
+  useEffect(() => { setSegment('All') }, [client])
+
   // Products available for the selected segment
   const segmentProducts = useMemo(() =>
-    allProducts.filter(p => segment === 'All' || getProductCategory(p, pogMap[p]) === segment),
-    [allProducts, segment, pogMap]
+    allProducts.filter(p => productMatchesSegment(p, pogMap[p], segment, client)),
+    [allProducts, segment, pogMap, client]
   )
 
   // Clear product selection when segment changes
@@ -232,7 +315,7 @@ export default function ByProductView({ state, rep }) {
       {/* ── Segment + Product filters ── */}
       <div className="bpv-filters">
         <div className="bpv-segment-tabs">
-          {SEGMENTS.map(s => (
+          {segments.map(s => (
             <button
               key={s}
               className={`bpv-seg-tab ${segment === s ? 'active' : ''}`}
@@ -246,6 +329,7 @@ export default function ByProductView({ state, rep }) {
           onChange={setSelectedProducts}
           segment={segment}
           pogMap={pogMap}
+          client={client}
         />
         {selectedProducts.length > 0 && (
           <button className="bpv-clear-btn" onClick={() => setSelectedProducts([])}>
