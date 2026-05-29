@@ -4,6 +4,8 @@ import StoreProfile from './StoreMap/StoreProfile'
 import StoreSearchInput from '../components/StoreSearchInput'
 import ByProductView from './ByProductView'
 import Targets from './Targets'
+import BeiersdorfTargetsView from './Distribution/BeiersdorfTargetsView'
+import { useClient } from '../context/ClientContext'
 import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Distribution.css'
 
@@ -18,6 +20,7 @@ export default function Distribution() {
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
   const freshness                     = useDataFreshness()
+  const { client }                    = useClient()
 
   const filters = { state, rep, search }
 
@@ -90,7 +93,8 @@ export default function Distribution() {
           <ByProductView state={state} rep={rep} />
         </div>
       )}
-      {view === 'targets' && <Targets />}
+      {view === 'targets' && client === 'vitasoy'     && <Targets />}
+      {view === 'targets' && client === 'beiersdorf'  && <BeiersdorfTargetsView state={state} rep={rep} />}
     </div>
   )
 }
