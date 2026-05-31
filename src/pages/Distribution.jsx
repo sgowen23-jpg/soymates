@@ -88,13 +88,13 @@ export default function Distribution() {
           <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} bnbPeriod={bnbPeriod} />
         </>
       )}
-      {view === 'product' && (
+      {view === 'product' && client !== 'beiersdorf' && (
         <div className="distribution-content">
           <ByProductView state={state} rep={rep} />
         </div>
       )}
-      {view === 'targets' && client === 'vitasoy'     && <Targets />}
-      {view === 'targets' && client === 'beiersdorf'  && <BeiersdorfTargetsView state={state} rep={rep} />}
+      {view === 'product' && client === 'beiersdorf' && <BeiersdorfTargetsView state={state} rep={rep} />}
+      {view === 'targets' && client === 'vitasoy'    && <Targets />}
     </div>
   )
 }
