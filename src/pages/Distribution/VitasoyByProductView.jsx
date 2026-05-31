@@ -20,10 +20,24 @@ function getCategory(itemName, pogCategory, itemId) {
   return cat === 'UHT' ? 'Non Core UHT' : cat
 }
 
+async function fetchAllPages(buildQuery) {
+  let all = [], from = 0
+  while (true) {
+    const { data, error } = await buildQuery(from)
+    if (error) throw error
+    if (!data || data.length === 0) break
+    all = [...all, ...data]
+    if (data.length < 1000) break
+    from += 1000
+  }
+  return all
+}
+
 export default function VitasoyByProductView({ state, rep }) {
-  const [rows, setRows]       = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [distData, setDistData] = useState([])
+  const [nameMap, setNameMap]   = useState({})   // item_name → pog_category
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
   const [openSections, setOpenSections]       = useState(new Set())
   const [expandedProduct, setExpandedProduct] = useState(null)
 
@@ -36,55 +50,46 @@ export default function VitasoyByProductView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        // Each state may have been uploaded at a different time — find the latest
-        // uploaded_at per state, then fetch that state's snapshot separately.
-        const statesToLoad = state !== 'All'
-          ? [state]
-          : ['SA', 'VIC', 'WA', 'NSW', 'QLD']
-
-        const latestByState = await Promise.all(
-          statesToLoad.map(async s => {
-            const { data } = await supabase
-              .from('bnb_26wk')
-              .select('uploaded_at')
+        // Fetch store_distribution (source of truth for distribution, matches By Store view)
+        // and bnb_26wk (item_id → pog_category lookup only) in parallel
+        const [dist, pogRows] = await Promise.all([
+          fetchAllPages(from => {
+            let q = supabase
+              .from('store_distribution')
+              .select('location_id, store_name, state, rep_name, item_name, item_code, latest_distribution')
               .eq('client', 'vitasoy')
-              .eq('state', s)
-              .order('uploaded_at', { ascending: false })
-              .limit(1)
-              .single()
-            return { state: s, uploaded_at: data?.uploaded_at ?? null }
-          })
-        )
+              .range(from, from + 999)
+            if (state !== 'All') q = q.eq('state', state)
+            if (rep   !== 'All') q = q.eq('rep_name', rep)
+            return q
+          }),
+          fetchAllPages(from =>
+            supabase
+              .from('bnb_26wk')
+              .select('item_id, item_name, pog_category')
+              .eq('client', 'vitasoy')
+              .range(from, from + 999)
+          ),
+        ])
+
         if (cancelled) return
 
-        const stateSnapshots = latestByState.filter(x => x.uploaded_at)
-        if (!stateSnapshots.length) { setRows([]); setLoading(false); return }
+        // Build item_name → pog_category (prefer direct name match, fall back via item_code)
+        const idToPog = {}
+        const nameToPog = {}
+        pogRows.forEach(r => {
+          if (r.item_id && r.pog_category) idToPog[String(r.item_id)] = r.pog_category
+          if (r.item_name && r.pog_category && !nameToPog[r.item_name])
+            nameToPog[r.item_name] = r.pog_category
+        })
+        dist.forEach(r => {
+          if (r.item_name && r.item_code && !nameToPog[r.item_name]) {
+            const pog = idToPog[String(r.item_code)]
+            if (pog) nameToPog[r.item_name] = pog
+          }
+        })
 
-        const stateChunks = await Promise.all(
-          stateSnapshots.map(async ({ state: s, uploaded_at }) => {
-            let all = [], from = 0
-            while (true) {
-              let q = supabase
-                .from('bnb_26wk')
-                .select('item_name, item_id, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name')
-                .eq('client', 'vitasoy')
-                .eq('state', s)
-                .eq('uploaded_at', uploaded_at)
-                .range(from, from + 999)
-              if (rep !== 'All') q = q.eq('rep_name', rep)
-              const { data, error: fetchErr } = await q
-              if (fetchErr) throw fetchErr
-              if (!data || data.length === 0) break
-              all = [...all, ...data]
-              if (data.length < 1000) break
-              from += 1000
-            }
-            return all
-          })
-        )
-        if (cancelled) return
-
-        if (!cancelled) setRows(stateChunks.flat())
+        if (!cancelled) { setDistData(dist); setNameMap(nameToPog) }
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
@@ -96,28 +101,28 @@ export default function VitasoyByProductView({ state, rep }) {
     return () => { cancelled = true }
   }, [state, rep])
 
+  // Aggregate per product using latest_distribution (matches By Store view)
   const grouped = useMemo(() => {
     const itemMap = {}
-    rows.forEach(r => {
+    distData.forEach(r => {
       if (!r.item_name) return
       if (!itemMap[r.item_name]) {
         itemMap[r.item_name] = {
           item_name: r.item_name,
-          category: getCategory(r.item_name, r.pog_category, r.item_id),
+          category: getCategory(r.item_name, nameMap[r.item_name], r.item_code),
           total: 0,
           stocked: 0,
-          gapCount: 0,
         }
       }
       const item = itemMap[r.item_name]
       item.total++
-      if ((r.sum_of_ranging ?? 0) > 0) item.stocked++
-      item.gapCount += (r.ranging_gap ?? 0)
+      if (r.latest_distribution) item.stocked++
     })
 
     const products = Object.values(itemMap).map(item => ({
       ...item,
-      distPct: item.total > 0 ? (item.stocked / item.total) * 100 : 0,
+      distPct:  item.total > 0 ? (item.stocked / item.total) * 100 : 0,
+      gapCount: item.total - item.stocked,
     }))
 
     const groups = {}
@@ -128,18 +133,19 @@ export default function VitasoyByProductView({ state, rep }) {
     })
     Object.values(groups).forEach(g => g.sort((a, b) => a.distPct - b.distPct))
     return groups
-  }, [rows])
+  }, [distData, nameMap])
 
+  // Gap stores for the expanded product — derived from distData, no extra query
   const gapStores = useMemo(() => {
     if (!expandedProduct) return []
-    return rows
-      .filter(r => r.item_name === expandedProduct && (r.ranging_gap ?? 0) > 0)
-      .map(r => ({ store_name: r.store_name, state: r.state, rep_name: r.rep_name, ranging_gap: r.ranging_gap }))
+    return distData
+      .filter(r => r.item_name === expandedProduct && !r.latest_distribution)
+      .map(r => ({ store_name: r.store_name, state: r.state, rep_name: r.rep_name }))
       .sort((a, b) =>
         (a.state ?? '').localeCompare(b.state ?? '') ||
         (a.store_name ?? '').localeCompare(b.store_name ?? '')
       )
-  }, [rows, expandedProduct])
+  }, [distData, expandedProduct])
 
   function toggleSection(cat) {
     setOpenSections(prev => {
@@ -176,7 +182,7 @@ export default function VitasoyByProductView({ state, rep }) {
   if (!sortedCats.length) {
     return (
       <div className="bdft-empty">
-        No Vitasoy BNB data loaded. Upload a 26-week BNB file to get started.
+        No Vitasoy distribution data loaded. Upload a Distribution file to get started.
       </div>
     )
   }
@@ -243,7 +249,6 @@ export default function VitasoyByProductView({ state, rep }) {
                                 <th>Store</th>
                                 <th>State</th>
                                 <th>Rep</th>
-                                <th>Gap</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -252,7 +257,6 @@ export default function VitasoyByProductView({ state, rep }) {
                                   <td>{s.store_name}</td>
                                   <td>{s.state}</td>
                                   <td>{s.rep_name ?? '—'}</td>
-                                  <td>{s.ranging_gap}</td>
                                 </tr>
                               ))}
                             </tbody>
