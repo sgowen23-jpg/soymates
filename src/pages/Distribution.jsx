@@ -5,6 +5,7 @@ import StoreSearchInput from '../components/StoreSearchInput'
 import ByProductView from './ByProductView'
 import Targets from './Targets'
 import BeiersdorfTargetsView from './Distribution/BeiersdorfTargetsView'
+import VitasoyByProductView from './Distribution/VitasoyByProductView'
 import { useClient } from '../context/ClientContext'
 import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Distribution.css'
@@ -88,12 +89,13 @@ export default function Distribution() {
           <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} bnbPeriod={bnbPeriod} />
         </>
       )}
-      {view === 'product' && client !== 'beiersdorf' && (
+      {view === 'product' && client === 'vitasoy'    && <VitasoyByProductView state={state} rep={rep} />}
+      {view === 'product' && client === 'beiersdorf' && <BeiersdorfTargetsView state={state} rep={rep} />}
+      {view === 'product' && client !== 'vitasoy' && client !== 'beiersdorf' && (
         <div className="distribution-content">
           <ByProductView state={state} rep={rep} />
         </div>
       )}
-      {view === 'product' && client === 'beiersdorf' && <BeiersdorfTargetsView state={state} rep={rep} />}
       {view === 'targets' && client === 'vitasoy'    && <Targets />}
     </div>
   )
