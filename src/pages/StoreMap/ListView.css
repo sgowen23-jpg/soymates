@@ -235,6 +235,21 @@
   color: #777;
 }
 
+/* Unlock the sticky store column on mobile + tablet so the table scrolls freely */
+@media (max-width: 1024px) {
+  .store-table th:first-child,
+  .store-table td:first-child {
+    position: static;
+    box-shadow: none;
+  }
+
+  .store-table thead th:first-child {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+
 @media (max-width: 480px) {
   .list-toolbar {
     padding: 8px 10px;
