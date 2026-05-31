@@ -36,39 +36,55 @@ export default function VitasoyByProductView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        const { data: latestRow, error: latestErr } = await supabase
-          .from('bnb_26wk')
-          .select('uploaded_at')
-          .eq('client', 'vitasoy')
-          .order('uploaded_at', { ascending: false })
-          .limit(1)
-          .single()
+        // Each state may have been uploaded at a different time — find the latest
+        // uploaded_at per state, then fetch that state's snapshot separately.
+        const statesToLoad = state !== 'All'
+          ? [state]
+          : ['SA', 'VIC', 'WA', 'NSW', 'QLD']
 
+        const latestByState = await Promise.all(
+          statesToLoad.map(async s => {
+            const { data } = await supabase
+              .from('bnb_26wk')
+              .select('uploaded_at')
+              .eq('client', 'vitasoy')
+              .eq('state', s)
+              .order('uploaded_at', { ascending: false })
+              .limit(1)
+              .single()
+            return { state: s, uploaded_at: data?.uploaded_at ?? null }
+          })
+        )
         if (cancelled) return
-        if (latestErr && latestErr.code !== 'PGRST116') throw latestErr
-        if (!latestRow) { setRows([]); setLoading(false); return }
 
-        let all = [], from = 0
-        while (true) {
-          let q = supabase
-            .from('bnb_26wk')
-            .select('item_name, item_id, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name')
-            .eq('client', 'vitasoy')
-            .eq('uploaded_at', latestRow.uploaded_at)
-            .range(from, from + 999)
-          if (state !== 'All') q = q.eq('state', state)
-          if (rep   !== 'All') q = q.eq('rep_name', rep)
+        const stateSnapshots = latestByState.filter(x => x.uploaded_at)
+        if (!stateSnapshots.length) { setRows([]); setLoading(false); return }
 
-          const { data, error: fetchErr } = await q
-          if (cancelled) return
-          if (fetchErr) throw fetchErr
-          if (!data || data.length === 0) break
-          all = [...all, ...data]
-          if (data.length < 1000) break
-          from += 1000
-        }
+        const stateChunks = await Promise.all(
+          stateSnapshots.map(async ({ state: s, uploaded_at }) => {
+            let all = [], from = 0
+            while (true) {
+              let q = supabase
+                .from('bnb_26wk')
+                .select('item_name, item_id, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name')
+                .eq('client', 'vitasoy')
+                .eq('state', s)
+                .eq('uploaded_at', uploaded_at)
+                .range(from, from + 999)
+              if (rep !== 'All') q = q.eq('rep_name', rep)
+              const { data, error: fetchErr } = await q
+              if (fetchErr) throw fetchErr
+              if (!data || data.length === 0) break
+              all = [...all, ...data]
+              if (data.length < 1000) break
+              from += 1000
+            }
+            return all
+          })
+        )
+        if (cancelled) return
 
-        if (!cancelled) setRows(all)
+        if (!cancelled) setRows(stateChunks.flat())
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
