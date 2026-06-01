@@ -21,7 +21,7 @@ export default function Distribution() {
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
   const freshness                     = useDataFreshness()
-  const { client }                    = useClient()
+  const { client, setClient }         = useClient()
 
   // Beiersdorf only has 26wk BNB data — DIS and 13wk paths query store_distribution (Vitasoy-only)
   useEffect(() => {
@@ -49,6 +49,17 @@ export default function Distribution() {
             className={`view-btn ${view === 'targets' ? 'active' : ''}`}
             onClick={() => setView('targets')}
           >Targets</button>
+        </div>
+
+        <div className="toolbar-client-switcher">
+          <button
+            className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
+            onClick={() => setClient('vitasoy')}
+          >Vitasoy</button>
+          <button
+            className={`toolbar-client-btn ${client === 'beiersdorf' ? 'active' : ''}`}
+            onClick={() => setClient('beiersdorf')}
+          >Beiersdorf</button>
         </div>
 
         {view === 'store' && (

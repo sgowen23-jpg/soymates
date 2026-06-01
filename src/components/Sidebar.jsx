@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { useClient } from '../context/ClientContext'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -21,8 +20,6 @@ const ADMIN_ITEMS = [
 ]
 
 export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
-  const { client, setClient } = useClient()
-
   async function handleSignOut() {
     await supabase.auth.signOut()
   }
@@ -69,17 +66,6 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
               </button>
             ))}
           </nav>
-
-          <div className="sidebar-client-switcher">
-            <button
-              className={`sidebar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
-              onClick={() => setClient('vitasoy')}
-            >Vitasoy</button>
-            <button
-              className={`sidebar-client-btn ${client === 'beiersdorf' ? 'active' : ''}`}
-              onClick={() => setClient('beiersdorf')}
-            >Beiersdorf</button>
-          </div>
 
           <div className="sidebar-footer">
             <button className="sidebar-signout" onClick={handleSignOut}>

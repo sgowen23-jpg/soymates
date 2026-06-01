@@ -306,20 +306,16 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             placeholder="Search store, suburb…"
           />
         )}
-        <div className="chain-filters">
-          <button
-            className={`chain-btn ${!chainFilter ? 'active' : ''}`}
-            onClick={() => setChainFilter('')}
-          >All</button>
+        <select
+          className="chain-select"
+          value={chainFilter}
+          onChange={e => setChainFilter(e.target.value)}
+        >
+          <option value="">All MSO</option>
           {ALL_CHAINS.map(c => (
-            <button
-              key={c}
-              className={`chain-btn ${chainFilter === c ? 'active' : ''}`}
-              style={chainFilter === c ? { background: chainColor(c), borderColor: chainColor(c) } : {}}
-              onClick={() => setChainFilter(c === chainFilter ? '' : c)}
-            >{c}</button>
+            <option key={c} value={c}>{c}</option>
           ))}
-        </div>
+        </select>
         <span className="list-count">{sorted.length} stores</span>
         <button
           className="lv-export-btn"

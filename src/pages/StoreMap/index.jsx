@@ -2,6 +2,7 @@ import { useState } from 'react'
 import MapView from './MapView'
 import StoreProfile from './StoreProfile'
 import StoreSearchInput from '../../components/StoreSearchInput'
+import { useClient } from '../../context/ClientContext'
 import './StoreMap.css'
 
 const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
@@ -12,6 +13,7 @@ export default function StoreMap() {
   const [state, setState] = useState('All')
   const [rep, setRep] = useState('All')
   const [search, setSearch] = useState('')
+  const { client, setClient } = useClient()
 
   const filters = { state, rep }
 
@@ -24,6 +26,16 @@ export default function StoreMap() {
             onChange={setSearch}
             placeholder="Search store…"
           />
+          <div className="toolbar-client-switcher">
+            <button
+              className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
+              onClick={() => setClient('vitasoy')}
+            >Vitasoy</button>
+            <button
+              className={`toolbar-client-btn ${client === 'beiersdorf' ? 'active' : ''}`}
+              onClick={() => setClient('beiersdorf')}
+            >Beiersdorf</button>
+          </div>
           <select className="filter-select" value={state} onChange={e => setState(e.target.value)}>
             {STATES.map(s => <option key={s}>{s}</option>)}
           </select>

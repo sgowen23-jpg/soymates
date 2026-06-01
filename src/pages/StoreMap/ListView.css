@@ -64,37 +64,19 @@
   border-color: #1a4d2e;
 }
 
-.chain-filters {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  flex-shrink: 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.chain-filters::-webkit-scrollbar { display: none; }
-
-.chain-btn {
+.chain-select {
   padding: 5px 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
   background: #fff;
-  cursor: pointer;
   font-size: 12px;
-  transition: all 0.12s;
-  color: #444;
-  white-space: nowrap;
+  color: #333;
+  cursor: pointer;
+  outline: none;
   flex-shrink: 0;
 }
 
-.chain-btn:hover {
-  background: #f5f5f5;
-}
-
-.chain-btn.active {
-  background: #1a4d2e;
-  color: #fff;
+.chain-select:focus {
   border-color: #1a4d2e;
 }
 
