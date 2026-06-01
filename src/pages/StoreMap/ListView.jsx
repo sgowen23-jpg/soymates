@@ -24,6 +24,9 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   const [stores, setStores] = useState([])
   const [search, setSearch] = useState('')
   const [chainFilter, setChainFilter] = useState('')
+  const [chainSearch, setChainSearch] = useState('')
+  const [chainOpen, setChainOpen] = useState(false)
+  const chainWrapRef = useRef(null)
   const [bdfCat, setBdfCat] = useState('All')
   const bdfCacheRef = useRef([])
   const [sortCol, setSortCol] = useState('name')
@@ -233,6 +236,25 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     setGapMap(map)
   }, [bdfCat, stores])
 
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (chainWrapRef.current && !chainWrapRef.current.contains(e.target)) setChainOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const chainOptions = useMemo(() => {
+    const q = chainSearch.toLowerCase()
+    return q ? ALL_CHAINS.filter(c => c.toLowerCase().includes(q)) : ALL_CHAINS
+  }, [ALL_CHAINS, chainSearch])
+
+  function selectChain(c) {
+    setChainFilter(c)
+    setChainSearch('')
+    setChainOpen(false)
+  }
+
   const filtered = useMemo(() => {
     const q = (search || filters?.search || '').toLowerCase()
     return stores.filter(s => {
@@ -306,16 +328,29 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             placeholder="Search store, suburb…"
           />
         )}
-        <select
-          className="chain-select"
-          value={chainFilter}
-          onChange={e => setChainFilter(e.target.value)}
-        >
-          <option value="">All MSO</option>
-          {ALL_CHAINS.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        <div className="chain-search-wrap" ref={chainWrapRef}>
+          <div className="chain-search-row">
+            <input
+              className="chain-search-input"
+              type="text"
+              value={chainSearch}
+              placeholder={chainFilter || 'All MSO'}
+              onChange={e => { setChainSearch(e.target.value); setChainOpen(true) }}
+              onFocus={() => setChainOpen(true)}
+            />
+            {chainFilter && (
+              <button className="chain-search-clear" onMouseDown={() => selectChain('')}>✕</button>
+            )}
+          </div>
+          {chainOpen && (
+            <ul className="chain-search-dropdown">
+              <li onMouseDown={() => selectChain('')} className={!chainFilter ? 'active' : ''}>All MSO</li>
+              {chainOptions.map(c => (
+                <li key={c} onMouseDown={() => selectChain(c)} className={chainFilter === c ? 'active' : ''}>{c}</li>
+              ))}
+            </ul>
+          )}
+        </div>
         <span className="list-count">{sorted.length} stores</span>
         <button
           className="lv-export-btn"
