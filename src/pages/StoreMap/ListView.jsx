@@ -7,7 +7,7 @@ import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
 
-const BDF_CATS = ['All', 'Deodorants', 'Lip Care', 'Medicinal', 'Men Grooming', 'Skincare', 'Sun Care', 'Sea Salt', 'Must Have', 'Other']
+const BDF_CATS = ['All', 'Sea Salt', 'Must Have']
 const BDF_POG_SET = new Set(['deodorants', 'lip care', 'medicinal', 'men grooming', 'skincare', 'sun care'])
 
 function rowMatchesBdfCat(row, cat) {
