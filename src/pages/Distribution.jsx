@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ListView from './StoreMap/ListView'
 import StoreProfile from './StoreMap/StoreProfile'
 import StoreSearchInput from '../components/StoreSearchInput'
@@ -22,6 +22,11 @@ export default function Distribution() {
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
   const freshness                     = useDataFreshness()
   const { client }                    = useClient()
+
+  // Beiersdorf only has 26wk BNB data — DIS and 13wk paths query store_distribution (Vitasoy-only)
+  useEffect(() => {
+    if (client === 'beiersdorf') setBnbPeriod('26wk')
+  }, [client])
 
   const filters = { state, rep, search }
 
@@ -54,14 +59,18 @@ export default function Distribution() {
               placeholder="Search store…"
             />
             <div className="bnb-toggle">
-              <button
-                className={`bnb-btn ${bnbPeriod === 'dis' ? 'active' : ''}`}
-                onClick={() => setBnbPeriod('dis')}
-              >DIS</button>
-              <button
-                className={`bnb-btn ${bnbPeriod === '13wk' ? 'active' : ''}`}
-                onClick={() => setBnbPeriod('13wk')}
-              >13 Wk</button>
+              {client !== 'beiersdorf' && (
+                <>
+                  <button
+                    className={`bnb-btn ${bnbPeriod === 'dis' ? 'active' : ''}`}
+                    onClick={() => setBnbPeriod('dis')}
+                  >DIS</button>
+                  <button
+                    className={`bnb-btn ${bnbPeriod === '13wk' ? 'active' : ''}`}
+                    onClick={() => setBnbPeriod('13wk')}
+                  >13 Wk</button>
+                </>
+              )}
               <button
                 className={`bnb-btn ${bnbPeriod === '26wk' ? 'active' : ''}`}
                 onClick={() => setBnbPeriod('26wk')}

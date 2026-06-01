@@ -51,57 +51,53 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        // Step 1: find latest uploaded_at for beiersdorf (state-scoped if filtered)
-        let latestQ = supabase
-          .from('bnb_26wk')
-          .select('uploaded_at')
-          .eq('client', 'beiersdorf')
-          .order('uploaded_at', { ascending: false })
-          .limit(1)
-          .single()
+        // Each state may have been uploaded at a different time — find the latest
+        // uploaded_at per state, then fetch that state's snapshot separately.
+        const statesToLoad = effectiveState !== 'All'
+          ? [effectiveState]
+          : ['SA', 'VIC', 'WA', 'NSW', 'QLD']
 
-        if (effectiveState !== 'All') {
-          latestQ = supabase
-            .from('bnb_26wk')
-            .select('uploaded_at')
-            .eq('client', 'beiersdorf')
-            .eq('state', effectiveState)
-            .order('uploaded_at', { ascending: false })
-            .limit(1)
-            .single()
-        }
-
-        const { data: latestRow, error: latestErr } = await latestQ
+        const latestByState = await Promise.all(
+          statesToLoad.map(async s => {
+            const { data } = await supabase
+              .from('bnb_26wk')
+              .select('uploaded_at')
+              .eq('client', 'beiersdorf')
+              .eq('state', s)
+              .order('uploaded_at', { ascending: false })
+              .limit(1)
+              .single()
+            return { state: s, uploaded_at: data?.uploaded_at ?? null }
+          })
+        )
         if (cancelled) return
-        if (latestErr && latestErr.code !== 'PGRST116') throw latestErr
-        if (!latestRow) {
-          setRows([])
-          setLoading(false)
-          return
-        }
 
-        // Step 2: paginate all rows for the latest batch
-        // Fetch only the columns needed for aggregation + gap derivation
-        let all = [], from = 0
-        while (true) {
-          let q = supabase
-            .from('bnb_26wk')
-            .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state')
-            .eq('client', 'beiersdorf')
-            .eq('uploaded_at', latestRow.uploaded_at)
-            .range(from, from + 999)
-          if (effectiveState !== 'All') q = q.eq('state', effectiveState)
+        const stateSnapshots = latestByState.filter(x => x.uploaded_at)
+        if (!stateSnapshots.length) { setRows([]); setLoading(false); return }
 
-          const { data, error: fetchErr } = await q
-          if (cancelled) return
-          if (fetchErr) throw fetchErr
-          if (!data || data.length === 0) break
-          all = [...all, ...data]
-          if (data.length < 1000) break
-          from += 1000
-        }
+        const stateChunks = await Promise.all(
+          stateSnapshots.map(async ({ state: s, uploaded_at }) => {
+            let all = [], from = 0
+            while (true) {
+              const { data, error: fetchErr } = await supabase
+                .from('bnb_26wk')
+                .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state')
+                .eq('client', 'beiersdorf')
+                .eq('state', s)
+                .eq('uploaded_at', uploaded_at)
+                .range(from, from + 999)
+              if (fetchErr) throw fetchErr
+              if (!data || data.length === 0) break
+              all = [...all, ...data]
+              if (data.length < 1000) break
+              from += 1000
+            }
+            return all
+          })
+        )
+        if (cancelled) return
 
-        if (!cancelled) setRows(all)
+        if (!cancelled) setRows(stateChunks.flat())
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
