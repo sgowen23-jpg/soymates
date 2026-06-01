@@ -54,10 +54,11 @@ export default function VitasoyByProductView({ state, rep }) {
         // and bnb_26wk (item_id → pog_category lookup only) in parallel
         const [dist, pogRows] = await Promise.all([
           fetchAllPages(from => {
+            // No client filter — store_distribution is Vitasoy-only and uploaded rows
+            // don't always have client set. ListView/StoreProfile also omit this filter.
             let q = supabase
               .from('store_distribution')
               .select('location_id, store_name, state, rep_name, item_name, item_code, latest_distribution')
-              .eq('client', 'vitasoy')
               .range(from, from + 999)
             if (state !== 'All') q = q.eq('state', state)
             if (rep   !== 'All') q = q.eq('rep_name', rep)
