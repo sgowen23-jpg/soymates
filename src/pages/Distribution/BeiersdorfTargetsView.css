@@ -30,6 +30,26 @@
   font-weight: 600;
 }
 
+.bdft-prod-export-btn {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid #888;
+  background: #fff;
+  color: #555;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.bdft-prod-export-btn:hover {
+  background: #1a2b5e;
+  border-color: #1a2b5e;
+  color: #fff;
+}
+
 .bdft-cat-export-btn {
   margin-left: auto;
   padding: 3px 10px;

@@ -221,6 +221,53 @@ export default function BeiersdorfTargetsView({ state, rep }) {
     pptx.writeFile({ fileName: `${slug}-products-${dateStr}.pptx` })
   }
 
+  async function handleProductExport(itemName, stores) {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
+    const repLabel    = rep !== 'All' ? rep : 'All Reps'
+    const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
+    const displayName = cleanName(itemName)
+    const slideTitle  = `${displayName} — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+    const subtitle    = `${stores.length} store${stores.length !== 1 ? 's are' : ' is'} a gap for ${displayName}`
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Store', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+      { text: 'State', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+      { text: 'Rep',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+      { text: 'Gap',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+    ]
+
+    const dataRows = stores.map(s => ([
+      { text: s.store_name ?? '',              options: { fontSize: 10 } },
+      { text: s.state ?? '',                   options: { fontSize: 10, align: 'center' } },
+      { text: STATE_TO_REP[s.state] ?? '—',   options: { fontSize: 10 } },
+      { text: String(s.ranging_gap ?? 0),      options: { fontSize: 10, align: 'center' } },
+    ]))
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, {
+      x: 0.3, y: 0.15, w: '94%', h: 0.45,
+      fontSize: 15, bold: true, color: DARK,
+    })
+    slide.addText(subtitle, {
+      x: 0.3, y: 0.6, w: '94%', h: 0.28,
+      fontSize: 11, color: '555555', italic: true,
+    })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.95, w: 9,
+      colW: [4.5, 1, 2.5, 1],
+      rowH: 0.28,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const slug    = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `${slug}-gaps-${dateStr}.pptx` })
+  }
+
   async function handleExport() {
     const PptxGenJS = (await import('pptxgenjs')).default
     const pptx = new PptxGenJS()
@@ -363,6 +410,12 @@ export default function BeiersdorfTargetsView({ state, rep }) {
                       <span className="bdft-prod-gap">
                         {product.gapCount} gap{product.gapCount !== 1 ? 's' : ''}
                       </span>
+                      {expandedProduct === product.item_name && (
+                        <button
+                          className="bdft-prod-export-btn"
+                          onClick={e => { e.stopPropagation(); handleProductExport(product.item_name, gapStores) }}
+                        >Export Slide</button>
+                      )}
                       <span className="bdft-prod-chevron">
                         {expandedProduct === product.item_name ? '▲' : '▼'}
                       </span>
