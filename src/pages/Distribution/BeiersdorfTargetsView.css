@@ -30,6 +30,25 @@
   font-weight: 600;
 }
 
+.bdft-cat-export-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid #1a2b5e;
+  background: #fff;
+  color: #1a2b5e;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bdft-cat-export-btn:hover {
+  background: #1a2b5e;
+  color: #fff;
+}
+
 .bdft-export-btn {
   margin-left: auto;
   padding: 4px 12px;
@@ -119,6 +138,7 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.1s;
+  box-sizing: border-box;
 }
 
 .bdft-section-hdr:hover {

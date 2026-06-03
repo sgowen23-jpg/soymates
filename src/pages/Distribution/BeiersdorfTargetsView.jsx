@@ -179,6 +179,48 @@ export default function BeiersdorfTargetsView({ state, rep }) {
     setExpandedProduct(prev => (prev === itemName ? null : itemName))
   }
 
+  async function handleCatExport(cat, products) {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
+    const repLabel    = rep !== 'All' ? rep : 'All Reps'
+    const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
+    const slideTitle  = `${cat} — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Product',  options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+      { text: 'DIS%',     options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+      { text: 'Gaps',     options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+    ]
+
+    const dataRows = products.map(p => {
+      const color = p.distPct >= 80 ? '16a085' : p.distPct >= 60 ? 'e67e22' : 'CC0000'
+      return [
+        { text: cleanName(p.item_name),      options: { fontSize: 10 } },
+        { text: p.distPct.toFixed(1) + '%',  options: { fontSize: 10, bold: true, color, align: 'center' } },
+        { text: String(p.gapCount),          options: { fontSize: 10, align: 'center' } },
+      ]
+    })
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, {
+      x: 0.3, y: 0.2, w: '94%', h: 0.5,
+      fontSize: 15, bold: true, color: DARK,
+    })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.85, w: 9,
+      colW: [6, 1.5, 1.5],
+      rowH: 0.28,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const slug    = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `${slug}-products-${dateStr}.pptx` })
+  }
+
   async function handleExport() {
     const PptxGenJS = (await import('pptxgenjs')).default
     const pptx = new PptxGenJS()
@@ -276,7 +318,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
 
         return (
           <div key={cat} className="bdft-section">
-            <button className="bdft-section-hdr" onClick={() => toggleSection(cat)}>
+            <div className="bdft-section-hdr" onClick={() => toggleSection(cat)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && toggleSection(cat)}>
               <span className="bdft-hdr-arrow">{isOpen ? '▾' : '▸'}</span>
               <span className="bdft-hdr-name">{cat}</span>
               <span className="bdft-hdr-count">
@@ -288,7 +330,13 @@ export default function BeiersdorfTargetsView({ state, rep }) {
               >
                 avg {avgDist.toFixed(1)}%
               </span>
-            </button>
+              {isOpen && (
+                <button
+                  className="bdft-cat-export-btn"
+                  onClick={e => { e.stopPropagation(); handleCatExport(cat, products) }}
+                >Export Slide</button>
+              )}
+            </div>
 
             {isOpen && (
               <div className="bdft-product-list">
