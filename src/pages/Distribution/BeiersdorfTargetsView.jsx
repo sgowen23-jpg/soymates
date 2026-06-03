@@ -13,9 +13,15 @@ const REP_TO_STATE = Object.fromEntries(
   Object.entries(STATE_TO_REP).map(([s, r]) => [r, s])
 )
 
-// Sea Salt pill: hidden — no pog_category='Sea Salt' exists in Beiersdorf data;
-// Sea Salt is encoded in product name prefixes ( S ) / ( S / M ).
-// Must Have pill: hidden — no must_have column on bnb_26wk.
+const BDF_CATS = ['All', 'Sea Salt', 'Must Have']
+
+function itemMatchesCat(itemName, cat) {
+  if (cat === 'All') return true
+  const prefix = (itemName || '').match(/^\(\s*([^)]+)\)/i)
+  if (cat === 'Sea Salt')  return !!(prefix && prefix[1].toUpperCase().includes('S'))
+  if (cat === 'Must Have') return !!(prefix && prefix[1].toUpperCase().includes('M'))
+  return true
+}
 
 function distColor(pct) {
   if (pct >= 80) return '#16a085'
@@ -34,6 +40,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
   const [error, setError]     = useState(null)
   const [openSections, setOpenSections]       = useState(new Set())
   const [expandedProduct, setExpandedProduct] = useState(null)
+  const [bdfCat, setBdfCat]                   = useState('All')
 
   // Derive effective state: explicit state wins; else map rep → state
   const effectiveState = useMemo(() => {
@@ -129,10 +136,12 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       item.gapCount += (r.ranging_gap ?? 0)
     })
 
-    const products = Object.values(itemMap).map(item => ({
-      ...item,
-      distPct: item.total > 0 ? (item.stocked / item.total) * 100 : 0,
-    }))
+    const products = Object.values(itemMap)
+      .filter(item => itemMatchesCat(item.item_name, bdfCat))
+      .map(item => ({
+        ...item,
+        distPct: item.total > 0 ? (item.stocked / item.total) * 100 : 0,
+      }))
 
     // Group, then sort each group worst-first
     const groups = {}
@@ -143,7 +152,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
     })
     Object.values(groups).forEach(g => g.sort((a, b) => a.distPct - b.distPct))
     return groups
-  }, [rows])
+  }, [rows, bdfCat])
 
   // Gap stores for the currently expanded product — derived from loaded rows, no extra query
   const gapStores = useMemo(() => {
@@ -201,6 +210,15 @@ export default function BeiersdorfTargetsView({ state, rep }) {
 
   return (
     <div className="bdft-page">
+      <div className="bdf-cat-bar">
+        {BDF_CATS.map(cat => (
+          <button
+            key={cat}
+            className={`bdf-cat-btn ${bdfCat === cat ? 'active' : ''}`}
+            onClick={() => { setBdfCat(cat); setExpandedProduct(null) }}
+          >{cat}</button>
+        ))}
+      </div>
       {sortedCats.map(cat => {
         const products = grouped[cat]
         const avgDist  = products.reduce((s, p) => s + p.distPct, 0) / products.length
