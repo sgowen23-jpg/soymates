@@ -160,6 +160,119 @@ export default function VitasoyByProductView({ state, rep }) {
     setExpandedProduct(prev => (prev === itemName ? null : itemName))
   }
 
+  async function handleExport() {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel = state !== 'All' ? state : 'All States'
+    const repLabel   = rep   !== 'All' ? rep   : 'All Reps'
+    const slideTitle = `Distribution Summary — Vitasoy — ${stateLabel} — ${repLabel}`
+
+    const exportCats = Object.keys(grouped).sort((a, b) => {
+      const ai = CATEGORY_ORDER.indexOf(a), bi = CATEGORY_ORDER.indexOf(b)
+      if (ai === -1 && bi === -1) return a.localeCompare(b)
+      if (ai === -1) return 1; if (bi === -1) return -1
+      return ai - bi
+    })
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Category', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11 } },
+      { text: 'Products',  options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
+      { text: 'Avg DIS%', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
+    ]
+    const dataRows = exportCats.map(cat => {
+      const prods = grouped[cat]
+      const avg   = prods.reduce((s, p) => s + p.distPct, 0) / prods.length
+      const color = avg >= 80 ? '16a085' : avg >= 60 ? 'e67e22' : 'CC0000'
+      return [
+        { text: cat,                  options: { fontSize: 11 } },
+        { text: String(prods.length), options: { fontSize: 11, align: 'center' } },
+        { text: avg.toFixed(1) + '%', options: { fontSize: 11, bold: true, color, align: 'center' } },
+      ]
+    })
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, { x: 0.3, y: 0.2, w: '94%', h: 0.5, fontSize: 15, bold: true, color: DARK })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.85, w: 9, colW: [5.5, 1.5, 2], rowH: 0.32,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `distribution-summary-${dateStr}.pptx` })
+  }
+
+  async function handleCatExport(cat, products) {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel = state !== 'All' ? state : 'All States'
+    const repLabel   = rep   !== 'All' ? rep   : 'All Reps'
+    const slideTitle = `${cat} — Vitasoy — ${stateLabel} — ${repLabel}`
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Product', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+      { text: 'DIS%',    options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+      { text: 'Gaps',    options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+    ]
+    const dataRows = products.map(p => {
+      const color = p.distPct >= 80 ? '16a085' : p.distPct >= 60 ? 'e67e22' : 'CC0000'
+      return [
+        { text: cleanName(p.item_name),     options: { fontSize: 10 } },
+        { text: p.distPct.toFixed(1) + '%', options: { fontSize: 10, bold: true, color, align: 'center' } },
+        { text: String(p.gapCount),         options: { fontSize: 10, align: 'center' } },
+      ]
+    })
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, { x: 0.3, y: 0.2, w: '94%', h: 0.5, fontSize: 15, bold: true, color: DARK })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.85, w: 9, colW: [6, 1.5, 1.5], rowH: 0.28,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const slug    = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `${slug}-products-${dateStr}.pptx` })
+  }
+
+  async function handleProductExport(itemName, stores) {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel  = state !== 'All' ? state : 'All States'
+    const repLabel    = rep   !== 'All' ? rep   : 'All Reps'
+    const displayName = cleanName(itemName)
+    const slideTitle  = `${displayName} — Vitasoy — ${stateLabel} — ${repLabel}`
+    const subtitle    = `${stores.length} store${stores.length !== 1 ? 's are' : ' is'} a gap for ${displayName}`
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Store', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+      { text: 'State', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
+      { text: 'Rep',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
+    ]
+    const dataRows = stores.map(s => ([
+      { text: s.store_name ?? '',    options: { fontSize: 10 } },
+      { text: s.state ?? '',         options: { fontSize: 10, align: 'center' } },
+      { text: s.rep_name ?? '—',     options: { fontSize: 10 } },
+    ]))
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, { x: 0.3, y: 0.15, w: '94%', h: 0.45, fontSize: 15, bold: true, color: DARK })
+    slide.addText(subtitle,   { x: 0.3, y: 0.6,  w: '94%', h: 0.28, fontSize: 11, color: '555555', italic: true })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.95, w: 9, colW: [5, 1.5, 2.5], rowH: 0.28,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const slug    = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `${slug}-gaps-${dateStr}.pptx` })
+  }
+
   if (loading) {
     return (
       <div className="bdft-loading">
@@ -190,6 +303,9 @@ export default function VitasoyByProductView({ state, rep }) {
 
   return (
     <div className="bdft-page">
+      <div className="bdf-cat-bar">
+        <button className="bdft-export-btn" onClick={handleExport}>Export Slide</button>
+      </div>
       {sortedCats.map(cat => {
         const products = grouped[cat]
         const avgDist  = products.reduce((s, p) => s + p.distPct, 0) / products.length
@@ -197,7 +313,7 @@ export default function VitasoyByProductView({ state, rep }) {
 
         return (
           <div key={cat} className="bdft-section">
-            <button className="bdft-section-hdr" onClick={() => toggleSection(cat)}>
+            <div className="bdft-section-hdr" onClick={() => toggleSection(cat)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && toggleSection(cat)}>
               <span className="bdft-hdr-arrow">{isOpen ? '▾' : '▸'}</span>
               <span className="bdft-hdr-name">{cat}</span>
               <span className="bdft-hdr-count">
@@ -206,7 +322,13 @@ export default function VitasoyByProductView({ state, rep }) {
               <span className="bdft-hdr-avg" style={{ color: distColor(avgDist) }}>
                 avg {avgDist.toFixed(1)}%
               </span>
-            </button>
+              {isOpen && (
+                <button
+                  className="bdft-cat-export-btn"
+                  onClick={e => { e.stopPropagation(); handleCatExport(cat, products) }}
+                >Export Slide</button>
+              )}
+            </div>
 
             {isOpen && (
               <div className="bdft-product-list">
@@ -229,6 +351,12 @@ export default function VitasoyByProductView({ state, rep }) {
                       <span className="bdft-prod-gap">
                         {product.gapCount} gap{product.gapCount !== 1 ? 's' : ''}
                       </span>
+                      {expandedProduct === product.item_name && (
+                        <button
+                          className="bdft-prod-export-btn"
+                          onClick={e => { e.stopPropagation(); handleProductExport(product.item_name, gapStores) }}
+                        >Export Slide</button>
+                      )}
                       <span className="bdft-prod-chevron">
                         {expandedProduct === product.item_name ? '▲' : '▼'}
                       </span>
