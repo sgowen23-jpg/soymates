@@ -30,6 +30,24 @@
   font-weight: 600;
 }
 
+.bdft-export-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #1a2b5e;
+  background: #fff;
+  color: #1a2b5e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bdft-export-btn:hover {
+  background: #1a2b5e;
+  color: #fff;
+}
+
 /* ── Page wrapper ─────────────────────────────────────────────────────────── */
 .bdft-page {
   padding: 16px;

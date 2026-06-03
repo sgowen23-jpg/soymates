@@ -179,6 +179,55 @@ export default function BeiersdorfTargetsView({ state, rep }) {
     setExpandedProduct(prev => (prev === itemName ? null : itemName))
   }
 
+  async function handleExport() {
+    const PptxGenJS = (await import('pptxgenjs')).default
+    const pptx = new PptxGenJS()
+
+    const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
+    const repLabel    = rep !== 'All' ? rep : 'All Reps'
+    const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
+    const slideTitle  = `Distribution Summary — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+
+    const exportCats = Object.keys(grouped).sort((a, b) => {
+      if (a === 'OTHER') return 1
+      if (b === 'OTHER') return -1
+      return a.localeCompare(b)
+    })
+
+    const DARK = '1a2b5e'
+    const headerRow = [
+      { text: 'Category', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11 } },
+      { text: 'Products',  options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
+      { text: 'Avg DIS%', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
+    ]
+
+    const dataRows = exportCats.map(cat => {
+      const prods   = grouped[cat]
+      const avg     = prods.reduce((s, p) => s + p.distPct, 0) / prods.length
+      const color   = avg >= 80 ? '16a085' : avg >= 60 ? 'e67e22' : 'CC0000'
+      return [
+        { text: cat,                          options: { fontSize: 11 } },
+        { text: String(prods.length),         options: { fontSize: 11, align: 'center' } },
+        { text: avg.toFixed(1) + '%',         options: { fontSize: 11, bold: true, color, align: 'center' } },
+      ]
+    })
+
+    const slide = pptx.addSlide()
+    slide.addText(slideTitle, {
+      x: 0.3, y: 0.2, w: '94%', h: 0.5,
+      fontSize: 15, bold: true, color: DARK,
+    })
+    slide.addTable([headerRow, ...dataRows], {
+      x: 0.3, y: 0.85, w: 9,
+      colW: [5.5, 1.5, 2],
+      rowH: 0.32,
+      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
+    })
+
+    const dateStr = new Date().toISOString().slice(0, 10)
+    pptx.writeFile({ fileName: `distribution-summary-${dateStr}.pptx` })
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -218,6 +267,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
             onClick={() => { setBdfCat(cat); setExpandedProduct(null) }}
           >{cat}</button>
         ))}
+        <button className="bdft-export-btn" onClick={handleExport}>Export Slide</button>
       </div>
       {sortedCats.map(cat => {
         const products = grouped[cat]
