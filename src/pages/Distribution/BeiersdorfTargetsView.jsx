@@ -42,7 +42,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
   const [expandedProduct, setExpandedProduct] = useState(null)
   const [bdfCat, setBdfCat]                   = useState('All')
 
-  // Derive effective state: explicit state wins; else map rep → state
+  // Derive effective state for export labels only
   const effectiveState = useMemo(() => {
     if (state !== 'All') return state
     if (rep !== 'All') return REP_TO_STATE[rep] ?? 'All'
@@ -58,40 +58,35 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        const statesToLoad = effectiveState !== 'All'
-          ? [effectiveState]
-          : ['SA', 'VIC', 'WA', 'NSW', 'QLD']
+        // Mirror VitasoyByProductView: apply state + rep_name filters directly,
+        // fetch all pages, then keep only the latest upload batch in memory.
+        let all = [], from = 0
+        while (true) {
+          let q = supabase
+            .from('bnb_26wk')
+            .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name, uploaded_at')
+            .eq('client', 'beiersdorf')
+            .order('uploaded_at', { ascending: false })
+            .range(from, from + 999)
+          if (state !== 'All') q = q.eq('state', state)
+          if (rep   !== 'All') q = q.eq('rep_name', rep)
+          const { data, error: fetchErr } = await q
+          if (fetchErr) throw fetchErr
+          if (!data || data.length === 0) break
+          all = [...all, ...data]
+          if (data.length < 1000) break
+          from += 1000
+        }
 
-        // Fetch all rows per state, then keep only the latest upload snapshot
-        // in memory. Avoids the fragile two-step uploaded_at exact-match approach.
-        const stateChunks = await Promise.all(
-          statesToLoad.map(async s => {
-            let all = [], from = 0
-            while (true) {
-              const { data, error: fetchErr } = await supabase
-                .from('bnb_26wk')
-                .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state, uploaded_at')
-                .eq('client', 'beiersdorf')
-                .eq('state', s)
-                .order('uploaded_at', { ascending: false })
-                .range(from, from + 999)
-              if (fetchErr) throw fetchErr
-              if (!data || data.length === 0) break
-              all = [...all, ...data]
-              if (data.length < 1000) break
-              from += 1000
-            }
-            // Keep only the latest upload batch
-            if (all.length) {
-              const maxUploaded = all[0].uploaded_at // already ordered desc
-              all = all.filter(r => r.uploaded_at === maxUploaded)
-            }
-            return all
-          })
-        )
         if (cancelled) return
 
-        if (!cancelled) setRows(stateChunks.flat())
+        // Keep only the latest upload batch
+        if (all.length) {
+          const maxUploaded = all[0].uploaded_at
+          all = all.filter(r => r.uploaded_at === maxUploaded)
+        }
+
+        if (!cancelled) setRows(all)
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
@@ -101,7 +96,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
 
     load()
     return () => { cancelled = true }
-  }, [effectiveState])
+  }, [state, rep])
 
   // Aggregate rows → per-product stats, grouped by pog_category
   const grouped = useMemo(() => {
