@@ -6,6 +6,9 @@ import './WeeklyUpload.css'
 
 const CHUNK = 200
 
+const VALID_STATES = new Set(['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
+const bnbStateFilter = rows => rows.filter(r => VALID_STATES.has(r.state))
+
 // ── Coerce helpers ────────────────────────────────────────────────────────────
 
 const toInt   = v => { if (v == null || v === '') return null; const n = parseInt(v, 10); return isNaN(n) ? null : n }
@@ -97,7 +100,7 @@ function parseSheet(arrayBuffer, sheetTarget, colMap) {
 
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client, rowFilter }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -144,7 +147,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
       return
     }
 
-    const { records } = parseInfo
+    const records = rowFilter ? rowFilter(parseInfo.records) : parseInfo.records
     const total = records.length
     const errors = []
     const uploadedAt = new Date().toISOString()
@@ -266,6 +269,7 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_26wk"
           client={client}
+          rowFilter={bnbStateFilter}
           deleteQuery={() => supabase.from('bnb_26wk').delete().eq('client', client)}
           onSuccess={async () => {
             await supabase.rpc('sync_perfect_store_v2')
@@ -277,6 +281,7 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_13wk"
           client={client}
+          rowFilter={bnbStateFilter}
           deleteQuery={() => supabase.from('bnb_13wk').delete().eq('client', client)}
         />
         <Uploader
