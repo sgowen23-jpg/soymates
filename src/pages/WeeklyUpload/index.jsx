@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { useClient } from '../../context/ClientContext'
 import './WeeklyUpload.css'
 
 const CHUNK = 200
@@ -96,7 +97,7 @@ function parseSheet(arrayBuffer, sheetTarget, colMap) {
 
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -149,7 +150,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
 
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = records.slice(i, i + CHUNK)
-      const { error } = await supabase.from(table).insert(chunk)
+      const { error } = await supabase.from(table).insert(chunk.map(r => ({ ...r, client })))
       if (error) errors.push(error.message)
       setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
     }
@@ -237,10 +238,24 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function WeeklyUpload() {
+  const { client, setClient } = useClient()
+
   return (
     <div className="wu-page">
       <div className="wu-header">
-        <h1 className="wu-title">Weekly Data Upload</h1>
+        <div className="wu-header-top">
+          <h1 className="wu-title">Weekly Data Upload</h1>
+          <div className="toolbar-client-switcher">
+            <button
+              className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
+              onClick={() => setClient('vitasoy')}
+            >Vitasoy</button>
+            <button
+              className={`toolbar-client-btn ${client === 'beiersdorf' ? 'active' : ''}`}
+              onClick={() => setClient('beiersdorf')}
+            >Beiersdorf</button>
+          </div>
+        </div>
         <p className="wu-sub">Upload all files each week.</p>
       </div>
 
@@ -249,7 +264,8 @@ export default function WeeklyUpload() {
           label="26 Week Buy Not Buy"
           colMap={BNB_COLS}
           table="bnb_26wk"
-          deleteQuery={() => supabase.from('bnb_26wk').delete().eq('client', 'vitasoy')}
+          client={client}
+          deleteQuery={() => supabase.from('bnb_26wk').delete().eq('client', client)}
           onSuccess={async () => {
             await supabase.rpc('sync_perfect_store_v2')
             await supabase.rpc('sync_perfect_store_ranging')
@@ -259,13 +275,15 @@ export default function WeeklyUpload() {
           label="13 Week Buy Not Buy"
           colMap={BNB_COLS}
           table="bnb_13wk"
-          deleteQuery={() => supabase.from('bnb_13wk').delete().eq('client', 'vitasoy')}
+          client={client}
+          deleteQuery={() => supabase.from('bnb_13wk').delete().eq('client', client)}
         />
         <Uploader
           label="Distribution"
           colMap={DIST_COLS}
           table="store_distribution"
-          deleteQuery={() => supabase.from('store_distribution').delete().eq('client', 'vitasoy')}
+          client={client}
+          deleteQuery={() => supabase.from('store_distribution').delete().eq('client', client)}
         />
         <Uploader
           label="Store Contacts"

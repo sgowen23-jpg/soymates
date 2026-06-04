@@ -6,6 +6,13 @@
 
 .wu-header { margin-bottom: 24px; }
 
+.wu-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
 .wu-title {
   font-size: 20px;
   font-weight: 700;
