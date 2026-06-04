@@ -58,46 +58,33 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        // Each state may have been uploaded at a different time — find the latest
-        // uploaded_at per state, then fetch that state's snapshot separately.
         const statesToLoad = effectiveState !== 'All'
           ? [effectiveState]
           : ['SA', 'VIC', 'WA', 'NSW', 'QLD']
 
-        const latestByState = await Promise.all(
-          statesToLoad.map(async s => {
-            const { data } = await supabase
-              .from('bnb_26wk')
-              .select('uploaded_at')
-              .eq('client', 'beiersdorf')
-              .eq('state', s)
-              .order('uploaded_at', { ascending: false })
-              .limit(1)
-              .single()
-            return { state: s, uploaded_at: data?.uploaded_at ?? null }
-          })
-        )
-        if (cancelled) return
-
-        const stateSnapshots = latestByState.filter(x => x.uploaded_at)
-        if (!stateSnapshots.length) { setRows([]); setLoading(false); return }
-
+        // Fetch all rows per state, then keep only the latest upload snapshot
+        // in memory. Avoids the fragile two-step uploaded_at exact-match approach.
         const stateChunks = await Promise.all(
-          stateSnapshots.map(async ({ state: s, uploaded_at }) => {
+          statesToLoad.map(async s => {
             let all = [], from = 0
             while (true) {
               const { data, error: fetchErr } = await supabase
                 .from('bnb_26wk')
-                .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state')
+                .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state, uploaded_at')
                 .eq('client', 'beiersdorf')
                 .eq('state', s)
-                .eq('uploaded_at', uploaded_at)
+                .order('uploaded_at', { ascending: false })
                 .range(from, from + 999)
               if (fetchErr) throw fetchErr
               if (!data || data.length === 0) break
               all = [...all, ...data]
               if (data.length < 1000) break
               from += 1000
+            }
+            // Keep only the latest upload batch
+            if (all.length) {
+              const maxUploaded = all[0].uploaded_at // already ordered desc
+              all = all.filter(r => r.uploaded_at === maxUploaded)
             }
             return all
           })
