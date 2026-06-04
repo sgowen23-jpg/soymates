@@ -147,10 +147,11 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
     const { records } = parseInfo
     const total = records.length
     const errors = []
+    const uploadedAt = new Date().toISOString()
 
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = records.slice(i, i + CHUNK)
-      const { error } = await supabase.from(table).insert(chunk.map(r => ({ ...r, client })))
+      const { error } = await supabase.from(table).insert(chunk.map(r => ({ ...r, client, uploaded_at: uploadedAt })))
       if (error) errors.push(error.message)
       setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
     }
