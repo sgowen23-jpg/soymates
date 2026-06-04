@@ -245,7 +245,7 @@ export default function WeeklyUpload() {
       <div className="wu-header">
         <div className="wu-header-top">
           <h1 className="wu-title">Weekly Data Upload</h1>
-          <div className="toolbar-client-switcher">
+          <div className="toolbar-client-switcher" data-client={client}>
             <button
               className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
               onClick={() => setClient('vitasoy')}

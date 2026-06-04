@@ -51,7 +51,7 @@ export default function Distribution() {
           >Targets</button>
         </div>
 
-        <div className="toolbar-client-switcher">
+        <div className="toolbar-client-switcher" data-client={client}>
           <button
             className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
             onClick={() => setClient('vitasoy')}

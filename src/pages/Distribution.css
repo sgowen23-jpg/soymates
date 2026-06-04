@@ -153,6 +153,11 @@
   color: #fff;
 }
 
+.toolbar-client-switcher[data-client="beiersdorf"] .toolbar-client-btn.active {
+  background: #c0392b;
+  color: #fff;
+}
+
 .toolbar-client-btn:hover:not(.active) {
   background: #f5f5f5;
   color: #333;

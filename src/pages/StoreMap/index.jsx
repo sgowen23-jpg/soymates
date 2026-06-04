@@ -26,7 +26,7 @@ export default function StoreMap() {
             onChange={setSearch}
             placeholder="Search store…"
           />
-          <div className="toolbar-client-switcher">
+          <div className="toolbar-client-switcher" data-client={client}>
             <button
               className={`toolbar-client-btn ${client === 'vitasoy' ? 'active' : ''}`}
               onClick={() => setClient('vitasoy')}
