@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
+import { bdfTemplateExport } from '../../utils/bdfTemplateExport'
 import './BeiersdorfTargetsView.css'
 
 const STATE_TO_REP = {
@@ -179,142 +180,73 @@ export default function BeiersdorfTargetsView({ state, rep }) {
     setExpandedProduct(prev => (prev === itemName ? null : itemName))
   }
 
-  async function handleCatExport(cat, products) {
-    const PptxGenJS = (await import('pptxgenjs')).default
-    const pptx = new PptxGenJS()
-
+  function exportLabels() {
     const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
     const repLabel    = rep !== 'All' ? rep : 'All Reps'
     const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
-    const slideTitle  = `${cat} — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+    return { stateLabel, repLabel, filterLabel }
+  }
 
-    const DARK = '1a2b5e'
-    const headerRow = [
-      { text: 'Product',  options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
-      { text: 'DIS%',     options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
-      { text: 'Gaps',     options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
-    ]
+  function hexColor(pct) { return pct >= 80 ? '16a085' : pct >= 60 ? 'e67e22' : 'CC0000' }
 
-    const dataRows = products.map(p => {
-      const color = p.distPct >= 80 ? '16a085' : p.distPct >= 60 ? 'e67e22' : 'CC0000'
+  async function handleExport() {
+    const { stateLabel, repLabel, filterLabel } = exportLabels()
+    const slideTitle = `Distribution Summary — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+    const dateStr    = new Date().toISOString().slice(0, 10)
+
+    const exportCats = Object.keys(grouped).sort((a, b) => {
+      if (a === 'OTHER') return 1; if (b === 'OTHER') return -1; return a.localeCompare(b)
+    })
+    const rows = exportCats.map(cat => {
+      const prods = grouped[cat]
+      const avg   = prods.reduce((s, p) => s + p.distPct, 0) / prods.length
       return [
-        { text: cleanName(p.item_name),      options: { fontSize: 10 } },
-        { text: p.distPct.toFixed(1) + '%',  options: { fontSize: 10, bold: true, color, align: 'center' } },
-        { text: String(p.gapCount),          options: { fontSize: 10, align: 'center' } },
+        { text: cat },
+        { text: String(prods.length), align: 'c' },
+        { text: avg.toFixed(1) + '%', bold: true, color: hexColor(avg), align: 'c' },
       ]
     })
 
-    const slide = pptx.addSlide()
-    slide.addText(slideTitle, {
-      x: 0.3, y: 0.2, w: '94%', h: 0.5,
-      fontSize: 15, bold: true, color: DARK,
-    })
-    slide.addTable([headerRow, ...dataRows], {
-      x: 0.3, y: 0.85, w: 9,
-      colW: [6, 1.5, 1.5],
-      rowH: 0.28,
-      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
-    })
+    await bdfTemplateExport({ tier: 1, slideTitle, fileName: `bdf-summary-${dateStr}.pptx`, rows })
+  }
 
-    const slug    = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    const dateStr = new Date().toISOString().slice(0, 10)
-    pptx.writeFile({ fileName: `${slug}-products-${dateStr}.pptx` })
+  async function handleCatExport(cat, products) {
+    const { stateLabel, repLabel, filterLabel } = exportLabels()
+    const slideTitle = `${cat} — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
+    const dateStr    = new Date().toISOString().slice(0, 10)
+    const slug       = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+    const rows = products.map(p => [
+      { text: cleanName(p.item_name) },
+      { text: p.distPct.toFixed(1) + '%', bold: true, color: hexColor(p.distPct), align: 'c' },
+      { text: String(p.gapCount), align: 'c' },
+    ])
+
+    await bdfTemplateExport({
+      tier: 2, heroCategory: cat, slideTitle,
+      fileName: `bdf-${slug}-${dateStr}.pptx`, rows,
+    })
   }
 
   async function handleProductExport(itemName, stores) {
-    const PptxGenJS = (await import('pptxgenjs')).default
-    const pptx = new PptxGenJS()
-
-    const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
-    const repLabel    = rep !== 'All' ? rep : 'All Reps'
-    const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
+    const { stateLabel, repLabel, filterLabel } = exportLabels()
     const displayName = cleanName(itemName)
     const slideTitle  = `${displayName} — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
     const subtitle    = `${stores.length} store${stores.length !== 1 ? 's are' : ' is'} a gap for ${displayName}`
+    const dateStr     = new Date().toISOString().slice(0, 10)
+    const slug        = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-    const DARK = '1a2b5e'
-    const headerRow = [
-      { text: 'Store', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
-      { text: 'State', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
-      { text: 'Rep',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
-      { text: 'Gap',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
-    ]
+    const rows = stores.map(s => [
+      { text: s.store_name ?? '' },
+      { text: s.state ?? '', align: 'c' },
+      { text: STATE_TO_REP[s.state] ?? '—' },
+      { text: String(s.ranging_gap ?? 0), align: 'c' },
+    ])
 
-    const dataRows = stores.map(s => ([
-      { text: s.store_name ?? '',              options: { fontSize: 10 } },
-      { text: s.state ?? '',                   options: { fontSize: 10, align: 'center' } },
-      { text: STATE_TO_REP[s.state] ?? '—',   options: { fontSize: 10 } },
-      { text: String(s.ranging_gap ?? 0),      options: { fontSize: 10, align: 'center' } },
-    ]))
-
-    const slide = pptx.addSlide()
-    slide.addText(slideTitle, {
-      x: 0.3, y: 0.15, w: '94%', h: 0.45,
-      fontSize: 15, bold: true, color: DARK,
+    await bdfTemplateExport({
+      tier: 3, heroCategory: null, slideTitle, subtitle,
+      fileName: `bdf-${slug}-${dateStr}.pptx`, rows,
     })
-    slide.addText(subtitle, {
-      x: 0.3, y: 0.6, w: '94%', h: 0.28,
-      fontSize: 11, color: '555555', italic: true,
-    })
-    slide.addTable([headerRow, ...dataRows], {
-      x: 0.3, y: 0.95, w: 9,
-      colW: [4.5, 1, 2.5, 1],
-      rowH: 0.28,
-      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
-    })
-
-    const slug    = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const dateStr = new Date().toISOString().slice(0, 10)
-    pptx.writeFile({ fileName: `${slug}-gaps-${dateStr}.pptx` })
-  }
-
-  async function handleExport() {
-    const PptxGenJS = (await import('pptxgenjs')).default
-    const pptx = new PptxGenJS()
-
-    const stateLabel  = effectiveState !== 'All' ? effectiveState : 'All States'
-    const repLabel    = rep !== 'All' ? rep : 'All Reps'
-    const filterLabel = bdfCat !== 'All' ? bdfCat : 'All Products'
-    const slideTitle  = `Distribution Summary — Beiersdorf — ${stateLabel} — ${repLabel} — ${filterLabel}`
-
-    const exportCats = Object.keys(grouped).sort((a, b) => {
-      if (a === 'OTHER') return 1
-      if (b === 'OTHER') return -1
-      return a.localeCompare(b)
-    })
-
-    const DARK = '1a2b5e'
-    const headerRow = [
-      { text: 'Category', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11 } },
-      { text: 'Products',  options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
-      { text: 'Avg DIS%', options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 11, align: 'center' } },
-    ]
-
-    const dataRows = exportCats.map(cat => {
-      const prods   = grouped[cat]
-      const avg     = prods.reduce((s, p) => s + p.distPct, 0) / prods.length
-      const color   = avg >= 80 ? '16a085' : avg >= 60 ? 'e67e22' : 'CC0000'
-      return [
-        { text: cat,                          options: { fontSize: 11 } },
-        { text: String(prods.length),         options: { fontSize: 11, align: 'center' } },
-        { text: avg.toFixed(1) + '%',         options: { fontSize: 11, bold: true, color, align: 'center' } },
-      ]
-    })
-
-    const slide = pptx.addSlide()
-    slide.addText(slideTitle, {
-      x: 0.3, y: 0.2, w: '94%', h: 0.5,
-      fontSize: 15, bold: true, color: DARK,
-    })
-    slide.addTable([headerRow, ...dataRows], {
-      x: 0.3, y: 0.85, w: 9,
-      colW: [5.5, 1.5, 2],
-      rowH: 0.32,
-      border: { type: 'solid', color: 'e0e0e0', pt: 0.5 },
-    })
-
-    const dateStr = new Date().toISOString().slice(0, 10)
-    pptx.writeFile({ fileName: `distribution-summary-${dateStr}.pptx` })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
