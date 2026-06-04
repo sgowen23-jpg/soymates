@@ -341,20 +341,29 @@ async function _buildAndDownload(JSZip, tmpl, opts) {
     })
   }
 
-  // Assemble output zip
-  const out = new JSZip()
+  // Collect all template files that need to be copied (excluding ones we regenerate)
   const skipSet = new Set([
     'ppt/presentation.xml',
     'ppt/_rels/presentation.xml.rels',
     '[Content_Types].xml',
   ])
+  const filesToCopy = []
   tmpl.forEach((relPath, file) => {
     if (file.dir) return
     if (skipSet.has(relPath)) return
     if (/^ppt\/slides\/slide\d+\.xml$/.test(relPath)) return
     if (/^ppt\/slides\/_rels\/slide\d+\.xml\.rels$/.test(relPath)) return
-    out.file(relPath, file.async('uint8array'))
+    filesToCopy.push(relPath)
   })
+
+  // Await all binary reads before adding to output zip (JSZip v3 does not accept Promises as data)
+  const copiedFiles = await Promise.all(
+    filesToCopy.map(async (p) => ({ path: p, data: await tmpl.file(p).async('uint8array') }))
+  )
+
+  // Assemble output zip
+  const out = new JSZip()
+  copiedFiles.forEach(({ path, data }) => out.file(path, data))
 
   outputSlides.forEach(({ xml, rels }, i) => {
     out.file(`ppt/slides/slide${i + 1}.xml`, xml)
@@ -365,11 +374,7 @@ async function _buildAndDownload(JSZip, tmpl, opts) {
   out.file('ppt/_rels/presentation.xml.rels', updatePresRels(presRels, outputSlides.length))
   out.file('[Content_Types].xml',             updateContentTypes(ctXml, outputSlides.length))
 
-  const blob = await out.generateAsync({
-    type:        'blob',
-    mimeType:    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    compression: 'DEFLATE',
-  })
+  const blob = await out.generateAsync({ type: 'blob', compression: 'DEFLATE' })
   triggerDownload(blob, fileName)
 }
 
