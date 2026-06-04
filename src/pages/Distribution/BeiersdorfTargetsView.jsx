@@ -58,15 +58,16 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
-        // Mirror VitasoyByProductView: apply state + rep_name filters directly,
-        // fetch all pages, then keep only the latest upload batch in memory.
+        // Mirror VitasoyByProductView: apply state + rep_name filters directly
+        // and fetch all pages. No uploaded_at filter needed — WeeklyUpload
+        // deletes all client='beiersdorf' rows before inserting, so there is
+        // only ever one upload's worth of data in the table at a time.
         let all = [], from = 0
         while (true) {
           let q = supabase
             .from('bnb_26wk')
-            .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name, uploaded_at')
+            .select('item_name, pog_category, sum_of_ranging, ranging_gap, store_name, state, rep_name')
             .eq('client', 'beiersdorf')
-            .order('uploaded_at', { ascending: false })
             .range(from, from + 999)
           if (state !== 'All') q = q.eq('state', state)
           if (rep   !== 'All') q = q.eq('rep_name', rep)
@@ -76,14 +77,6 @@ export default function BeiersdorfTargetsView({ state, rep }) {
           all = [...all, ...data]
           if (data.length < 1000) break
           from += 1000
-        }
-
-        if (cancelled) return
-
-        // Keep only the latest upload batch
-        if (all.length) {
-          const maxUploaded = all[0].uploaded_at
-          all = all.filter(r => r.uploaded_at === maxUploaded)
         }
 
         if (!cancelled) setRows(all)
