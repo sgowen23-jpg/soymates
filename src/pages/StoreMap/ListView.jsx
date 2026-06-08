@@ -39,17 +39,18 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   // Fetch store list from Supabase once on mount
   useEffect(() => {
     supabase.from('stores')
-      .select('store_id, store_name, state, store_region, rep_name, mso, suburb, banner')
+      .select('store_id, store_name, state, store_region, rep_name, mso, suburb, banner, classification')
       .then(({ data }) => {
         setStores((data || []).map(s => ({
-          id:     s.store_id,
-          name:   s.store_name,
-          state:  s.state,
-          region: s.store_region,
-          rep:    s.rep_name,
-          chain:  s.mso || '',
-          banner: s.banner || '',
-          suburb: s.suburb || '',
+          id:             s.store_id,
+          name:           s.store_name,
+          state:          s.state,
+          region:         s.store_region,
+          rep:            s.rep_name,
+          chain:          s.mso || '',
+          banner:         s.banner || '',
+          suburb:         s.suburb || '',
+          classification: s.classification || '',
         })))
       })
   }, [])
@@ -59,13 +60,14 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       setLoading(true)
       // Only fetch distribution data for stores visible under current filters —
       // avoids a full table scan when a state or rep filter is active
-      const visibleIds = stores
-        .filter(s => {
-          const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
-          const matchRep   = !filters?.rep   || filters.rep   === 'All' || s.rep   === filters.rep
-          return matchState && matchRep
-        })
-        .map(s => s.id)
+      const matchesFilters = s => {
+        const matchState          = !filters?.state          || filters.state          === 'All' || s.state          === filters.state
+        const matchRep            = !filters?.rep            || filters.rep            === 'All' || s.rep            === filters.rep
+        const matchClassification = !filters?.classification || filters.classification === 'All' || s.classification === filters.classification
+        return matchState && matchRep && matchClassification
+      }
+
+      const visibleIds = stores.filter(matchesFilters).map(s => s.id)
 
       if (!visibleIds.length) { setGapMap({}); setLoading(false); return }
 
@@ -78,13 +80,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       if (client === 'beiersdorf' && bnbPeriod === '26wk') {
         bdfCacheRef.current = []  // reset cache before fresh fetch
 
-        const visibleNames = stores
-          .filter(s => {
-            const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
-            const matchRep   = !filters?.rep   || filters.rep   === 'All' || s.rep   === filters.rep
-            return matchState && matchRep
-          })
-          .map(s => s.name)
+        const visibleNames = stores.filter(matchesFilters).map(s => s.name)
 
         const storeIdByName = {}
         stores.forEach(s => { storeIdByName[s.name] = String(s.id) })
@@ -217,7 +213,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       setLoading(false)
     }
     fetchGaps()
-  }, [stores, filters?.state, filters?.rep, bnbPeriod, client])
+  }, [stores, filters?.state, filters?.rep, filters?.classification, bnbPeriod, client])
 
   // When bdfCat tab changes, recompute gaps from cached rows without re-fetching
   useEffect(() => {
@@ -263,9 +259,10 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
         s.suburb.toLowerCase().includes(q) ||
         s.state.toLowerCase().includes(q)
       const matchChain = !chainFilter || s.chain === chainFilter
-      const matchState = !filters?.state || filters.state === 'All' || s.state === filters.state
-      const matchRep = !filters?.rep || filters.rep === 'All' || s.rep === filters.rep
-      return matchSearch && matchChain && matchState && matchRep
+      const matchState          = !filters?.state          || filters.state          === 'All' || s.state          === filters.state
+      const matchRep            = !filters?.rep            || filters.rep            === 'All' || s.rep            === filters.rep
+      const matchClassification = !filters?.classification || filters.classification === 'All' || s.classification === filters.classification
+      return matchSearch && matchChain && matchState && matchRep && matchClassification
     })
   }, [search, chainFilter, filters])
 

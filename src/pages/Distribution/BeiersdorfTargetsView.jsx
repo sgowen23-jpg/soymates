@@ -34,7 +34,7 @@ function cleanName(name) {
   return name.replace(/^\(\s*[^)]*\)\s*/i, '').trim()
 }
 
-export default function BeiersdorfTargetsView({ state, rep }) {
+export default function BeiersdorfTargetsView({ state, rep, classification }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
@@ -58,6 +58,20 @@ export default function BeiersdorfTargetsView({ state, rep }) {
       setExpandedProduct(null)
 
       try {
+        // If classification filter is active, fetch matching store names first
+        let classificationNames = null
+        if (classification && classification !== 'All') {
+          const { data: storeRows } = await supabase
+            .from('stores')
+            .select('store_name')
+            .eq('classification', classification)
+          classificationNames = (storeRows || []).map(s => s.store_name).filter(Boolean)
+          if (!classificationNames.length) {
+            if (!cancelled) { setRows([]); setLoading(false) }
+            return
+          }
+        }
+
         // Mirror VitasoyByProductView: apply state + rep_name filters directly
         // and fetch all pages. No uploaded_at filter needed — WeeklyUpload
         // deletes all client='beiersdorf' rows before inserting, so there is
@@ -71,6 +85,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
             .range(from, from + 999)
           if (state !== 'All') q = q.eq('state', state)
           if (rep   !== 'All') q = q.eq('rep_name', rep)
+          if (classificationNames) q = q.in('store_name', classificationNames)
           const { data, error: fetchErr } = await q
           if (fetchErr) throw fetchErr
           if (!data || data.length === 0) break
@@ -89,7 +104,7 @@ export default function BeiersdorfTargetsView({ state, rep }) {
 
     load()
     return () => { cancelled = true }
-  }, [state, rep])
+  }, [state, rep, classification])
 
   // Aggregate rows → per-product stats, grouped by pog_category
   const grouped = useMemo(() => {

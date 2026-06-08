@@ -117,7 +117,7 @@ function ProductPicker({ allProducts, selected, onChange, segment, pogMap, clien
 }
 
 // ─── By Product View ──────────────────────────────────────────────────────────
-export default function ByProductView({ state, rep }) {
+export default function ByProductView({ state, rep, classification }) {
   const { client } = useClient()
   const [segment, setSegment]             = useState('All')
   const [selectedProducts, setSelectedProducts] = useState([])
@@ -139,10 +139,11 @@ export default function ByProductView({ state, rep }) {
       // because Beiersdorf bnb_26wk rows may not have those columns populated.
       if (client === 'beiersdorf') {
         let visibleNames = null  // null = no store-name filter (load all)
-        if (state !== 'All' || rep !== 'All') {
+        if (state !== 'All' || rep !== 'All' || (classification && classification !== 'All')) {
           let storeQ = supabase.from('stores').select('store_name')
-          if (state !== 'All') storeQ = storeQ.eq('state', state)
-          if (rep   !== 'All') storeQ = storeQ.eq('rep_name', rep)
+          if (state          !== 'All') storeQ = storeQ.eq('state', state)
+          if (rep            !== 'All') storeQ = storeQ.eq('rep_name', rep)
+          if (classification && classification !== 'All') storeQ = storeQ.eq('classification', classification)
           const { data: storeRows } = await storeQ
           visibleNames = (storeRows || []).map(s => s.store_name).filter(Boolean)
           if (!visibleNames.length) {
@@ -196,6 +197,19 @@ export default function ByProductView({ state, rep }) {
         return
       }
 
+      // Vitasoy: if classification filter is active, resolve matching store IDs first
+      let classificationIds = null
+      if (classification && classification !== 'All') {
+        const { data: storeRows } = await supabase
+          .from('stores')
+          .select('store_id')
+          .eq('classification', classification)
+        classificationIds = (storeRows || []).map(s => s.store_id)
+        if (!classificationIds.length) {
+          setAllData([]); setPogMap({}); setRules(loadedRules); setLoading(false); return
+        }
+      }
+
       // Vitasoy: fetch store_distribution + bnb_26wk pog lookup in parallel
       const [distData, pogRows] = await Promise.all([
         (async () => {
@@ -208,6 +222,7 @@ export default function ByProductView({ state, rep }) {
               .range(from, from + 999)
             if (state !== 'All') q = q.eq('state', state)
             if (rep   !== 'All') q = q.eq('rep_name', rep)
+            if (classificationIds) q = q.in('location_id', classificationIds)
             const { data } = await q
             if (!data || data.length === 0) break
             all = [...all, ...data]
@@ -254,7 +269,7 @@ export default function ByProductView({ state, rep }) {
       setLoading(false)
     }
     load()
-  }, [state, rep, client])
+  }, [state, rep, classification, client])
 
   // All unique products in original order
   const allProducts = useMemo(() => {

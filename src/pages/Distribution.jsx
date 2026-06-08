@@ -10,14 +10,16 @@ import { useClient } from '../context/ClientContext'
 import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Distribution.css'
 
-const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
-const REPS   = ['All', 'Azra Horell', 'David Kerr', 'David Saleeb', 'Dipen Surani', 'Sam Gowen', 'Shane Vandewardt']
+const STATES          = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
+const REPS            = ['All', 'Azra Horell', 'David Kerr', 'David Saleeb', 'Dipen Surani', 'Sam Gowen', 'Shane Vandewardt']
+const CLASSIFICATIONS = ['All', 'Metro', 'Regional', 'Remote']
 
 export default function Distribution() {
   const [view, setView]               = useState('store')
   const [selectedStore, setSelectedStore] = useState(null)
   const [state, setState]             = useState('All')
   const [rep, setRep]                 = useState('All')
+  const [classification, setClassification] = useState('All')
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
   const freshness                     = useDataFreshness()
@@ -28,7 +30,7 @@ export default function Distribution() {
     if (client === 'beiersdorf') setBnbPeriod('26wk')
   }, [client])
 
-  const filters = { state, rep, search }
+  const filters = { state, rep, classification, search }
 
   const activeDate = bnbPeriod === '26wk' ? freshness.bnb26 : bnbPeriod === '13wk' ? freshness.bnb13 : freshness.dis
 
@@ -97,6 +99,9 @@ export default function Distribution() {
         <select className="filter-select" value={rep} onChange={e => setRep(e.target.value)}>
           {REPS.map(r => <option key={r}>{r}</option>)}
         </select>
+        <select className="filter-select" value={classification} onChange={e => setClassification(e.target.value)}>
+          {CLASSIFICATIONS.map(c => <option key={c}>{c}</option>)}
+        </select>
 
         <span className="distribution-title">Distribution</span>
       </div>
@@ -109,11 +114,11 @@ export default function Distribution() {
           <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} bnbPeriod={bnbPeriod} />
         </>
       )}
-      {view === 'product' && client === 'vitasoy'    && <VitasoyByProductView state={state} rep={rep} />}
-      {view === 'product' && client === 'beiersdorf' && <BeiersdorfTargetsView state={state} rep={rep} />}
+      {view === 'product' && client === 'vitasoy'    && <VitasoyByProductView state={state} rep={rep} classification={classification} />}
+      {view === 'product' && client === 'beiersdorf' && <BeiersdorfTargetsView state={state} rep={rep} classification={classification} />}
       {view === 'product' && client !== 'vitasoy' && client !== 'beiersdorf' && (
         <div className="distribution-content">
-          <ByProductView state={state} rep={rep} />
+          <ByProductView state={state} rep={rep} classification={classification} />
         </div>
       )}
       {view === 'targets' && client === 'vitasoy'    && <Targets />}

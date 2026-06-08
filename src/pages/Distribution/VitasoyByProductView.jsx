@@ -33,7 +33,7 @@ async function fetchAllPages(buildQuery) {
   return all
 }
 
-export default function VitasoyByProductView({ state, rep }) {
+export default function VitasoyByProductView({ state, rep, classification }) {
   const [distData, setDistData] = useState([])
   const [nameMap, setNameMap]   = useState({})   // item_name → pog_category
   const [loading, setLoading]   = useState(true)
@@ -52,6 +52,20 @@ export default function VitasoyByProductView({ state, rep }) {
       try {
         // Fetch store_distribution (source of truth for distribution, matches By Store view)
         // and bnb_26wk (item_id → pog_category lookup only) in parallel
+        // If classification filter is active, fetch matching store IDs first
+        let classificationIds = null
+        if (classification && classification !== 'All') {
+          const { data: storeRows } = await supabase
+            .from('stores')
+            .select('store_id')
+            .eq('classification', classification)
+          classificationIds = (storeRows || []).map(s => s.store_id)
+          if (!classificationIds.length) {
+            if (!cancelled) { setDistData([]); setNameMap({}); setLoading(false) }
+            return
+          }
+        }
+
         const [dist, pogRows] = await Promise.all([
           fetchAllPages(from => {
             // No client filter — store_distribution is Vitasoy-only and uploaded rows
@@ -62,6 +76,7 @@ export default function VitasoyByProductView({ state, rep }) {
               .range(from, from + 999)
             if (state !== 'All') q = q.eq('state', state)
             if (rep   !== 'All') q = q.eq('rep_name', rep)
+            if (classificationIds) q = q.in('location_id', classificationIds)
             return q
           }),
           fetchAllPages(from =>
@@ -100,7 +115,7 @@ export default function VitasoyByProductView({ state, rep }) {
 
     load()
     return () => { cancelled = true }
-  }, [state, rep])
+  }, [state, rep, classification])
 
   // Aggregate per product using latest_distribution (matches By Store view)
   const grouped = useMemo(() => {
