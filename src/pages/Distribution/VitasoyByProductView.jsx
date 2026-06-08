@@ -15,32 +15,21 @@ function cleanName(name) {
   return name.replace(/^\*\s*/, '').trim()
 }
 
-function getCategory(itemName, pogCategory, itemId) {
-  const cat = getProductCategory(itemName, pogCategory, itemId)
+function getCategory(itemName, pogCategory, itemCode) {
+  const cat = getProductCategory(itemName, pogCategory, itemCode)
   return cat === 'UHT' ? 'Non Core UHT' : cat
 }
 
-async function fetchAllPages(buildQuery) {
-  let all = [], from = 0
-  while (true) {
-    const { data, error } = await buildQuery(from)
-    if (error) throw error
-    if (!data || data.length === 0) break
-    all = [...all, ...data]
-    if (data.length < 1000) break
-    from += 1000
-  }
-  return all
-}
-
 export default function VitasoyByProductView({ state, rep, classification }) {
-  const [distData, setDistData] = useState([])
-  const [nameMap, setNameMap]   = useState({})   // item_name → pog_category
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const [products, setProducts]   = useState([])   // aggregated per-product rows from RPC
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
   const [openSections, setOpenSections]       = useState(new Set())
   const [expandedProduct, setExpandedProduct] = useState(null)
+  const [gapStores, setGapStores]             = useState([])
+  const [gapLoading, setGapLoading]           = useState(false)
 
+  // Load aggregate summary — single RPC call instead of paginated full-table scan
   useEffect(() => {
     let cancelled = false
 
@@ -48,64 +37,17 @@ export default function VitasoyByProductView({ state, rep, classification }) {
       setLoading(true)
       setError(null)
       setExpandedProduct(null)
+      setGapStores([])
 
       try {
-        // Fetch store_distribution (source of truth for distribution, matches By Store view)
-        // and bnb_26wk (item_id → pog_category lookup only) in parallel
-        // If classification filter is active, fetch matching store IDs first
-        let classificationIds = null
-        if (classification && classification !== 'All') {
-          const { data: storeRows } = await supabase
-            .from('stores')
-            .select('store_id')
-            .eq('classification', classification)
-          classificationIds = (storeRows || []).map(s => s.store_id)
-          if (!classificationIds.length) {
-            if (!cancelled) { setDistData([]); setNameMap({}); setLoading(false) }
-            return
-          }
-        }
-
-        const [dist, pogRows] = await Promise.all([
-          fetchAllPages(from => {
-            // No client filter — store_distribution is Vitasoy-only and uploaded rows
-            // don't always have client set. ListView/StoreProfile also omit this filter.
-            let q = supabase
-              .from('store_distribution')
-              .select('location_id, store_name, state, rep_name, item_name, item_code, latest_distribution')
-              .range(from, from + 999)
-            if (state !== 'All') q = q.eq('state', state)
-            if (rep   !== 'All') q = q.eq('rep_name', rep)
-            if (classificationIds) q = q.in('location_id', classificationIds)
-            return q
-          }),
-          fetchAllPages(from =>
-            supabase
-              .from('bnb_26wk')
-              .select('item_id, item_name, pog_category')
-              .eq('client', 'vitasoy')
-              .range(from, from + 999)
-          ),
-        ])
-
-        if (cancelled) return
-
-        // Build item_name → pog_category (prefer direct name match, fall back via item_code)
-        const idToPog = {}
-        const nameToPog = {}
-        pogRows.forEach(r => {
-          if (r.item_id && r.pog_category) idToPog[String(r.item_id)] = r.pog_category
-          if (r.item_name && r.pog_category && !nameToPog[r.item_name])
-            nameToPog[r.item_name] = r.pog_category
-        })
-        dist.forEach(r => {
-          if (r.item_name && r.item_code && !nameToPog[r.item_name]) {
-            const pog = idToPog[String(r.item_code)]
-            if (pog) nameToPog[r.item_name] = pog
-          }
+        const { data, error: rpcError } = await supabase.rpc('get_vitasoy_distribution_summary', {
+          p_state:          state          === 'All' ? 'All' : state,
+          p_rep:            rep            === 'All' ? 'All' : rep,
+          p_classification: (classification && classification !== 'All') ? classification : 'All',
         })
 
-        if (!cancelled) { setDistData(dist); setNameMap(nameToPog) }
+        if (rpcError) throw rpcError
+        if (!cancelled) setProducts(data || [])
       } catch (e) {
         if (!cancelled) setError(e.message)
       }
@@ -117,51 +59,49 @@ export default function VitasoyByProductView({ state, rep, classification }) {
     return () => { cancelled = true }
   }, [state, rep, classification])
 
-  // Aggregate per product using latest_distribution (matches By Store view)
-  const grouped = useMemo(() => {
-    const itemMap = {}
-    distData.forEach(r => {
-      if (!r.item_name) return
-      if (!itemMap[r.item_name]) {
-        itemMap[r.item_name] = {
-          item_name: r.item_name,
-          category: getCategory(r.item_name, nameMap[r.item_name], r.item_code),
-          total: 0,
-          stocked: 0,
-        }
-      }
-      const item = itemMap[r.item_name]
-      item.total++
-      if (r.latest_distribution) item.stocked++
+  // Fetch gap stores lazily when a product is expanded
+  useEffect(() => {
+    if (!expandedProduct) { setGapStores([]); return }
+
+    let cancelled = false
+    setGapLoading(true)
+
+    supabase.rpc('get_vitasoy_gap_stores', {
+      p_item_name:      expandedProduct,
+      p_state:          state          === 'All' ? 'All' : state,
+      p_rep:            rep            === 'All' ? 'All' : rep,
+      p_classification: (classification && classification !== 'All') ? classification : 'All',
+    }).then(({ data, error: rpcError }) => {
+      if (cancelled) return
+      if (rpcError) console.error('gap stores RPC error', rpcError)
+      setGapStores(data || [])
+      setGapLoading(false)
     })
 
-    const products = Object.values(itemMap).map(item => ({
-      ...item,
-      distPct:  item.total > 0 ? (item.stocked / item.total) * 100 : 0,
-      gapCount: item.total - item.stocked,
-    }))
+    return () => { cancelled = true }
+  }, [expandedProduct, state, rep, classification])
 
+  const grouped = useMemo(() => {
     const groups = {}
-    products.forEach(p => {
-      const cat = p.category || 'Other'
+    products.forEach(r => {
+      if (!r.item_name) return
+      const total   = Number(r.total_stores)   || 0
+      const stocked = Number(r.stocked_stores) || 0
+      const cat = getCategory(r.item_name, r.pog_category, r.item_code) || 'Other'
       if (!groups[cat]) groups[cat] = []
-      groups[cat].push(p)
+      groups[cat].push({
+        item_name: r.item_name,
+        item_code: r.item_code,
+        category:  cat,
+        total,
+        stocked,
+        distPct:  total > 0 ? (stocked / total) * 100 : 0,
+        gapCount: total - stocked,
+      })
     })
     Object.values(groups).forEach(g => g.sort((a, b) => a.distPct - b.distPct))
     return groups
-  }, [distData, nameMap])
-
-  // Gap stores for the expanded product — derived from distData, no extra query
-  const gapStores = useMemo(() => {
-    if (!expandedProduct) return []
-    return distData
-      .filter(r => r.item_name === expandedProduct && !r.latest_distribution)
-      .map(r => ({ store_name: r.store_name, state: r.state, rep_name: r.rep_name }))
-      .sort((a, b) =>
-        (a.state ?? '').localeCompare(b.state ?? '') ||
-        (a.store_name ?? '').localeCompare(b.store_name ?? '')
-      )
-  }, [distData, expandedProduct])
+  }, [products])
 
   function toggleSection(cat) {
     setOpenSections(prev => {
@@ -218,7 +158,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
     pptx.writeFile({ fileName: `distribution-summary-${dateStr}.pptx` })
   }
 
-  async function handleCatExport(cat, products) {
+  async function handleCatExport(cat, prods) {
     const PptxGenJS = (await import('pptxgenjs')).default
     const pptx = new PptxGenJS()
 
@@ -232,7 +172,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
       { text: 'DIS%',    options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
       { text: 'Gaps',    options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10, align: 'center' } },
     ]
-    const dataRows = products.map(p => {
+    const dataRows = prods.map(p => {
       const color = p.distPct >= 80 ? '16a085' : p.distPct >= 60 ? 'e67e22' : 'CC0000'
       return [
         { text: cleanName(p.item_name),     options: { fontSize: 10 } },
@@ -270,9 +210,9 @@ export default function VitasoyByProductView({ state, rep, classification }) {
       { text: 'Rep',   options: { bold: true, fill: { color: DARK }, color: 'FFFFFF', fontSize: 10 } },
     ]
     const dataRows = stores.map(s => ([
-      { text: s.store_name ?? '',    options: { fontSize: 10 } },
-      { text: s.state ?? '',         options: { fontSize: 10, align: 'center' } },
-      { text: s.rep_name ?? '—',     options: { fontSize: 10 } },
+      { text: s.store_name ?? '',  options: { fontSize: 10 } },
+      { text: s.state ?? '',       options: { fontSize: 10, align: 'center' } },
+      { text: s.rep_name ?? '—',   options: { fontSize: 10 } },
     ]))
 
     const slide = pptx.addSlide()
@@ -322,9 +262,9 @@ export default function VitasoyByProductView({ state, rep, classification }) {
         <button className="bdft-export-btn" onClick={handleExport}>Export Slide</button>
       </div>
       {sortedCats.map(cat => {
-        const products = grouped[cat]
-        const avgDist  = products.reduce((s, p) => s + p.distPct, 0) / products.length
-        const isOpen   = openSections.has(cat)
+        const prods   = grouped[cat]
+        const avgDist = prods.reduce((s, p) => s + p.distPct, 0) / prods.length
+        const isOpen  = openSections.has(cat)
 
         return (
           <div key={cat} className="bdft-section">
@@ -332,7 +272,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
               <span className="bdft-hdr-arrow">{isOpen ? '▾' : '▸'}</span>
               <span className="bdft-hdr-name">{cat}</span>
               <span className="bdft-hdr-count">
-                {products.length} product{products.length !== 1 ? 's' : ''}
+                {prods.length} product{prods.length !== 1 ? 's' : ''}
               </span>
               <span className="bdft-hdr-avg" style={{ color: distColor(avgDist) }}>
                 avg {avgDist.toFixed(1)}%
@@ -340,14 +280,14 @@ export default function VitasoyByProductView({ state, rep, classification }) {
               {isOpen && (
                 <button
                   className="bdft-cat-export-btn"
-                  onClick={e => { e.stopPropagation(); handleCatExport(cat, products) }}
+                  onClick={e => { e.stopPropagation(); handleCatExport(cat, prods) }}
                 >Export Slide</button>
               )}
             </div>
 
             {isOpen && (
               <div className="bdft-product-list">
-                {products.map(product => (
+                {prods.map(product => (
                   <Fragment key={product.item_name}>
                     <div
                       className={`bdft-product-row${expandedProduct === product.item_name ? ' active' : ''}`}
@@ -357,10 +297,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
                       onKeyDown={e => e.key === 'Enter' && handleProductClick(product.item_name)}
                     >
                       <span className="bdft-prod-name">{cleanName(product.item_name)}</span>
-                      <span
-                        className="bdft-prod-dist"
-                        style={{ color: distColor(product.distPct) }}
-                      >
+                      <span className="bdft-prod-dist" style={{ color: distColor(product.distPct) }}>
                         {product.distPct.toFixed(1)}%
                       </span>
                       <span className="bdft-prod-gap">
@@ -379,32 +316,37 @@ export default function VitasoyByProductView({ state, rep, classification }) {
 
                     {expandedProduct === product.item_name && (
                       <div className="bdft-gap-panel">
-                        <div className="bdft-gap-header">
-                          {gapStores.length} store{gapStores.length !== 1 ? 's are' : ' is'} a gap for{' '}
-                          <strong>{cleanName(product.item_name)}</strong>
-                        </div>
-
-                        {gapStores.length === 0 ? (
-                          <div className="bdft-gap-empty">No gap stores for current filters.</div>
+                        {gapLoading ? (
+                          <div className="bdft-gap-header">Loading gap stores…</div>
                         ) : (
-                          <table className="bdft-gap-table">
-                            <thead>
-                              <tr>
-                                <th>Store</th>
-                                <th>State</th>
-                                <th>Rep</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {gapStores.map((s, i) => (
-                                <tr key={i}>
-                                  <td>{s.store_name}</td>
-                                  <td>{s.state}</td>
-                                  <td>{s.rep_name ?? '—'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <>
+                            <div className="bdft-gap-header">
+                              {gapStores.length} store{gapStores.length !== 1 ? 's are' : ' is'} a gap for{' '}
+                              <strong>{cleanName(product.item_name)}</strong>
+                            </div>
+                            {gapStores.length === 0 ? (
+                              <div className="bdft-gap-empty">No gap stores for current filters.</div>
+                            ) : (
+                              <table className="bdft-gap-table">
+                                <thead>
+                                  <tr>
+                                    <th>Store</th>
+                                    <th>State</th>
+                                    <th>Rep</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {gapStores.map((s, i) => (
+                                    <tr key={i}>
+                                      <td>{s.store_name}</td>
+                                      <td>{s.state}</td>
+                                      <td>{s.rep_name ?? '—'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
