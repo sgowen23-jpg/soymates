@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { CYCLE_STARTS, CYCLE_YEAR_MAP } from '../../constants'
 import { exportCoverageHTML } from './exportHTML'
@@ -368,9 +368,11 @@ export default function Coverage() {
   const [mainView, setMainView] = useState('cycle')   // 'cycle' | 'day' | 'week' | 'list'
 
   // Filters
-  const [filterRep, setFilterRep]       = useState('All')
+  const [filterReps, setFilterReps]     = useState(new Set()) // empty = show all
   const [filterState, setFilterState]   = useState('All')
   const [showAllStates, setShowAllStates] = useState(false)
+  const [repDropOpen, setRepDropOpen]   = useState(false)
+  const repDropRef = useRef(null)
 
   // Data
   const [visits, setVisits]   = useState([])
@@ -412,10 +414,22 @@ export default function Coverage() {
     load()
   }, [cycle])
 
+  // Close rep dropdown when clicking outside
+  useEffect(() => {
+    function handler(e) {
+      if (repDropRef.current && !repDropRef.current.contains(e.target)) setRepDropOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   // Derive available reps and states from loaded data
   const allReps = useMemo(() => {
     const s = new Set(visits.map(v => v.rep).filter(Boolean))
-    return ['All', ...Array.from(s).sort()]
+    return [
+      ...REP_ORDER.filter(r => s.has(r)),
+      ...Array.from(s).filter(r => !REP_ORDER.includes(r)).sort(),
+    ]
   }, [visits])
 
   const allStates = useMemo(() => {
@@ -426,10 +440,10 @@ export default function Coverage() {
   // Apply filters
   const filtered = useMemo(() => visits.filter(v => {
     if (!showAllStates && v.schedule_state !== 'Successful') return false
-    if (filterRep   !== 'All' && v.rep   !== filterRep)   return false
-    if (filterState !== 'All' && v.state !== filterState) return false
+    if (filterReps.size > 0 && !filterReps.has(v.rep))     return false
+    if (filterState !== 'All' && v.state !== filterState)   return false
     return true
-  }), [visits, filterRep, filterState, showAllStates])
+  }), [visits, filterReps, filterState, showAllStates])
 
   // Index by date — used by both Day and Week views
   const byDate = useMemo(() => {
@@ -483,14 +497,13 @@ export default function Coverage() {
 
   // Heatmap — reps × 12 weeks
   const heatmapReps = useMemo(() => {
-    if (filterRep !== 'All') return [filterRep]
     const s = new Set(filtered.map(v => v.rep).filter(Boolean))
     const inData = Array.from(s)
     return [
       ...REP_ORDER.filter(r => inData.includes(r)),
       ...inData.filter(r => !REP_ORDER.includes(r)).sort(),
     ]
-  }, [filtered, filterRep])
+  }, [filtered])
 
   const heatmapData = useMemo(() => {
     const cycleStart = CYCLE_STARTS[cycle]
@@ -523,7 +536,12 @@ export default function Coverage() {
           {!loading && filtered.length > 0 && (
             <button
               className="cp-export-btn"
-              onClick={() => exportCoverageHTML({ filtered, weeks, cycleLabelStr: cycleLabel(cycle), filterRep, filterState, showAllStates })}
+              onClick={() => {
+                const repLabel = filterReps.size === 0 ? 'All Reps'
+                  : filterReps.size <= 3 ? [...filterReps].join(', ')
+                  : `${filterReps.size} reps`
+                exportCoverageHTML({ filtered, weeks, cycleLabelStr: cycleLabel(cycle), repLabel, filterState, showAllStates })
+              }}
             >
               Export / Share
             </button>
@@ -539,11 +557,53 @@ export default function Coverage() {
               ))}
             </select>
           </div>
-          <div className="cov-field">
+          <div className="cov-field" ref={repDropRef}>
             <label className="cov-field-lbl">Rep</label>
-            <select className="cov-sel" value={filterRep} onChange={e => setFilterRep(e.target.value)}>
-              {allReps.map(r => <option key={r}>{r}</option>)}
-            </select>
+            <div className="cov-rep-drop-wrap">
+              <button
+                className={`cov-sel cov-rep-drop-btn ${repDropOpen ? 'cov-rep-drop-open' : ''}`}
+                onClick={() => setRepDropOpen(o => !o)}
+                type="button"
+              >
+                <span className="cov-rep-drop-label">
+                  {filterReps.size === 0 ? 'All Reps'
+                    : filterReps.size === 1 ? [...filterReps][0].split(' ')[0]
+                    : `${filterReps.size} reps selected`}
+                </span>
+                <span className="cov-rep-drop-arrow">{repDropOpen ? '▲' : '▼'}</span>
+              </button>
+              {repDropOpen && (
+                <div className="cov-rep-drop-menu">
+                  <label className="cov-rep-drop-item cov-rep-drop-all">
+                    <input
+                      type="checkbox"
+                      checked={filterReps.size === 0}
+                      onChange={() => setFilterReps(new Set())}
+                    />
+                    <span>All Reps</span>
+                  </label>
+                  <div className="cov-rep-drop-divider" />
+                  {allReps.map(r => (
+                    <label key={r} className="cov-rep-drop-item">
+                      <input
+                        type="checkbox"
+                        checked={filterReps.has(r)}
+                        onChange={() => {
+                          setFilterReps(prev => {
+                            const next = new Set(prev)
+                            if (next.has(r)) next.delete(r)
+                            else next.add(r)
+                            return next
+                          })
+                        }}
+                      />
+                      <span className="cov-rep-dot" style={{ background: repColor(r) }} />
+                      <span>{r}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="cov-field">
             <label className="cov-field-lbl">State</label>

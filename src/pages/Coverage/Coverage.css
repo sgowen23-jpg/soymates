@@ -34,6 +34,32 @@
 }
 .cov-sel:focus { outline: none; border-color: #CC0000; }
 
+/* ── Rep multi-select dropdown ─────────────────────────────────────────────── */
+.cov-rep-drop-wrap { position: relative; }
+.cov-rep-drop-btn  {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; text-align: left;
+}
+.cov-rep-drop-btn.cov-rep-drop-open { border-color: #1a2b5e; }
+.cov-rep-drop-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cov-rep-drop-arrow { font-size: 10px; opacity: 0.6; flex-shrink: 0; }
+.cov-rep-drop-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
+  background: white; border: 1.5px solid #e0e0e0; border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  min-width: 200px; padding: 6px 0;
+  max-height: 280px; overflow-y: auto;
+}
+.cov-rep-drop-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 500;
+  white-space: nowrap;
+}
+.cov-rep-drop-item:hover { background: #f5f7ff; }
+.cov-rep-drop-item input[type="checkbox"] { cursor: pointer; accent-color: #1a2b5e; }
+.cov-rep-drop-all { font-weight: 700; color: #1a2b5e; }
+.cov-rep-drop-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
 .cov-toggle-lbl {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 12px;
@@ -346,6 +372,8 @@
   .cov-selectors { flex-direction: column; gap: 8px; }
   .cov-field { width: 100%; }
   .cov-sel { width: 100%; min-width: unset; box-sizing: border-box; }
+  .cov-rep-drop-wrap { width: 100%; }
+  .cov-rep-drop-menu { width: 100%; }
   .cov-toggle-lbl { width: 100%; box-sizing: border-box; }
 
   /* Tabs */

@@ -47,10 +47,9 @@ function staleColor(n) {
   return '#16a085'
 }
 
-export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, filterRep, filterState, showAllStates }) {
+export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, repLabel, filterState, showAllStates }) {
   const exportedAt  = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-  const repLabel    = filterRep    !== 'All' ? filterRep    : 'All Reps'
-  const stateLabel  = filterState  !== 'All' ? filterState  : 'All States'
+  const stateLabel  = filterState !== 'All' ? filterState : 'All States'
   const statusLabel = showAllStates ? 'All visit states' : 'Successful visits only'
   const title       = `Coverage — ${cycleLabelStr} — ${stateLabel} — ${repLabel}`
 
@@ -231,7 +230,7 @@ table{border-collapse:collapse}
   const url     = URL.createObjectURL(blob)
   const a       = document.createElement('a')
   const dateStr = new Date().toISOString().slice(0, 10)
-  const slug    = [cycleLabelStr, filterState !== 'All' ? filterState : null, filterRep !== 'All' ? filterRep.split(' ')[0] : null]
+  const slug    = [cycleLabelStr, filterState !== 'All' ? filterState : null, repLabel !== 'All Reps' ? repLabel : null]
     .filter(Boolean).join('-').replace(/\s+/g, '-').toLowerCase()
   a.href        = url
   a.download    = `coverage-${slug}-${dateStr}.html`
