@@ -15,6 +15,27 @@ const toInt   = v => { if (v == null || v === '') return null; const n = parseIn
 const toFloat = v => { if (v == null || v === '') return null; const n = parseFloat(v);   return isNaN(n) ? null : n }
 const toStr   = v => (v == null || v === '') ? null : String(v).trim()
 
+// Parse DD/MM/YYYY or any date Excel gives us → YYYY-MM-DD string
+const toDate  = v => {
+  if (v == null || v === '') return null
+  // If xlsx gave us a JS Date object (numeric serial), format directly
+  if (v instanceof Date) {
+    const y = v.getFullYear(), m = String(v.getMonth()+1).padStart(2,'0'), d = String(v.getDate()).padStart(2,'0')
+    return `${y}-${m}-${d}`
+  }
+  const s = String(v).trim()
+  if (!s) return null
+  // DD/MM/YYYY
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`
+  // YYYY-MM-DD passthrough
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  return null
+}
+
+// Reject null / non-numeric strings (footer/total rows guard)
+const isNumericStr = v => { if (v == null || v === '') return false; return !isNaN(parseFloat(String(v).trim())) }
+
 // ── Column maps ───────────────────────────────────────────────────────────────
 
 const BNB_COLS = [
@@ -72,6 +93,32 @@ const CONTACTS_COLS = [
   { src: 'Match Score',         dest: 'match_score',     parse: toInt  },
 ]
 
+// ── Column map — Store Visits (TaskStatus export) ─────────────────────────────
+// Mirrors import_store_visits.py exactly. Header is on row 1 (row 0 is blank).
+
+const VISITS_COLS = [
+  { src: 'Schedule ID',        dest: 'schedule_id',          parse: toInt   },
+  { src: 'SchedulePeople ID',  dest: 'schedule_people_id',   parse: toInt   },
+  { src: 'Location No',        dest: 'location_no',          parse: toInt   },
+  { src: 'Company Name',       dest: 'store_name',           parse: toStr   },
+  { src: 'Region',             dest: 'state',                parse: toStr   },
+  { src: 'Group Name',         dest: 'group_name',           parse: toStr   },
+  { src: 'Rep',                dest: 'rep',                  parse: toStr   },
+  { src: 'Cycle',              dest: 'cycle',                parse: toStr   },
+  { src: 'Schedule State',     dest: 'schedule_state',       parse: toStr   },
+  { src: 'Date Schedule',      dest: 'date_scheduled',       parse: toDate  },
+  { src: 'WorkType',           dest: 'work_type',            parse: toStr   },
+  { src: 'Schedule Type',      dest: 'schedule_type',        parse: toStr   },
+  { src: 'Budgeted Duration',  dest: 'budgeted_duration',    parse: toInt   },
+  { src: 'Reported Minutes',   dest: 'actual_duration',      parse: toInt   },
+  { src: 'Timer Minutes',      dest: 'timer_minutes',        parse: toInt   },
+  { src: 'KMs',                dest: 'kms',                  parse: toFloat },
+  { src: 'Forms',              dest: 'forms',                parse: toInt   },
+  { src: 'Photos',             dest: 'photos',               parse: toInt   },
+  { src: 'Schedule Comment',   dest: 'schedule_comment',     parse: toStr   },
+  { src: 'Manager Comment',    dest: 'manager_comment',      parse: toStr   },
+]
+
 // ── Parser ────────────────────────────────────────────────────────────────────
 
 function parseSheet(arrayBuffer, sheetTarget, colMap) {
@@ -98,9 +145,45 @@ function parseSheet(arrayBuffer, sheetTarget, colMap) {
   return { records, sheetName, totalRows: raw.length }
 }
 
+// TaskStatus exports have a blank row 0; real header is row 1.
+// Parse the first sheet regardless of its name.
+function parseVisitsSheet(arrayBuffer) {
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true })
+  const sheetName = wb.SheetNames[0]
+  if (!sheetName) return { error: 'No sheets found in workbook.' }
+
+  // Read with header:1 offset — skip first row (blank), use second row as headers
+  const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null, range: 1 })
+  if (!raw.length) return { error: 'No data rows found (sheet may be empty).' }
+
+  const norm = h => String(h).trim().toLowerCase()
+  const lookup = {}
+  Object.keys(raw[0]).forEach(h => { lookup[norm(h)] = h })
+
+  const rejected = []
+  const records = []
+
+  raw.forEach((row, i) => {
+    const rawId  = lookup[norm('Schedule ID')]  !== undefined ? row[lookup[norm('Schedule ID')]]  : null
+    const rawLoc = lookup[norm('Location No')]  !== undefined ? row[lookup[norm('Location No')]]  : null
+    if (!isNumericStr(rawId) || !isNumericStr(rawLoc)) {
+      rejected.push(i)
+      return
+    }
+    const rec = {}
+    VISITS_COLS.forEach(col => {
+      const key = lookup[norm(col.src)]
+      rec[col.dest] = key !== undefined ? col.parse(row[key]) : null
+    })
+    records.push(rec)
+  })
+
+  return { records, sheetName, totalRows: raw.length, rejected: rejected.length }
+}
+
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client, rowFilter }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client, rowFilter, customParser, upsertMode, upsertKey }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -121,9 +204,11 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const res = parseSheet(evt.target.result, sheetName, colMap)
+      const res = customParser
+        ? customParser(evt.target.result)
+        : parseSheet(evt.target.result, sheetName, colMap)
       if (res.error) { setErrMsg(res.error); setPhase('error'); return }
-      if (!res.records.length) { setErrMsg('No rows found in Export sheet.'); setPhase('error'); return }
+      if (!res.records.length) { setErrMsg('No valid rows found after parsing.'); setPhase('error'); return }
       setParseInfo(res)
       setPhase('parsed')
     }
@@ -140,11 +225,13 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
     setPhase('uploading')
     setProgress(0)
 
-    const { error: delErr } = await deleteQuery()
-    if (delErr) {
-      setErrMsg(`Delete failed: ${delErr.message}`)
-      setPhase('error')
-      return
+    if (!upsertMode) {
+      const { error: delErr } = await deleteQuery()
+      if (delErr) {
+        setErrMsg(`Delete failed: ${delErr.message}`)
+        setPhase('error')
+        return
+      }
     }
 
     const records = rowFilter ? rowFilter(parseInfo.records) : parseInfo.records
@@ -154,12 +241,17 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
 
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = records.slice(i, i + CHUNK)
-      const { error } = await supabase.from(table).insert(chunk.map(r => ({ ...r, client, uploaded_at: uploadedAt })))
+      const stamped = upsertMode
+        ? chunk.map(r => ({ ...r, uploaded_at: uploadedAt }))
+        : chunk.map(r => ({ ...r, client, uploaded_at: uploadedAt }))
+      const { error } = upsertMode
+        ? await supabase.from(table).upsert(stamped, { onConflict: upsertKey })
+        : await supabase.from(table).insert(stamped)
       if (error) errors.push(error.message)
       setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
     }
 
-    setResult({ count: total, errors })
+    setResult({ count: total, errors, rejected: parseInfo.rejected })
     setPhase('done')
     if (!errors.length && onSuccess) await onSuccess()
   }
@@ -229,7 +321,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
             </>
           ) : (
             <>
-              <strong>✅ Done!</strong> {result.count.toLocaleString()} rows inserted.
+              <strong>✅ Done!</strong> {result.count.toLocaleString()} rows {upsertMode ? 'upserted' : 'inserted'}{result.rejected > 0 ? ` · ${result.rejected} rejected (corrupt/footer rows)` : ''}.
               <button className="wu-link" onClick={reset}>Upload new file</button>
             </>
           )}
@@ -290,6 +382,15 @@ export default function WeeklyUpload() {
           table="store_distribution"
           client={client}
           deleteQuery={() => supabase.from('store_distribution').delete().eq('client', client)}
+        />
+        <Uploader
+          label="Store Visits (TaskStatus)"
+          description="Upload the weekly TaskStatus export. Upserts on schedule_id — safe to re-upload the same file."
+          customParser={parseVisitsSheet}
+          table="store_visits"
+          upsertMode
+          upsertKey="schedule_id"
+          deleteQuery={() => Promise.resolve({ error: null })}
         />
         <Uploader
           label="Store Contacts"

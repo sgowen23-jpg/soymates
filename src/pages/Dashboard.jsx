@@ -17,6 +17,7 @@ const CyclePlanner = lazy(() => import('./CyclePlanner'))
 const Promotions      = lazy(() => import('./Promotions'))
 const StoreContacts   = lazy(() => import('./StoreContacts'))
 const PerfectStore    = lazy(() => import('./PerfectStore'))
+const Coverage        = lazy(() => import('./Coverage'))
 
 function PageSpinner() {
   return (
@@ -76,6 +77,7 @@ export default function Dashboard() {
           {activePage === 'Cycle Planner' && <CyclePlanner />}
           {activePage === 'Promotions'    && <Promotions />}
           {activePage === 'Perfect Store' && <PerfectStore />}
+          {activePage === 'Coverage'     && <Coverage />}
           {PLACEHOLDER_PAGES.includes(activePage) && (
             <div className="placeholder-page">
               <h2>{activePage}</h2>

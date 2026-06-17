@@ -1,0 +1,296 @@
+/* ── Page ──────────────────────────────────────────────────────────────────── */
+.cov-page {
+  padding: 20px;
+  max-width: 1500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.cov-header       { display: flex; flex-direction: column; gap: 10px; }
+.cov-header-row   { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cov-title        { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0; }
+.cov-total-badge  {
+  background: #1a2b5e; color: white;
+  font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+}
+.cov-selectors  { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.cov-field      { display: flex; flex-direction: column; gap: 3px; }
+.cov-field-lbl  {
+  font-size: 10px; font-weight: 700; color: #999;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cov-sel {
+  padding: 8px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 600;
+  background: white; color: #1a1a1a;
+  cursor: pointer; min-width: 150px;
+}
+.cov-sel:focus { outline: none; border-color: #CC0000; }
+
+.cov-toggle-lbl {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px;
+  border: 1.5px solid #e0e0e0; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  background: white; cursor: pointer;
+  white-space: nowrap;
+}
+.cov-toggle-lbl input { cursor: pointer; }
+
+/* ── Tab bar ───────────────────────────────────────────────────────────────── */
+.cov-tab-bar {
+  display: flex; gap: 4px;
+  border-bottom: 2px solid #e8e8e8;
+  padding-bottom: 0;
+}
+.cov-sub-tab-bar { border-bottom: none; margin-bottom: 4px; }
+
+.cov-tab {
+  padding: 10px 20px;
+  background: none; border: none; border-bottom: 3px solid transparent;
+  font-size: 14px; font-weight: 600; color: #888;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -2px;
+}
+.cov-tab:hover { color: #1a2b5e; }
+.cov-tab.active { color: #1a2b5e; border-bottom-color: #1a2b5e; }
+
+/* ── Loading ───────────────────────────────────────────────────────────────── */
+.cov-loading {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 60px 0; color: #aaa; font-size: 14px;
+}
+.cov-spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid #e0e0e0; border-top-color: #CC0000;
+  animation: cov-spin 0.8s linear infinite;
+}
+@keyframes cov-spin { to { transform: rotate(360deg); } }
+
+/* ── Calendar grid (shared by Day and Week views) ──────────────────────────── */
+.cov-calendar {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cov-week {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cov-week-hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  background: #1a2b5e; color: white;
+  font-size: 13px; font-weight: 700;
+}
+.cov-week-range { font-weight: 400; font-size: 12px; opacity: 0.8; flex: 1; }
+.cov-week-total {
+  background: rgba(255,255,255,0.2);
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px;
+}
+.cov-week-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: #e8e8e8;
+}
+.cov-day {
+  background: white;
+  padding: 10px;
+  min-height: 80px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.cov-day-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px;
+}
+.cov-day-lbl { font-size: 11px; font-weight: 700; color: #555; }
+.cov-day-badge {
+  background: #CC0000; color: white;
+  font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px; min-width: 20px; text-align: center;
+}
+.cov-day-empty { font-size: 11px; color: #ccc; }
+
+/* ── Day View cells ────────────────────────────────────────────────────────── */
+.cov-day-clickable { cursor: pointer; transition: background 0.1s; }
+.cov-day-clickable:hover { background: #f8f9ff; }
+.cov-day-has-visits { background: #fafbff; }
+.cov-day-selected  { background: #eef1ff !important; outline: 2px solid #1a2b5e; outline-offset: -2px; }
+
+.cov-day-dots {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;
+}
+.cov-rep-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── Day View — detail panel ───────────────────────────────────────────────── */
+.cov-day-panel {
+  background: white;
+  border: 1.5px solid #1a2b5e;
+  border-radius: 12px;
+  padding: 16px;
+}
+.cov-day-panel-hd {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+.cov-panel-count  { color: #888; font-size: 13px; flex: 1; }
+.cov-panel-close  {
+  background: none; border: none; font-size: 14px; color: #aaa;
+  cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.cov-panel-close:hover { background: #f0f0f0; color: #333; }
+
+.cov-panel-reps { display: flex; flex-direction: column; gap: 12px; }
+
+.cov-panel-rep-group { border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+.cov-panel-rep-hd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: #f8f8f8;
+  border-left: 4px solid;
+  font-size: 13px;
+}
+.cov-panel-rep-count { color: #888; font-size: 12px; margin-left: auto; font-weight: 400; }
+
+.cov-panel-visit-list { padding: 6px 0; }
+.cov-visit-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.cov-visit-row:last-child { border-bottom: none; }
+.cov-visit-store { flex: 1; font-weight: 500; color: #1a1a1a; }
+.cov-visit-meta  { display: flex; align-items: center; gap: 6px; }
+.cov-visit-dur   { color: #888; font-size: 11px; }
+.cov-visit-state {
+  background: #fff3cd; color: #856404;
+  font-size: 10px; font-weight: 600;
+  padding: 1px 6px; border-radius: 10px;
+}
+.cov-visit-comment { font-size: 13px; cursor: help; }
+
+.cov-empty { color: #aaa; font-size: 13px; padding: 8px 0; }
+
+/* ── Week View — visit chips ───────────────────────────────────────────────── */
+.cov-week-chips {
+  display: flex; flex-direction: column; gap: 3px;
+  max-height: 220px; overflow-y: auto;
+}
+.cov-visit-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 4px;
+  padding: 3px 6px;
+  border-left: 3px solid;
+  border-radius: 0 4px 4px 0;
+  background: #f8f9ff;
+  font-size: 11px;
+  cursor: default;
+}
+.cov-chip-store {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500; color: #1a1a1a;
+}
+.cov-chip-dur { color: #aaa; font-size: 10px; flex-shrink: 0; }
+
+/* ── Cycle List View ───────────────────────────────────────────────────────── */
+.cov-list-wrap   { display: flex; flex-direction: column; gap: 12px; }
+.cov-list-meta   { font-size: 13px; color: #888; }
+.cov-table-scroll { overflow-x: auto; }
+.cov-table {
+  width: 100%; border-collapse: collapse;
+  background: white; border-radius: 10px; overflow: hidden;
+  border: 1.5px solid #e8e8e8;
+}
+.cov-th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px; font-weight: 700; color: #888;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  background: #f8f8f8;
+  border-bottom: 1.5px solid #e8e8e8;
+}
+.cov-th-sort  { cursor: pointer; user-select: none; white-space: nowrap; }
+.cov-th-sort:hover { color: #1a2b5e; background: #f0f2ff; }
+.cov-th-active    { color: #1a2b5e; }
+
+.cov-tr { border-bottom: 1px solid #f0f0f0; }
+.cov-tr:last-child { border-bottom: none; }
+.cov-tr:hover { background: #fafbff; }
+
+.cov-td         { padding: 10px 14px; font-size: 13px; color: #1a1a1a; }
+.cov-td-name    { font-weight: 500; max-width: 260px; }
+.cov-td-center  { text-align: center; }
+.cov-td-count   { font-weight: 700; color: #1a2b5e; }
+
+.cov-stale-green { color: #16a085; font-weight: 600; }
+.cov-stale-orange{ color: #e67e22; font-weight: 600; }
+.cov-stale-red   { color: #CC0000; font-weight: 600; }
+
+/* ── Cycle Heatmap View ────────────────────────────────────────────────────── */
+.cov-heatmap-wrap   { display: flex; flex-direction: column; gap: 12px; }
+.cov-heatmap-hint   { font-size: 12px; color: #aaa; }
+.cov-heatmap-scroll { overflow-x: auto; }
+.cov-heatmap-table  { border-collapse: collapse; font-size: 12px; }
+
+.cov-hm-rep-hd {
+  padding: 8px 16px 8px 8px; text-align: left;
+  font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase;
+  border-bottom: 2px solid #e8e8e8; white-space: nowrap;
+}
+.cov-hm-week-hd {
+  padding: 4px 6px; text-align: center;
+  font-size: 11px; font-weight: 700; color: #1a2b5e;
+  border-bottom: 2px solid #e8e8e8; min-width: 46px;
+}
+.cov-hm-week-date { font-weight: 400; font-size: 10px; color: #aaa; }
+.cov-hm-total-hd  {
+  padding: 4px 10px; text-align: center;
+  font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase;
+  border-bottom: 2px solid #e8e8e8; border-left: 1px solid #e0e0e0;
+}
+.cov-hm-row { border-bottom: 1px solid #f0f0f0; }
+.cov-hm-row:last-child { border-bottom: none; }
+
+.cov-hm-rep-cell {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px 8px 8px; white-space: nowrap;
+}
+.cov-hm-rep-name { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+
+.cov-hm-cell {
+  width: 46px; height: 40px;
+  text-align: center; vertical-align: middle;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid #f0f0f0;
+  transition: opacity 0.1s;
+  cursor: default;
+}
+.cov-hm-total-cell {
+  padding: 0 10px; text-align: center;
+  font-weight: 700; font-size: 13px; color: #1a2b5e;
+  border-left: 1px solid #e0e0e0;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cov-week-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .cov-week-grid { grid-template-columns: repeat(2, 1fr); }
+  .cov-selectors { flex-direction: column; }
+}

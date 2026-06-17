@@ -9,3 +9,11 @@ export const CYCLE_YEAR_MAP = {
   3: 2025,
   4: 2025,
 }
+
+// Maps cycle number → Monday start date (YYYY-MM-DD)
+// Single source of truth — import here, never redefine locally
+export const CYCLE_STARTS = {
+  1: '2026-03-30',
+  2: '2026-06-22',
+  3: '2026-09-14',
+}
