@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { CYCLE_STARTS, CYCLE_YEAR_MAP } from '../../constants'
+import { exportCoverageHTML } from './exportHTML'
 import './Coverage.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -518,6 +519,14 @@ export default function Coverage() {
           <h1 className="cov-title">Coverage</h1>
           {!loading && (
             <span className="cov-total-badge">{filtered.length} visits</span>
+          )}
+          {!loading && filtered.length > 0 && (
+            <button
+              className="cp-export-btn"
+              onClick={() => exportCoverageHTML({ filtered, weeks, cycleLabelStr: cycleLabel(cycle), filterRep, filterState, showAllStates })}
+            >
+              Export / Share
+            </button>
           )}
         </div>
 
