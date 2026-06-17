@@ -173,6 +173,7 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
 
 // ─── Avg/Day View ────────────────────────────────────────────────────────────
 function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
+  const [expandedRep,  setExpandedRep]  = useState(null)
   const [expandedWeek, setExpandedWeek] = useState(null)
   const [selectedDay,  setSelectedDay]  = useState(null)
 
@@ -183,19 +184,77 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
     return week.filter(d => (days[toDS(d)] || 0) > 0).length
   }
 
-  function toggleWeek(wi) {
-    if (expandedWeek === wi) { setExpandedWeek(null); setSelectedDay(null) }
-    else { setExpandedWeek(wi); setSelectedDay(null) }
+  function toggleCell(rep, wi) {
+    if (expandedRep === rep && expandedWeek === wi) {
+      setExpandedRep(null); setExpandedWeek(null); setSelectedDay(null)
+    } else {
+      setExpandedRep(rep); setExpandedWeek(wi); setSelectedDay(null)
+    }
   }
 
-  function toggleDay(ds) {
-    setSelectedDay(prev => prev === ds ? null : ds)
+  // byDate filtered to just the expanded rep
+  const repByDate = useMemo(() => {
+    if (!expandedRep || !byDate) return {}
+    const m = {}
+    Object.entries(byDate).forEach(([ds, visits]) => {
+      const filtered = visits.filter(v => v.rep === expandedRep)
+      if (filtered.length) m[ds] = filtered
+    })
+    return m
+  }, [expandedRep, byDate])
+
+  function AccordionPanel({ rep, wi }) {
+    const week      = weeks[wi]
+    const repVisits = repByDate
+    const total     = week.reduce((s, d) => s + (repVisits[toDS(d)]?.length || 0), 0)
+    return (
+      <div className="cov-week cov-accordion-week">
+        <div className="cov-week-hd" style={{ cursor: 'pointer' }} onClick={() => toggleCell(rep, wi)}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
+            {rep.split(' ')[0]} · Week {wi + 1}
+          </span>
+          <span className="cov-week-range">{fmtDay(week[0])} – {fmtDay(week[4])}</span>
+          {total > 0 && <span className="cov-week-total">{total} visits</span>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.7 }}>▲ close</span>
+        </div>
+        <div className="cov-week-grid">
+          {week.map(date => {
+            const ds     = toDS(date)
+            const visits = repVisits[ds] || []
+            const sel    = selectedDay === ds
+            return (
+              <div key={ds}
+                className={`cov-day cov-day-clickable ${visits.length > 0 ? 'cov-day-has-visits' : ''} ${sel ? 'cov-day-selected' : ''}`}
+                onClick={() => setSelectedDay(prev => prev === ds ? null : ds)}>
+                <div className="cov-day-hd">
+                  <span className="cov-day-lbl">{fmtDay(date)}</span>
+                  {visits.length > 0 && <span className="cov-day-badge">{visits.length}</span>}
+                </div>
+                {visits.length > 0
+                  ? <div className="cov-week-chips">
+                      {visits.map(v => (
+                        <div key={v.schedule_id} className="cov-visit-chip" style={{ borderLeftColor: repColor(v.rep) }}>
+                          <span className="cov-chip-store">{v.store_name}</span>
+                          {v.actual_duration > 0 && <span className="cov-chip-dur">{v.actual_duration}m</span>}
+                        </div>
+                      ))}
+                    </div>
+                  : <span className="cov-day-empty">—</span>
+                }
+              </div>
+            )
+          })}
+        </div>
+        {selectedDay && <DayDetailPanel ds={selectedDay} byDate={repVisits} onClose={() => setSelectedDay(null)} />}
+      </div>
+    )
   }
 
   return (
     <div className="cov-heatmap-wrap">
       <p className="cov-heatmap-hint">
-        Average visits per working day — per week and across the full cycle.
+        Average visits per working day — tap a cell to drill into that rep's week.
       </p>
 
       {/* ── Desktop table ── */}
@@ -205,13 +264,9 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
             <tr>
               <th className="cov-hm-rep-hd">Rep</th>
               {weeks.map((week, wi) => (
-                <th key={wi}
-                  className={`cov-hm-week-hd cov-hm-week-btn ${expandedWeek === wi ? 'cov-hm-week-active' : ''}`}
-                  onClick={() => toggleWeek(wi)}>
+                <th key={wi} className="cov-hm-week-hd">
                   <div>W{wi + 1}</div>
-                  <div className="cov-hm-week-date">
-                    {week[0].getDate()} {MONTHS[week[0].getMonth()]}
-                  </div>
+                  <div className="cov-hm-week-date">{week[0].getDate()} {MONTHS[week[0].getMonth()]}</div>
                 </th>
               ))}
               <th className="cov-hm-total-hd">Cycle avg/day</th>
@@ -219,79 +274,48 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
           </thead>
           <tbody>
             {reps.map(rep => {
-              const counts        = data[rep] || Array(12).fill(0)
-              const totalVisits   = counts.reduce((a, b) => a + b, 0)
+              const counts          = data[rep] || Array(12).fill(0)
+              const totalVisits     = counts.reduce((a, b) => a + b, 0)
               const totalActiveDays = weeks.reduce((s, week) => s + activeDays(rep, week), 0)
-              const cycleAvg      = totalActiveDays > 0 ? (totalVisits / totalActiveDays).toFixed(1) : '—'
+              const cycleAvg        = totalActiveDays > 0 ? (totalVisits / totalActiveDays).toFixed(1) : '—'
+              const isExpanded      = expandedRep === rep
               return (
-                <tr key={rep} className="cov-hm-row">
-                  <td className="cov-hm-rep-cell">
-                    <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
-                    <span className="cov-hm-rep-name">{rep.split(' ')[0]}</span>
-                  </td>
-                  {counts.map((count, wi) => {
-                    const active    = activeDays(rep, weeks[wi])
-                    const avg       = active > 0 ? count / active : 0
-                    const intensity = maxAvg > 0 ? avg / maxAvg : 0
-                    const bg        = count === 0 ? '#f5f5f5' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
-                    const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
-                    return (
-                      <td key={wi} className="cov-hm-cell" style={{ background: bg, color }}
-                        title={`${rep} · Week ${wi + 1}: ${count} visits over ${active} day${active !== 1 ? 's' : ''} · ${avg.toFixed(1)}/day`}>
-                        {count > 0 ? avg.toFixed(1) : ''}
+                <>
+                  <tr key={rep} className="cov-hm-row">
+                    <td className="cov-hm-rep-cell">
+                      <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
+                      <span className="cov-hm-rep-name">{rep.split(' ')[0]}</span>
+                    </td>
+                    {counts.map((count, wi) => {
+                      const active    = activeDays(rep, weeks[wi])
+                      const avg       = active > 0 ? count / active : 0
+                      const intensity = maxAvg > 0 ? avg / maxAvg : 0
+                      const isActive  = isExpanded && expandedWeek === wi
+                      const bg        = isActive ? '#1a2b5e' : count === 0 ? '#f5f5f5' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
+                      const color     = isActive || intensity > 0.55 ? '#fff' : '#1a1a1a'
+                      return (
+                        <td key={wi} className="cov-hm-cell cov-hm-week-btn" style={{ background: bg, color }}
+                          title={`${rep} · Week ${wi + 1}: ${count} visits · ${avg.toFixed(1)}/day`}
+                          onClick={() => toggleCell(rep, wi)}>
+                          {count > 0 ? avg.toFixed(1) : ''}
+                        </td>
+                      )
+                    })}
+                    <td className="cov-hm-total-cell">{cycleAvg}</td>
+                  </tr>
+                  {isExpanded && expandedWeek !== null && (
+                    <tr key={`${rep}-acc`}>
+                      <td colSpan={weeks.length + 2} style={{ padding: '8px 0 4px', background: '#f8f9ff' }}>
+                        <AccordionPanel rep={rep} wi={expandedWeek} />
                       </td>
-                    )
-                  })}
-                  <td className="cov-hm-total-cell">{cycleAvg}</td>
-                </tr>
+                    </tr>
+                  )}
+                </>
               )
             })}
           </tbody>
         </table>
       </div>
-
-      {/* ── Expanded week panel (desktop + mobile shared) ── */}
-      {expandedWeek !== null && byDate && (
-        <div className="cov-week cov-accordion-week">
-          <div className="cov-week-hd" style={{ cursor: 'pointer' }} onClick={() => toggleWeek(expandedWeek)}>
-            <span>Week {expandedWeek + 1}</span>
-            <span className="cov-week-range">
-              {fmtDay(weeks[expandedWeek][0])} – {fmtDay(weeks[expandedWeek][4])}
-            </span>
-            <span className="cov-week-total">
-              {weeks[expandedWeek].reduce((s, d) => s + (byDate[toDS(d)]?.length || 0), 0)} visits
-            </span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.7 }}>▲ close</span>
-          </div>
-          <div className="cov-week-grid">
-            {weeks[expandedWeek].map(date => {
-              const ds      = toDS(date)
-              const visits  = byDate[ds] || []
-              const repSet  = [...new Set(visits.map(v => v.rep))]
-              const sel     = selectedDay === ds
-              return (
-                <div key={ds}
-                  className={`cov-day cov-day-clickable ${visits.length > 0 ? 'cov-day-has-visits' : ''} ${sel ? 'cov-day-selected' : ''}`}
-                  onClick={() => toggleDay(ds)}>
-                  <div className="cov-day-hd">
-                    <span className="cov-day-lbl">{fmtDay(date)}</span>
-                    {visits.length > 0 && <span className="cov-day-badge">{visits.length}</span>}
-                  </div>
-                  {visits.length > 0
-                    ? <div className="cov-day-dots">
-                        {repSet.slice(0, 5).map(rep => (
-                          <span key={rep} className="cov-rep-dot" style={{ background: repColor(rep) }} title={rep} />
-                        ))}
-                      </div>
-                    : <span className="cov-day-empty">—</span>
-                  }
-                </div>
-              )
-            })}
-          </div>
-          {selectedDay && <DayDetailPanel ds={selectedDay} byDate={byDate} onClose={() => setSelectedDay(null)} />}
-        </div>
-      )}
 
       {/* ── Mobile cards ── */}
       <div className="cov-avgday-mobile">
@@ -300,6 +324,7 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
           const totalVisits     = counts.reduce((a, b) => a + b, 0)
           const totalActiveDays = weeks.reduce((s, week) => s + activeDays(rep, week), 0)
           const cycleAvg        = totalActiveDays > 0 ? (totalVisits / totalActiveDays).toFixed(1) : '—'
+          const isExpanded      = expandedRep === rep
           return (
             <div key={rep} className="cov-avgday-card">
               <div className="cov-avgday-card-hd">
@@ -312,19 +337,22 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
                   const active    = activeDays(rep, weeks[wi])
                   const avg       = active > 0 ? count / active : 0
                   const intensity = maxAvg > 0 ? avg / maxAvg : 0
-                  const bg        = count === 0 ? '#f0f0f0' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
-                  const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
+                  const isActive  = isExpanded && expandedWeek === wi
+                  const bg        = isActive ? '#1a2b5e' : count === 0 ? '#f0f0f0' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
+                  const color     = isActive || intensity > 0.55 ? '#fff' : '#1a1a1a'
                   return (
-                    <div key={wi} className={`cov-avgday-week-cell ${expandedWeek === wi ? 'cov-avgday-week-active' : ''}`}
-                      style={{ background: expandedWeek === wi ? '#1a2b5e' : bg, color: expandedWeek === wi ? '#fff' : color }}
-                      onClick={() => toggleWeek(wi)}
-                      title={`W${wi+1}: ${count} visits over ${active} day${active !== 1 ? 's' : ''} · ${avg.toFixed(1)}/day`}>
+                    <div key={wi} className="cov-avgday-week-cell" style={{ background: bg, color }}
+                      onClick={() => toggleCell(rep, wi)}
+                      title={`W${wi+1}: ${count} visits · ${avg.toFixed(1)}/day`}>
                       <div className="cov-avgday-wlbl">W{wi + 1}</div>
                       <div className="cov-avgday-wval">{count > 0 ? avg.toFixed(1) : '–'}</div>
                     </div>
                   )
                 })}
               </div>
+              {isExpanded && expandedWeek !== null && (
+                <AccordionPanel rep={rep} wi={expandedWeek} />
+              )}
             </div>
           )
         })}
