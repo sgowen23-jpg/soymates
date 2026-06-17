@@ -76,161 +76,45 @@ function weekOfCycle(dateStr, cycleStart) {
   return Math.floor((date - start) / 604800000) // 0-indexed
 }
 
-// ─── Day View ─────────────────────────────────────────────────────────────────
-function DayView({ weeks, byDate, selectedDay, onSelectDay }) {
-  const selectedVisits = selectedDay ? (byDate[selectedDay] || []) : []
-
-  // Group by rep for detail panel
-  const byRep = {}
-  selectedVisits.forEach(v => {
+// ─── Day detail panel (shared by AvgDayView accordion) ───────────────────────
+function DayDetailPanel({ ds, byDate, onClose }) {
+  const visits = byDate[ds] || []
+  const byRep  = {}
+  visits.forEach(v => {
     if (!byRep[v.rep]) byRep[v.rep] = []
     byRep[v.rep].push(v)
   })
-
   return (
-    <>
-      {/* Detail panel */}
-      {selectedDay && (
-        <div className="cov-day-panel">
-          <div className="cov-day-panel-hd">
-            <strong>{fmtDate(selectedDay)}</strong>
-            <span className="cov-panel-count">
-              {selectedVisits.length} visit{selectedVisits.length !== 1 ? 's' : ''}
-            </span>
-            <button className="cov-panel-close" onClick={() => onSelectDay(null)}>✕</button>
-          </div>
-          {selectedVisits.length === 0 && (
-            <p className="cov-empty">No visits on this day.</p>
-          )}
-          <div className="cov-panel-reps">
-            {Object.entries(byRep).sort(([a],[b]) => a.localeCompare(b)).map(([rep, visits]) => (
-              <div key={rep} className="cov-panel-rep-group">
-                <div className="cov-panel-rep-hd" style={{ borderLeftColor: repColor(rep) }}>
-                  <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
-                  <strong>{rep}</strong>
-                  <span className="cov-panel-rep-count">
-                    {visits.length} visit{visits.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="cov-panel-visit-list">
-                  {visits.map(v => (
-                    <div key={v.schedule_id} className="cov-visit-row">
-                      <span className="cov-visit-store">{v.store_name}</span>
-                      <div className="cov-visit-meta">
-                        {v.actual_duration > 0 && (
-                          <span className="cov-visit-dur">{v.actual_duration}m</span>
-                        )}
-                        {v.schedule_state !== 'Successful' && (
-                          <span className="cov-visit-state">{v.schedule_state}</span>
-                        )}
-                        {v.schedule_comment && (
-                          <span className="cov-visit-comment" title={v.schedule_comment}>💬</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Calendar grid */}
-      <div className="cov-calendar">
-        {weeks.map((week, wi) => {
-          const weekTotal = week.reduce((s, d) => s + (byDate[toDS(d)]?.length || 0), 0)
-          return (
-            <div key={wi} className="cov-week">
-              <div className="cov-week-hd">
-                <span>Week {wi + 1}</span>
-                <span className="cov-week-range">{fmtDay(week[0])} – {fmtDay(week[4])}</span>
-                {weekTotal > 0 && <span className="cov-week-total">{weekTotal} visits</span>}
-              </div>
-              <div className="cov-week-grid">
-                {week.map(date => {
-                  const ds       = toDS(date)
-                  const visits   = byDate[ds] || []
-                  const selected = selectedDay === ds
-                  const repSet   = [...new Set(visits.map(v => v.rep))]
-                  return (
-                    <div key={ds}
-                      className={`cov-day cov-day-clickable ${visits.length > 0 ? 'cov-day-has-visits' : ''} ${selected ? 'cov-day-selected' : ''}`}
-                      onClick={() => onSelectDay(selected ? null : ds)}>
-                      <div className="cov-day-hd">
-                        <span className="cov-day-lbl">{fmtDay(date)}</span>
-                        {visits.length > 0 && (
-                          <span className="cov-day-badge">{visits.length}</span>
-                        )}
-                      </div>
-                      {visits.length > 0 && (
-                        <div className="cov-day-dots">
-                          {repSet.slice(0, 5).map(rep => (
-                            <span key={rep} className="cov-rep-dot"
-                              style={{ background: repColor(rep) }} title={rep} />
-                          ))}
-                        </div>
-                      )}
-                      {visits.length === 0 && (
-                        <span className="cov-day-empty">—</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
+    <div className="cov-day-panel">
+      <div className="cov-day-panel-hd">
+        <strong>{fmtDate(ds)}</strong>
+        <span className="cov-panel-count">{visits.length} visit{visits.length !== 1 ? 's' : ''}</span>
+        <button className="cov-panel-close" onClick={onClose}>✕</button>
       </div>
-    </>
-  )
-}
-
-// ─── Week View ────────────────────────────────────────────────────────────────
-function WeekView({ weeks, byDate }) {
-  return (
-    <div className="cov-calendar">
-      {weeks.map((week, wi) => {
-        const weekTotal = week.reduce((s, d) => s + (byDate[toDS(d)]?.length || 0), 0)
-        return (
-          <div key={wi} className="cov-week">
-            <div className="cov-week-hd">
-              <span>Week {wi + 1}</span>
-              <span className="cov-week-range">{fmtDay(week[0])} – {fmtDay(week[4])}</span>
-              {weekTotal > 0 && <span className="cov-week-total">{weekTotal} visits</span>}
+      {visits.length === 0 && <p className="cov-empty">No visits on this day.</p>}
+      <div className="cov-panel-reps">
+        {Object.entries(byRep).sort(([a],[b]) => a.localeCompare(b)).map(([rep, vs]) => (
+          <div key={rep} className="cov-panel-rep-group">
+            <div className="cov-panel-rep-hd" style={{ borderLeftColor: repColor(rep) }}>
+              <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
+              <strong>{rep}</strong>
+              <span className="cov-panel-rep-count">{vs.length} visit{vs.length !== 1 ? 's' : ''}</span>
             </div>
-            <div className="cov-week-grid">
-              {week.map(date => {
-                const ds     = toDS(date)
-                const visits = byDate[ds] || []
-                return (
-                  <div key={ds} className="cov-day">
-                    <div className="cov-day-hd">
-                      <span className="cov-day-lbl">{fmtDay(date)}</span>
-                      {visits.length > 0 && (
-                        <span className="cov-day-badge">{visits.length}</span>
-                      )}
-                    </div>
-                    <div className="cov-week-chips">
-                      {visits.length === 0 && <span className="cov-day-empty">—</span>}
-                      {visits.map(v => (
-                        <div key={v.schedule_id} className="cov-visit-chip"
-                          style={{ borderLeftColor: repColor(v.rep) }}
-                          title={`${v.rep}${v.actual_duration > 0 ? ` · ${v.actual_duration}m` : ''}`}>
-                          <span className="cov-chip-store">{v.store_name}</span>
-                          {v.actual_duration > 0 && (
-                            <span className="cov-chip-dur">{v.actual_duration}m</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+            <div className="cov-panel-visit-list">
+              {vs.map(v => (
+                <div key={v.schedule_id} className="cov-visit-row">
+                  <span className="cov-visit-store">{v.store_name}</span>
+                  <div className="cov-visit-meta">
+                    {v.actual_duration > 0 && <span className="cov-visit-dur">{v.actual_duration}m</span>}
+                    {v.schedule_state !== 'Successful' && <span className="cov-visit-state">{v.schedule_state}</span>}
+                    {v.schedule_comment && <span className="cov-visit-comment" title={v.schedule_comment}>💬</span>}
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
-        )
-      })}
+        ))}
+      </div>
     </div>
   )
 }
@@ -288,13 +172,24 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
 }
 
 // ─── Avg/Day View ────────────────────────────────────────────────────────────
-function AvgDayView({ reps, data, max, weeks, repDayData }) {
+function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
+  const [expandedWeek, setExpandedWeek] = useState(null)
+  const [selectedDay,  setSelectedDay]  = useState(null)
+
   const maxAvg = max > 0 ? max / 5 : 1
 
-  // Count working days in a week where the rep had ≥1 visit
   function activeDays(rep, week) {
     const days = repDayData?.[rep] || {}
     return week.filter(d => (days[toDS(d)] || 0) > 0).length
+  }
+
+  function toggleWeek(wi) {
+    if (expandedWeek === wi) { setExpandedWeek(null); setSelectedDay(null) }
+    else { setExpandedWeek(wi); setSelectedDay(null) }
+  }
+
+  function toggleDay(ds) {
+    setSelectedDay(prev => prev === ds ? null : ds)
   }
 
   return (
@@ -310,7 +205,9 @@ function AvgDayView({ reps, data, max, weeks, repDayData }) {
             <tr>
               <th className="cov-hm-rep-hd">Rep</th>
               {weeks.map((week, wi) => (
-                <th key={wi} className="cov-hm-week-hd">
+                <th key={wi}
+                  className={`cov-hm-week-hd cov-hm-week-btn ${expandedWeek === wi ? 'cov-hm-week-active' : ''}`}
+                  onClick={() => toggleWeek(wi)}>
                   <div>W{wi + 1}</div>
                   <div className="cov-hm-week-date">
                     {week[0].getDate()} {MONTHS[week[0].getMonth()]}
@@ -353,6 +250,49 @@ function AvgDayView({ reps, data, max, weeks, repDayData }) {
         </table>
       </div>
 
+      {/* ── Expanded week panel (desktop + mobile shared) ── */}
+      {expandedWeek !== null && byDate && (
+        <div className="cov-week cov-accordion-week">
+          <div className="cov-week-hd" style={{ cursor: 'pointer' }} onClick={() => toggleWeek(expandedWeek)}>
+            <span>Week {expandedWeek + 1}</span>
+            <span className="cov-week-range">
+              {fmtDay(weeks[expandedWeek][0])} – {fmtDay(weeks[expandedWeek][4])}
+            </span>
+            <span className="cov-week-total">
+              {weeks[expandedWeek].reduce((s, d) => s + (byDate[toDS(d)]?.length || 0), 0)} visits
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.7 }}>▲ close</span>
+          </div>
+          <div className="cov-week-grid">
+            {weeks[expandedWeek].map(date => {
+              const ds      = toDS(date)
+              const visits  = byDate[ds] || []
+              const repSet  = [...new Set(visits.map(v => v.rep))]
+              const sel     = selectedDay === ds
+              return (
+                <div key={ds}
+                  className={`cov-day cov-day-clickable ${visits.length > 0 ? 'cov-day-has-visits' : ''} ${sel ? 'cov-day-selected' : ''}`}
+                  onClick={() => toggleDay(ds)}>
+                  <div className="cov-day-hd">
+                    <span className="cov-day-lbl">{fmtDay(date)}</span>
+                    {visits.length > 0 && <span className="cov-day-badge">{visits.length}</span>}
+                  </div>
+                  {visits.length > 0
+                    ? <div className="cov-day-dots">
+                        {repSet.slice(0, 5).map(rep => (
+                          <span key={rep} className="cov-rep-dot" style={{ background: repColor(rep) }} title={rep} />
+                        ))}
+                      </div>
+                    : <span className="cov-day-empty">—</span>
+                  }
+                </div>
+              )
+            })}
+          </div>
+          {selectedDay && <DayDetailPanel ds={selectedDay} byDate={byDate} onClose={() => setSelectedDay(null)} />}
+        </div>
+      )}
+
       {/* ── Mobile cards ── */}
       <div className="cov-avgday-mobile">
         {reps.map(rep => {
@@ -375,7 +315,9 @@ function AvgDayView({ reps, data, max, weeks, repDayData }) {
                   const bg        = count === 0 ? '#f0f0f0' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
                   const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
                   return (
-                    <div key={wi} className="cov-avgday-week-cell" style={{ background: bg, color }}
+                    <div key={wi} className={`cov-avgday-week-cell ${expandedWeek === wi ? 'cov-avgday-week-active' : ''}`}
+                      style={{ background: expandedWeek === wi ? '#1a2b5e' : bg, color: expandedWeek === wi ? '#fff' : color }}
+                      onClick={() => toggleWeek(wi)}
                       title={`W${wi+1}: ${count} visits over ${active} day${active !== 1 ? 's' : ''} · ${avg.toFixed(1)}/day`}>
                       <div className="cov-avgday-wlbl">W{wi + 1}</div>
                       <div className="cov-avgday-wval">{count > 0 ? avg.toFixed(1) : '–'}</div>
@@ -405,9 +347,6 @@ export default function Coverage() {
   const [visits, setVisits]   = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Day view
-  const [selectedDay, setSelectedDay] = useState(null)
-
   // Cycle list sort — default: days_since desc (neglected stores float up)
   const [sortCol, setSortCol] = useState('days_since')
   const [sortAsc, setSortAsc] = useState(false)
@@ -424,7 +363,6 @@ export default function Coverage() {
   // Fetch visits for the selected cycle — paginated to avoid 1000-row PostgREST truncation
   useEffect(() => {
     setLoading(true)
-    setSelectedDay(null)
     const label = cycleLabel(cycle)
     async function load() {
       let all = [], from = 0
@@ -566,13 +504,13 @@ export default function Coverage() {
           </div>
           <div className="cov-field">
             <label className="cov-field-lbl">Rep</label>
-            <select className="cov-sel" value={filterRep} onChange={e => { setFilterRep(e.target.value); setSelectedDay(null) }}>
+            <select className="cov-sel" value={filterRep} onChange={e => setFilterRep(e.target.value)}>
               {allReps.map(r => <option key={r}>{r}</option>)}
             </select>
           </div>
           <div className="cov-field">
             <label className="cov-field-lbl">State</label>
-            <select className="cov-sel" value={filterState} onChange={e => { setFilterState(e.target.value); setSelectedDay(null) }}>
+            <select className="cov-sel" value={filterState} onChange={e => setFilterState(e.target.value)}>
               {allStates.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
@@ -589,9 +527,9 @@ export default function Coverage() {
 
       {/* ── Main view toggle ── */}
       <div className="cov-tab-bar">
-        {[['cycle','Cycle'],['day','Day'],['week','Week'],['list','Ranked List']].map(([id, label]) => (
+        {[['cycle','Cycle'],['list','Ranked List']].map(([id, label]) => (
           <button key={id} className={`cov-tab ${mainView === id ? 'active' : ''}`}
-            onClick={() => { setMainView(id); setSelectedDay(null) }}>
+            onClick={() => setMainView(id)}>
             {label}
           </button>
         ))}
@@ -604,20 +542,10 @@ export default function Coverage() {
         </div>
       )}
 
-      {/* ── Day View ── */}
-      {!loading && mainView === 'day' && (
-        <DayView weeks={weeks} byDate={byDate} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
-      )}
-
-      {/* ── Week View ── */}
-      {!loading && mainView === 'week' && (
-        <WeekView weeks={weeks} byDate={byDate} />
-      )}
-
       {/* ── Cycle View ── */}
       {!loading && mainView === 'cycle' && (
         <AvgDayView
-          reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData}
+          reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData} byDate={byDate}
         />
       )}
 
