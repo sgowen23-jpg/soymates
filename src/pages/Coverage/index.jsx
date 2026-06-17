@@ -394,8 +394,7 @@ function AvgDayView({ reps, data, max, weeks, repDayData }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Coverage() {
   const [cycle, setCycle]       = useState(1)
-  const [mainView, setMainView] = useState('cycle')   // 'cycle' | 'day' | 'week'
-  const [cycleTab, setCycleTab] = useState('list')    // 'list' | 'heatmap'
+  const [mainView, setMainView] = useState('cycle')   // 'cycle' | 'day' | 'week' | 'list'
 
   // Filters
   const [filterRep, setFilterRep]       = useState('All')
@@ -590,7 +589,7 @@ export default function Coverage() {
 
       {/* ── Main view toggle ── */}
       <div className="cov-tab-bar">
-        {[['cycle','Cycle'],['day','Day'],['week','Week']].map(([id, label]) => (
+        {[['cycle','Cycle'],['day','Day'],['week','Week'],['list','Ranked List']].map(([id, label]) => (
           <button key={id} className={`cov-tab ${mainView === id ? 'active' : ''}`}
             onClick={() => { setMainView(id); setSelectedDay(null) }}>
             {label}
@@ -617,27 +616,17 @@ export default function Coverage() {
 
       {/* ── Cycle View ── */}
       {!loading && mainView === 'cycle' && (
-        <div>
-          <div className="cov-tab-bar cov-sub-tab-bar">
-            {[['list','Ranked List'],['heatmap','Avg / Day']].map(([id, label]) => (
-              <button key={id} className={`cov-tab ${cycleTab === id ? 'active' : ''}`}
-                onClick={() => setCycleTab(id)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {cycleTab === 'list' && (
-            <StoreListView
-              stores={sortedStoreList}
-              sortCol={sortCol} sortAsc={sortAsc} onSort={toggleSort}
-            />
-          )}
-          {cycleTab === 'heatmap' && (
-            <AvgDayView
-              reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData}
-            />
-          )}
-        </div>
+        <AvgDayView
+          reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData}
+        />
+      )}
+
+      {/* ── Ranked List View ── */}
+      {!loading && mainView === 'list' && (
+        <StoreListView
+          stores={sortedStoreList}
+          sortCol={sortCol} sortAsc={sortAsc} onSort={toggleSort}
+        />
       )}
     </div>
   )
