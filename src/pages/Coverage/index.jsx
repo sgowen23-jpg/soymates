@@ -276,13 +276,15 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
   )
 }
 
-// ─── Cycle Heatmap View ───────────────────────────────────────────────────────
-function HeatmapView({ reps, data, max, weeks }) {
+// ─── Avg/Day View ────────────────────────────────────────────────────────────
+function AvgDayView({ reps, data, max, weeks }) {
+  // max here is the highest raw weekly count — we derive avg intensity from it
+  const maxAvg = max > 0 ? max / 5 : 1
+
   return (
     <div className="cov-heatmap-wrap">
       <p className="cov-heatmap-hint">
-        Visit count per rep per week. Colour intensity = activity level.
-        This grid will carry DIS movements alongside visits in a later session.
+        Average visits per working day — per week and across the full cycle.
       </p>
       <div className="cov-heatmap-scroll">
         <table className="cov-heatmap-table">
@@ -297,13 +299,14 @@ function HeatmapView({ reps, data, max, weeks }) {
                   </div>
                 </th>
               ))}
-              <th className="cov-hm-total-hd">Total</th>
+              <th className="cov-hm-total-hd">Cycle avg/day</th>
             </tr>
           </thead>
           <tbody>
             {reps.map(rep => {
-              const counts = data[rep] || Array(12).fill(0)
-              const total  = counts.reduce((a, b) => a + b, 0)
+              const counts     = data[rep] || Array(12).fill(0)
+              const totalVisits = counts.reduce((a, b) => a + b, 0)
+              const cycleAvg   = (totalVisits / (weeks.length * 5)).toFixed(1)
               return (
                 <tr key={rep} className="cov-hm-row">
                   <td className="cov-hm-rep-cell">
@@ -311,17 +314,18 @@ function HeatmapView({ reps, data, max, weeks }) {
                     <span className="cov-hm-rep-name">{rep.split(' ')[0]}</span>
                   </td>
                   {counts.map((count, wi) => {
-                    const intensity = max > 0 ? count / max : 0
-                    const bg    = count === 0 ? '#f5f5f5' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
-                    const color = intensity > 0.55 ? '#fff' : '#1a1a1a'
+                    const avg       = count / 5
+                    const intensity = maxAvg > 0 ? avg / maxAvg : 0
+                    const bg        = count === 0 ? '#f5f5f5' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
+                    const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
                     return (
                       <td key={wi} className="cov-hm-cell" style={{ background: bg, color }}
-                        title={`${rep} · Week ${wi + 1}: ${count} visit${count !== 1 ? 's' : ''}`}>
-                        {count > 0 ? count : ''}
+                        title={`${rep} · Week ${wi + 1}: ${count} visits · ${avg.toFixed(1)}/day`}>
+                        {count > 0 ? avg.toFixed(1) : ''}
                       </td>
                     )
                   })}
-                  <td className="cov-hm-total-cell">{total}</td>
+                  <td className="cov-hm-total-cell">{cycleAvg}</td>
                 </tr>
               )
             })}
@@ -545,7 +549,7 @@ export default function Coverage() {
       {!loading && mainView === 'cycle' && (
         <div>
           <div className="cov-tab-bar cov-sub-tab-bar">
-            {[['list','Ranked List'],['heatmap','Heatmap']].map(([id, label]) => (
+            {[['list','Ranked List'],['heatmap','Avg / Day']].map(([id, label]) => (
               <button key={id} className={`cov-tab ${cycleTab === id ? 'active' : ''}`}
                 onClick={() => setCycleTab(id)}>
                 {label}
@@ -559,7 +563,7 @@ export default function Coverage() {
             />
           )}
           {cycleTab === 'heatmap' && (
-            <HeatmapView
+            <AvgDayView
               reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks}
             />
           )}
