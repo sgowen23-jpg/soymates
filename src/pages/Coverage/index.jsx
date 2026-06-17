@@ -7,6 +7,17 @@ import './Coverage.css'
 const MONTHS   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri']
 
+const REP_ORDER = [
+  'David Kerr',
+  'Shane Vandewardt',
+  'Sam Gowen',
+  'Dipen Surani',
+  'Sean Cooper',
+  'David Saleeb',
+  'Ashleigh Tasdarian',
+  'Azra Horell',
+]
+
 const REP_COLORS = {
   'Sam Gowen':          '#1a2b5e',
   'Shane Vandewardt':   '#CC0000',
@@ -508,7 +519,11 @@ export default function Coverage() {
   const heatmapReps = useMemo(() => {
     if (filterRep !== 'All') return [filterRep]
     const s = new Set(filtered.map(v => v.rep).filter(Boolean))
-    return Array.from(s).sort()
+    const inData = Array.from(s)
+    return [
+      ...REP_ORDER.filter(r => inData.includes(r)),
+      ...inData.filter(r => !REP_ORDER.includes(r)).sort(),
+    ]
   }, [filtered, filterRep])
 
   const heatmapData = useMemo(() => {
