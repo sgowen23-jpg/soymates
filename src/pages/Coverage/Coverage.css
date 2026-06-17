@@ -294,3 +294,41 @@
   .cov-week-grid { grid-template-columns: repeat(2, 1fr); }
   .cov-selectors { flex-direction: column; }
 }
+
+@media (max-width: 480px) {
+  .cov-page { padding: 12px; gap: 12px; }
+
+  /* Header */
+  .cov-title { font-size: 18px; }
+  .cov-selectors { flex-direction: column; gap: 8px; }
+  .cov-field { width: 100%; }
+  .cov-sel { width: 100%; min-width: unset; box-sizing: border-box; }
+  .cov-toggle-lbl { width: 100%; box-sizing: border-box; }
+
+  /* Tabs */
+  .cov-tab { padding: 8px 12px; font-size: 13px; }
+
+  /* Week grid — single column on phone so chips have room to breathe */
+  .cov-week-grid { grid-template-columns: 1fr; }
+  .cov-week-chips { max-height: 160px; }
+
+  /* Day view cells */
+  .cov-day { min-height: 60px; padding: 8px; }
+  .cov-day-lbl { font-size: 10px; }
+
+  /* Detail panel */
+  .cov-day-panel { padding: 12px; }
+  .cov-visit-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .cov-visit-meta { flex-wrap: wrap; }
+
+  /* Week header */
+  .cov-week-hd { font-size: 12px; padding: 8px 12px; }
+  .cov-week-range { font-size: 11px; }
+
+  /* List table — allow horizontal scroll, shrink font */
+  .cov-th, .cov-td { padding: 8px 10px; font-size: 12px; }
+
+  /* Heatmap */
+  .cov-hm-rep-name { font-size: 11px; }
+  .cov-hm-cell { width: 36px; height: 34px; font-size: 11px; }
+}
