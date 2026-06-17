@@ -278,7 +278,6 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
 
 // ─── Avg/Day View ────────────────────────────────────────────────────────────
 function AvgDayView({ reps, data, max, weeks }) {
-  // max here is the highest raw weekly count — we derive avg intensity from it
   const maxAvg = max > 0 ? max / 5 : 1
 
   return (
@@ -286,7 +285,9 @@ function AvgDayView({ reps, data, max, weeks }) {
       <p className="cov-heatmap-hint">
         Average visits per working day — per week and across the full cycle.
       </p>
-      <div className="cov-heatmap-scroll">
+
+      {/* ── Desktop table ── */}
+      <div className="cov-heatmap-scroll cov-avgday-desktop">
         <table className="cov-heatmap-table">
           <thead>
             <tr>
@@ -304,9 +305,9 @@ function AvgDayView({ reps, data, max, weeks }) {
           </thead>
           <tbody>
             {reps.map(rep => {
-              const counts     = data[rep] || Array(12).fill(0)
+              const counts      = data[rep] || Array(12).fill(0)
               const totalVisits = counts.reduce((a, b) => a + b, 0)
-              const cycleAvg   = (totalVisits / (weeks.length * 5)).toFixed(1)
+              const cycleAvg    = (totalVisits / (weeks.length * 5)).toFixed(1)
               return (
                 <tr key={rep} className="cov-hm-row">
                   <td className="cov-hm-rep-cell">
@@ -331,6 +332,39 @@ function AvgDayView({ reps, data, max, weeks }) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile cards ── */}
+      <div className="cov-avgday-mobile">
+        {reps.map(rep => {
+          const counts      = data[rep] || Array(12).fill(0)
+          const totalVisits = counts.reduce((a, b) => a + b, 0)
+          const cycleAvg    = (totalVisits / (weeks.length * 5)).toFixed(1)
+          return (
+            <div key={rep} className="cov-avgday-card">
+              <div className="cov-avgday-card-hd">
+                <span className="cov-rep-dot" style={{ background: repColor(rep) }} />
+                <span className="cov-avgday-rep">{rep.split(' ')[0]}</span>
+                <span className="cov-avgday-cycle">{cycleAvg}<span className="cov-avgday-unit"> /day</span></span>
+              </div>
+              <div className="cov-avgday-weeks">
+                {counts.map((count, wi) => {
+                  const avg       = count / 5
+                  const intensity = maxAvg > 0 ? avg / maxAvg : 0
+                  const bg        = count === 0 ? '#f0f0f0' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
+                  const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
+                  return (
+                    <div key={wi} className="cov-avgday-week-cell" style={{ background: bg, color }}
+                      title={`W${wi+1}: ${count} visits · ${avg.toFixed(1)}/day`}>
+                      <div className="cov-avgday-wlbl">W{wi + 1}</div>
+                      <div className="cov-avgday-wval">{count > 0 ? avg.toFixed(1) : '–'}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

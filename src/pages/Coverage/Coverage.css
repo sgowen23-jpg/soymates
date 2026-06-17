@@ -286,6 +286,41 @@
   border-left: 1px solid #e0e0e0;
 }
 
+/* ── Avg/Day mobile cards ──────────────────────────────────────────────────── */
+.cov-avgday-desktop { display: block; }
+.cov-avgday-mobile  { display: none; }
+
+.cov-avgday-card {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.cov-avgday-card-hd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #e8e8e8;
+}
+.cov-avgday-rep  { font-size: 14px; font-weight: 700; color: #1a1a1a; flex: 1; }
+.cov-avgday-cycle { font-size: 22px; font-weight: 800; color: #1a2b5e; }
+.cov-avgday-unit  { font-size: 12px; font-weight: 500; color: #888; }
+
+.cov-avgday-weeks {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: #e8e8e8;
+}
+.cov-avgday-week-cell {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 6px 2px;
+  text-align: center;
+}
+.cov-avgday-wlbl { font-size: 9px; font-weight: 700; opacity: 0.7; }
+.cov-avgday-wval { font-size: 12px; font-weight: 700; margin-top: 2px; }
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .cov-week-grid { grid-template-columns: repeat(3, 1fr); }
@@ -328,7 +363,7 @@
   /* List table — allow horizontal scroll, shrink font */
   .cov-th, .cov-td { padding: 8px 10px; font-size: 12px; }
 
-  /* Heatmap */
-  .cov-hm-rep-name { font-size: 11px; }
-  .cov-hm-cell { width: 36px; height: 34px; font-size: 11px; }
+  /* Heatmap — hidden on mobile, replaced by cards */
+  .cov-avgday-desktop { display: none; }
+  .cov-avgday-mobile  { display: block; }
 }
