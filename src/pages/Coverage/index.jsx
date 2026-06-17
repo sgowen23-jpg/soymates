@@ -277,8 +277,14 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
 }
 
 // ─── Avg/Day View ────────────────────────────────────────────────────────────
-function AvgDayView({ reps, data, max, weeks }) {
+function AvgDayView({ reps, data, max, weeks, repDayData }) {
   const maxAvg = max > 0 ? max / 5 : 1
+
+  // Count working days in a week where the rep had ≥1 visit
+  function activeDays(rep, week) {
+    const days = repDayData?.[rep] || {}
+    return week.filter(d => (days[toDS(d)] || 0) > 0).length
+  }
 
   return (
     <div className="cov-heatmap-wrap">
@@ -305,9 +311,10 @@ function AvgDayView({ reps, data, max, weeks }) {
           </thead>
           <tbody>
             {reps.map(rep => {
-              const counts      = data[rep] || Array(12).fill(0)
-              const totalVisits = counts.reduce((a, b) => a + b, 0)
-              const cycleAvg    = (totalVisits / (weeks.length * 5)).toFixed(1)
+              const counts        = data[rep] || Array(12).fill(0)
+              const totalVisits   = counts.reduce((a, b) => a + b, 0)
+              const totalActiveDays = weeks.reduce((s, week) => s + activeDays(rep, week), 0)
+              const cycleAvg      = totalActiveDays > 0 ? (totalVisits / totalActiveDays).toFixed(1) : '—'
               return (
                 <tr key={rep} className="cov-hm-row">
                   <td className="cov-hm-rep-cell">
@@ -315,13 +322,14 @@ function AvgDayView({ reps, data, max, weeks }) {
                     <span className="cov-hm-rep-name">{rep.split(' ')[0]}</span>
                   </td>
                   {counts.map((count, wi) => {
-                    const avg       = count / 5
+                    const active    = activeDays(rep, weeks[wi])
+                    const avg       = active > 0 ? count / active : 0
                     const intensity = maxAvg > 0 ? avg / maxAvg : 0
                     const bg        = count === 0 ? '#f5f5f5' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
                     const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
                     return (
                       <td key={wi} className="cov-hm-cell" style={{ background: bg, color }}
-                        title={`${rep} · Week ${wi + 1}: ${count} visits · ${avg.toFixed(1)}/day`}>
+                        title={`${rep} · Week ${wi + 1}: ${count} visits over ${active} day${active !== 1 ? 's' : ''} · ${avg.toFixed(1)}/day`}>
                         {count > 0 ? avg.toFixed(1) : ''}
                       </td>
                     )
@@ -337,9 +345,10 @@ function AvgDayView({ reps, data, max, weeks }) {
       {/* ── Mobile cards ── */}
       <div className="cov-avgday-mobile">
         {reps.map(rep => {
-          const counts      = data[rep] || Array(12).fill(0)
-          const totalVisits = counts.reduce((a, b) => a + b, 0)
-          const cycleAvg    = (totalVisits / (weeks.length * 5)).toFixed(1)
+          const counts          = data[rep] || Array(12).fill(0)
+          const totalVisits     = counts.reduce((a, b) => a + b, 0)
+          const totalActiveDays = weeks.reduce((s, week) => s + activeDays(rep, week), 0)
+          const cycleAvg        = totalActiveDays > 0 ? (totalVisits / totalActiveDays).toFixed(1) : '—'
           return (
             <div key={rep} className="cov-avgday-card">
               <div className="cov-avgday-card-hd">
@@ -349,13 +358,14 @@ function AvgDayView({ reps, data, max, weeks }) {
               </div>
               <div className="cov-avgday-weeks">
                 {counts.map((count, wi) => {
-                  const avg       = count / 5
+                  const active    = activeDays(rep, weeks[wi])
+                  const avg       = active > 0 ? count / active : 0
                   const intensity = maxAvg > 0 ? avg / maxAvg : 0
                   const bg        = count === 0 ? '#f0f0f0' : `rgba(26,43,94,${(0.15 + intensity * 0.85).toFixed(2)})`
                   const color     = intensity > 0.55 ? '#fff' : '#1a1a1a'
                   return (
                     <div key={wi} className="cov-avgday-week-cell" style={{ background: bg, color }}
-                      title={`W${wi+1}: ${count} visits · ${avg.toFixed(1)}/day`}>
+                      title={`W${wi+1}: ${count} visits over ${active} day${active !== 1 ? 's' : ''} · ${avg.toFixed(1)}/day`}>
                       <div className="cov-avgday-wlbl">W{wi + 1}</div>
                       <div className="cov-avgday-wval">{count > 0 ? avg.toFixed(1) : '–'}</div>
                     </div>
@@ -373,7 +383,7 @@ function AvgDayView({ reps, data, max, weeks }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Coverage() {
   const [cycle, setCycle]       = useState(1)
-  const [mainView, setMainView] = useState('week')    // 'day' | 'week' | 'cycle'
+  const [mainView, setMainView] = useState('cycle')   // 'cycle' | 'day' | 'week'
   const [cycleTab, setCycleTab] = useState('list')    // 'list' | 'heatmap'
 
   // Filters
@@ -483,6 +493,17 @@ export default function Coverage() {
     else { setSortCol(col); setSortAsc(false) }
   }
 
+  // Per-rep, per-day visit counts — used to count active days in avg denominator
+  const repDayData = useMemo(() => {
+    const m = {}
+    filtered.forEach(v => {
+      if (!v.rep || !v.date_scheduled) return
+      if (!m[v.rep]) m[v.rep] = {}
+      m[v.rep][v.date_scheduled] = (m[v.rep][v.date_scheduled] || 0) + 1
+    })
+    return m
+  }, [filtered])
+
   // Heatmap — reps × 12 weeks
   const heatmapReps = useMemo(() => {
     if (filterRep !== 'All') return [filterRep]
@@ -554,7 +575,7 @@ export default function Coverage() {
 
       {/* ── Main view toggle ── */}
       <div className="cov-tab-bar">
-        {[['day','Day'],['week','Week'],['cycle','Cycle']].map(([id, label]) => (
+        {[['cycle','Cycle'],['day','Day'],['week','Week']].map(([id, label]) => (
           <button key={id} className={`cov-tab ${mainView === id ? 'active' : ''}`}
             onClick={() => { setMainView(id); setSelectedDay(null) }}>
             {label}
@@ -598,7 +619,7 @@ export default function Coverage() {
           )}
           {cycleTab === 'heatmap' && (
             <AvgDayView
-              reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks}
+              reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData}
             />
           )}
         </div>
