@@ -34,6 +34,25 @@
 }
 .cov-sel:focus { outline: none; border-color: #CC0000; }
 
+/* ── DIS movement badges ───────────────────────────────────────────────────── */
+.cov-dis-badges { display: inline-flex; gap: 4px; align-items: center; }
+.cov-dis-g  { background: #e8f5e9; color: #2e7d32; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+.cov-dis-n  { background: #e3f2fd; color: #1565c0; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+.cov-dis-l  { background: #fce4ec; color: #b71c1c; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+.cov-dis-none { color: #ccc; font-size: 13px; }
+
+/* DIS context line in accordion header */
+.cov-acc-dis { font-size: 11px; color: #888; font-weight: 500; white-space: nowrap; }
+.cov-acc-dis .cov-dis-g,
+.cov-acc-dis .cov-dis-n,
+.cov-acc-dis .cov-dis-l { display: inline; background: none; padding: 0; font-size: 11px; border-radius: 0; }
+.cov-acc-dis .cov-dis-g { color: #2e7d32; }
+.cov-acc-dis .cov-dis-n { color: #1565c0; }
+.cov-acc-dis .cov-dis-l { color: #b71c1c; }
+
+/* Ranging column sub-label */
+.cov-th-sub { font-size: 9px; font-weight: 400; color: #bbb; text-transform: none; letter-spacing: 0; margin-top: 1px; }
+
 /* ── Rep multi-select dropdown ─────────────────────────────────────────────── */
 .cov-rep-drop-wrap { position: relative; }
 .cov-rep-drop-btn  {

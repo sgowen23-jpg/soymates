@@ -47,7 +47,7 @@ function staleColor(n) {
   return '#16a085'
 }
 
-export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, repLabel, filterState, showAllStates }) {
+export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, repLabel, filterState, showAllStates, disByStore = {}, psByStore = {}, bnbDate = null }) {
   const exportedAt  = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
   const stateLabel  = filterState !== 'All' ? filterState : 'All States'
   const statusLabel = showAllStates ? 'All visit states' : 'Successful visits only'
@@ -101,17 +101,35 @@ export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, repLabel, f
     })
   })
 
+  // BNB date label
+  const bnbLabel = bnbDate ? (() => {
+    const d = new Date(bnbDate)
+    return `${d.getDate()} ${MONTHS[d.getMonth()]}`
+  })() : null
+
   // ── Store list (one row per store, sorted neglected-first) ─────────────────
   const storeMap = {}
   filtered.forEach(v => {
     const key = v.location_no ?? v.store_name
-    if (!storeMap[key]) storeMap[key] = { store_name: v.store_name, state: v.state, dates: [] }
+    if (!storeMap[key]) storeMap[key] = { store_name: v.store_name, state: v.state, location_no: v.location_no, dates: [] }
     if (v.date_scheduled) storeMap[key].dates.push(v.date_scheduled)
   })
   const storeList = Object.values(storeMap).map(s => {
-    const sorted = [...s.dates].sort()
-    const last   = sorted[sorted.length - 1]
-    return { ...s, visit_count: s.dates.length, first_visit: sorted[0] || null, last_visit: last || null, days_since: daysSince(last) }
+    const sorted  = [...s.dates].sort()
+    const last    = sorted[sorted.length - 1]
+    const dis     = disByStore[s.location_no] || null
+    const ranging = s.location_no != null ? (psByStore[s.location_no] ?? null) : null
+    return {
+      ...s,
+      visit_count:   s.dates.length,
+      first_visit:   sorted[0] || null,
+      last_visit:    last || null,
+      days_since:    daysSince(last),
+      dis_gains:     dis?.gains    ?? 0,
+      dis_losses:    dis?.losses   ?? 0,
+      dis_new:       dis?.newLines ?? 0,
+      total_ranging: ranging,
+    }
   }).sort((a, b) => (b.days_since ?? -1) - (a.days_since ?? -1))
 
   // ── HTML fragments ─────────────────────────────────────────────────────────
@@ -137,10 +155,29 @@ export function exportCoverageHTML({ filtered, weeks, cycleLabelStr, repLabel, f
     return `<tr><td style="padding:8px 16px 8px 8px;white-space:nowrap;font-size:12px;font-weight:600"><span style="display:inline-flex;align-items:center">${dot}${rep.split(' ')[0]}</span></td>${cells}<td style="padding:0 10px;text-align:center;font-weight:700;font-size:13px;color:#1a2b5e;border-left:1px solid #e0e0e0">${cycleAvg}</td></tr>`
   }).join('\n')
 
+  function disBadgeHtml(gains, losses, newLines) {
+    if (!gains && !losses && !newLines) return '<span style="color:#ccc">—</span>'
+    const parts = []
+    if (gains    > 0) parts.push(`<span style="background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px">+${gains}G</span>`)
+    if (newLines > 0) parts.push(`<span style="background:#e3f2fd;color:#1565c0;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px">+${newLines}N</span>`)
+    if (losses   > 0) parts.push(`<span style="background:#fce4ec;color:#b71c1c;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px">${losses}L</span>`)
+    return `<span style="display:inline-flex;gap:4px;align-items:center">${parts.join('')}</span>`
+  }
+
   const rankedRows = storeList.map((s, i) => {
     const sc  = staleColor(s.days_since)
     const bg  = i % 2 === 0 ? '#ffffff' : '#fafafa'
-    return `<tr style="background:${bg};border-bottom:1px solid #f0f0f0"><td style="padding:9px 14px;font-size:13px;font-weight:500">${s.store_name || '—'}</td><td style="padding:9px 14px;font-size:13px;text-align:center">${s.state || '—'}</td><td style="padding:9px 14px;font-size:13px;text-align:center;font-weight:700;color:#1a2b5e">${s.visit_count}</td><td style="padding:9px 14px;font-size:13px;text-align:center">${fmtDate(s.first_visit)}</td><td style="padding:9px 14px;font-size:13px;text-align:center">${fmtDate(s.last_visit)}</td><td style="padding:9px 14px;font-size:13px;text-align:center;font-weight:600;color:${sc}">${s.days_since != null ? s.days_since + 'd' : '—'}</td></tr>`
+    const rc  = s.total_ranging == null ? '#888' : s.total_ranging >= 24 ? '#2e7d32' : s.total_ranging >= 18 ? '#e67e22' : '#b71c1c'
+    return `<tr style="background:${bg};border-bottom:1px solid #f0f0f0">
+      <td style="padding:9px 14px;font-size:13px;font-weight:500">${s.store_name || '—'}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center">${s.state || '—'}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center;font-weight:700;color:#1a2b5e">${s.visit_count}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center">${disBadgeHtml(s.dis_gains, s.dis_losses, s.dis_new)}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center;font-weight:600;color:${rc}">${s.total_ranging != null ? s.total_ranging + '/28' : '—'}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center">${fmtDate(s.first_visit)}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center">${fmtDate(s.last_visit)}</td>
+      <td style="padding:9px 14px;font-size:13px;text-align:center;font-weight:600;color:${sc}">${s.days_since != null ? s.days_since + 'd' : '—'}</td>
+    </tr>`
   }).join('\n')
 
   // ── Assemble full HTML ─────────────────────────────────────────────────────
@@ -199,7 +236,7 @@ table{border-collapse:collapse}
 
 <div class="sec">
   <div class="sec-title">Ranked List — ${storeList.length} stores visited</div>
-  <p class="hint">Sorted by days since last visit — neglected stores surface first.</p>
+  <p class="hint">Sorted by days since last visit — neglected stores surface first. DIS and ranging are correlated context, not attributed to visits.</p>
   <div class="scroll">
     <table class="list-table">
       <thead>
@@ -207,6 +244,8 @@ table{border-collapse:collapse}
           <th>Store</th>
           <th class="c">State</th>
           <th class="c">Visits</th>
+          <th class="c">DIS movements</th>
+          <th class="c">Ranging /28${bnbLabel ? `<div style="font-size:9px;font-weight:400;color:#bbb;margin-top:1px">BNB as of ${bnbLabel}</div>` : ''}</th>
           <th class="c">First Visit</th>
           <th class="c">Last Visit</th>
           <th class="c">Days Since Last</th>

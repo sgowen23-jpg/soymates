@@ -131,8 +131,26 @@ function SortTh({ col, label, sortCol, sortAsc, onSort }) {
   )
 }
 
-function StoreListView({ stores, sortCol, sortAsc, onSort }) {
+function fmtBnbDate(iso) {
+  if (!iso) return null
+  const d = new Date(iso)
+  return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}`
+}
+
+function DisBadge({ gains, losses, newLines }) {
+  if (!gains && !losses && !newLines) return <span className="cov-dis-none">—</span>
+  return (
+    <span className="cov-dis-badges">
+      {gains    > 0 && <span className="cov-dis-g">+{gains}G</span>}
+      {newLines > 0 && <span className="cov-dis-n">+{newLines}N</span>}
+      {losses   > 0 && <span className="cov-dis-l">{losses}L</span>}
+    </span>
+  )
+}
+
+function StoreListView({ stores, sortCol, sortAsc, onSort, bnbDate }) {
   const thProps = col => ({ col, sortCol, sortAsc, onSort })
+  const bnbLabel = fmtBnbDate(bnbDate)
   return (
     <div className="cov-list-wrap">
       <div className="cov-list-meta">{stores.length} stores visited this cycle</div>
@@ -140,23 +158,36 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
         <table className="cov-table">
           <thead>
             <tr>
-              <SortTh label="Store"          {...thProps('store_name')}  />
-              <SortTh label="State"          {...thProps('state')}       />
-              <SortTh label="Visits"         {...thProps('visit_count')} />
-              <SortTh label="First Visit"    {...thProps('first_visit')} />
-              <SortTh label="Last Visit"     {...thProps('last_visit')}  />
-              <SortTh label="Days Since Last" {...thProps('days_since')} />
+              <SortTh label="Store"           {...thProps('store_name')}  />
+              <SortTh label="State"           {...thProps('state')}       />
+              <SortTh label="Visits"          {...thProps('visit_count')} />
+              <SortTh label="DIS movements"   {...thProps('dis_gains')}   />
+              <th className="cov-th">
+                Ranging /28
+                {bnbLabel && <div className="cov-th-sub">BNB as of {bnbLabel}</div>}
+              </th>
+              <SortTh label="First Visit"     {...thProps('first_visit')} />
+              <SortTh label="Last Visit"      {...thProps('last_visit')}  />
+              <SortTh label="Days Since Last" {...thProps('days_since')}  />
             </tr>
           </thead>
           <tbody>
             {stores.map(s => {
               const ds = s.days_since
               const staleCls = ds == null ? '' : ds > 28 ? 'cov-stale-red' : ds > 14 ? 'cov-stale-orange' : 'cov-stale-green'
+              const ranging  = s.total_ranging
+              const rangCls  = ranging == null ? '' : ranging >= 24 ? 'cov-stale-green' : ranging >= 18 ? 'cov-stale-orange' : 'cov-stale-red'
               return (
                 <tr key={s.location_no ?? s.store_name} className="cov-tr">
                   <td className="cov-td cov-td-name">{s.store_name}</td>
                   <td className="cov-td cov-td-center">{s.state}</td>
                   <td className="cov-td cov-td-center cov-td-count">{s.visit_count}</td>
+                  <td className="cov-td cov-td-center">
+                    <DisBadge gains={s.dis_gains} losses={s.dis_losses} newLines={s.dis_new} />
+                  </td>
+                  <td className={`cov-td cov-td-center ${rangCls}`}>
+                    {ranging != null ? `${ranging}/28` : '—'}
+                  </td>
                   <td className="cov-td cov-td-center">{fmtDate(s.first_visit)}</td>
                   <td className="cov-td cov-td-center">{fmtDate(s.last_visit)}</td>
                   <td className={`cov-td cov-td-center ${staleCls}`}>
@@ -173,7 +204,7 @@ function StoreListView({ stores, sortCol, sortAsc, onSort }) {
 }
 
 // ─── Avg/Day View ────────────────────────────────────────────────────────────
-function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
+function AvgDayView({ reps, data, max, weeks, repDayData, byDate, disByStore }) {
   const [expandedRep,  setExpandedRep]  = useState(null)
   const [expandedWeek, setExpandedWeek] = useState(null)
   const [selectedDay,  setSelectedDay]  = useState(null)
@@ -208,6 +239,23 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
     const week      = weeks[wi]
     const repVisits = repByDate
     const total     = week.reduce((s, d) => s + (repVisits[toDS(d)]?.length || 0), 0)
+
+    // Aggregate DIS context for stores this rep visited this week
+    const weekDis = useMemo(() => {
+      if (!disByStore) return null
+      const acc = { gains: 0, losses: 0, newLines: 0 }
+      week.forEach(date => {
+        ;(repVisits[toDS(date)] || []).forEach(v => {
+          const d = disByStore[v.location_no]
+          if (!d) return
+          acc.gains    += d.gains
+          acc.losses   += d.losses
+          acc.newLines += d.newLines
+        })
+      })
+      return (acc.gains || acc.losses || acc.newLines) ? acc : null
+    }, [week, repVisits, disByStore])
+
     return (
       <div className="cov-week cov-accordion-week">
         <div className="cov-week-hd" style={{ cursor: 'pointer' }} onClick={() => toggleCell(rep, wi)}>
@@ -217,6 +265,14 @@ function AvgDayView({ reps, data, max, weeks, repDayData, byDate }) {
           </span>
           <span className="cov-week-range">{fmtDay(week[0])} – {fmtDay(week[4])}</span>
           {total > 0 && <span className="cov-week-total">{total} visits</span>}
+          {weekDis && (
+            <span className="cov-acc-dis">
+              DIS context:
+              {weekDis.gains    > 0 && <span className="cov-dis-g"> +{weekDis.gains}G</span>}
+              {weekDis.newLines > 0 && <span className="cov-dis-n"> +{weekDis.newLines}N</span>}
+              {weekDis.losses   > 0 && <span className="cov-dis-l"> {weekDis.losses}L</span>}
+            </span>
+          )}
           <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.7 }}>▲ close</span>
         </div>
         <div className="cov-week-grid">
@@ -374,9 +430,14 @@ export default function Coverage() {
   const [repDropOpen, setRepDropOpen]   = useState(false)
   const repDropRef = useRef(null)
 
-  // Data
+  // Visit data
   const [visits, setVisits]   = useState([])
   const [loading, setLoading] = useState(true)
+
+  // DIS + perfect_store data
+  const [distRows, setDistRows]   = useState([])
+  const [psRows, setPsRows]       = useState([])
+  const [bnbDate, setBnbDate]     = useState(null)
 
   // Cycle list sort — default: days_since desc (neglected stores float up)
   const [sortCol, setSortCol] = useState('days_since')
@@ -389,6 +450,59 @@ export default function Coverage() {
     const mc = document.querySelector('.main-content')
     if (mc) mc.style.overflowY = 'auto'
     return () => { if (mc) mc.style.overflowY = '' }
+  }, [])
+
+  // Fetch DIS movement rows — movement_type IS NOT NULL skips standing-state rows
+  useEffect(() => {
+    async function loadDis() {
+      let all = [], from = 0
+      while (true) {
+        let q = supabase
+          .from('store_distribution')
+          .select('location_id,movement_type,total_net_gains,uploaded_at')
+          .eq('client', 'vitasoy')
+          .not('movement_type', 'is', null)
+        if (filterReps.size > 0) q = q.in('rep_name', [...filterReps])
+        if (filterState !== 'All') q = q.eq('state', filterState)
+        q = q.range(from, from + 999)
+        const { data } = await q
+        if (!data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 1000) break
+        from += 1000
+      }
+      setDistRows(all)
+    }
+    loadDis()
+  }, [filterReps, filterState])
+
+  // Fetch perfect_store ranging for the selected cycle
+  useEffect(() => {
+    async function loadPs() {
+      let all = [], from = 0
+      while (true) {
+        const { data } = await supabase
+          .from('perfect_store')
+          .select('store_id,total_ranging')
+          .eq('cycle', cycle)
+          .range(from, from + 499)
+        if (!data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 500) break
+        from += 500
+      }
+      setPsRows(all)
+    }
+    loadPs()
+  }, [cycle])
+
+  // Fetch latest BNB upload date for staleness stamp — once on mount
+  useEffect(() => {
+    supabase.from('bnb_26wk')
+      .select('uploaded_at')
+      .order('uploaded_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => setBnbDate(data?.[0]?.uploaded_at ?? null))
   }, [])
 
   // Fetch visits for the selected cycle — paginated to avoid 1000-row PostgREST truncation
@@ -456,7 +570,27 @@ export default function Coverage() {
     return m
   }, [filtered])
 
-  // Cycle list — one row per unique store
+  // DIS movements indexed by location_id
+  const disByStore = useMemo(() => {
+    const m = {}
+    distRows.forEach(r => {
+      const id = r.location_id
+      if (!m[id]) m[id] = { gains: 0, losses: 0, newLines: 0 }
+      if (r.movement_type === 'Gain')                              m[id].gains++
+      else if (r.movement_type === 'Loss')                         m[id].losses++
+      else if (r.movement_type === 'New' || r.movement_type === 'New Gain') m[id].newLines++
+    })
+    return m
+  }, [distRows])
+
+  // perfect_store ranging indexed by store_id
+  const psByStore = useMemo(() => {
+    const m = {}
+    psRows.forEach(r => { m[r.store_id] = r.total_ranging })
+    return m
+  }, [psRows])
+
+  // Cycle list — one row per unique store, enriched with DIS + PS data
   const storeList = useMemo(() => {
     const m = {}
     filtered.forEach(v => {
@@ -465,11 +599,23 @@ export default function Coverage() {
       if (v.date_scheduled) m[key].dates.push(v.date_scheduled)
     })
     return Object.values(m).map(s => {
-      const sorted = [...s.dates].sort()
-      const last   = sorted[sorted.length - 1]
-      return { ...s, visit_count: s.dates.length, first_visit: sorted[0] || null, last_visit: last || null, days_since: daysSince(last) }
+      const sorted  = [...s.dates].sort()
+      const last    = sorted[sorted.length - 1]
+      const dis     = disByStore[s.location_no] || null
+      const ranging = s.location_no != null ? (psByStore[s.location_no] ?? null) : null
+      return {
+        ...s,
+        visit_count:   s.dates.length,
+        first_visit:   sorted[0] || null,
+        last_visit:    last || null,
+        days_since:    daysSince(last),
+        dis_gains:     dis?.gains    ?? 0,
+        dis_losses:    dis?.losses   ?? 0,
+        dis_new:       dis?.newLines ?? 0,
+        total_ranging: ranging,
+      }
     })
-  }, [filtered])
+  }, [filtered, disByStore, psByStore])
 
   const sortedStoreList = useMemo(() => [...storeList].sort((a, b) => {
     let av = a[sortCol], bv = b[sortCol]
@@ -540,7 +686,7 @@ export default function Coverage() {
                 const repLabel = filterReps.size === 0 ? 'All Reps'
                   : filterReps.size <= 3 ? [...filterReps].join(', ')
                   : `${filterReps.size} reps`
-                exportCoverageHTML({ filtered, weeks, cycleLabelStr: cycleLabel(cycle), repLabel, filterState, showAllStates })
+                exportCoverageHTML({ filtered, weeks, cycleLabelStr: cycleLabel(cycle), repLabel, filterState, showAllStates, disByStore, psByStore, bnbDate })
               }}
             >
               Export / Share
@@ -642,7 +788,8 @@ export default function Coverage() {
       {/* ── Cycle View ── */}
       {!loading && mainView === 'cycle' && (
         <AvgDayView
-          reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks} repDayData={repDayData} byDate={byDate}
+          reps={heatmapReps} data={heatmapData} max={heatmapMax} weeks={weeks}
+          repDayData={repDayData} byDate={byDate} disByStore={disByStore}
         />
       )}
 
@@ -651,6 +798,7 @@ export default function Coverage() {
         <StoreListView
           stores={sortedStoreList}
           sortCol={sortCol} sortAsc={sortAsc} onSort={toggleSort}
+          bnbDate={bnbDate}
         />
       )}
     </div>
