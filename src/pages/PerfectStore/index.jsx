@@ -2,7 +2,16 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import StoreProfile from '../StoreMap/StoreProfile'
 import { useDataFreshness } from '../../hooks/useDataFreshness'
+import { CURRENT_CYCLE, CYCLE_STARTS } from '../../constants'
 import './PerfectStore.css'
+
+const CYCLE_YEAR      = CYCLE_STARTS[CURRENT_CYCLE].split('-')[0]
+const CYCLE_LABEL     = `${CYCLE_YEAR} Cycle ${CURRENT_CYCLE}`
+const _cycleStart     = new Date(CYCLE_STARTS[CURRENT_CYCLE] + 'T00:00:00')
+const _cycleEnd       = new Date(_cycleStart)
+_cycleEnd.setDate(_cycleStart.getDate() + 11 * 7 + 4)
+const _fmtD = d => `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}`
+const CYCLE_RANGE     = `${_fmtD(_cycleStart)} – ${_fmtD(_cycleEnd)}`
 
 const PAGE_SIZE = 100
 
@@ -33,6 +42,7 @@ const COLS = [
   { label: 'UHT SOS',          key: 'uht_sos',          type: 'num' },
   { label: 'T/Up Previous',    key: 'tup_previous',     type: 'str' },
   { label: 'Call Freq Target', key: 'call_freq_target', type: 'num' },
+  { label: 'Actual Visits',   key: 'actual_visits',    type: 'num' },
 ]
 
 function sortRows(rows, col, dir) {
@@ -58,15 +68,24 @@ function renderCell(r, key) {
   switch (key) {
     case 'distribution_pct': return fmtPct(r[key])
     case 'uht_sos':          return fmtSos(r[key])
+    case 'actual_visits': {
+      const actual = r.actual_visits ?? 0
+      const target = r.call_freq_target
+      if (!target) return <span style={{ color: '#888' }}>{actual}</span>
+      const ratio = actual / target
+      const color = ratio >= 1 ? '#2e7d32' : ratio >= 0.5 ? '#e67e22' : '#b71c1c'
+      return <span style={{ fontWeight: 600, color }}>{actual} / {target}</span>
+    }
     default:                 return r[key] ?? '—'
   }
 }
 
 export default function PerfectStore() {
-  const [rows,    setRows]    = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-  const freshness             = useDataFreshness()
+  const [rows,        setRows]        = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState(null)
+  const [visitCounts, setVisitCounts] = useState({})
+  const freshness                     = useDataFreshness()
 
   const [stateFilter,    setStateFilter]    = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
@@ -76,6 +95,32 @@ export default function PerfectStore() {
   const [sortCol,      setSortCol]      = useState(null)
   const [sortDir,      setSortDir]      = useState('asc')
   const [selectedStore, setSelectedStore] = useState(null)
+
+  // Fetch visit counts for the current cycle — location_no only, paginated
+  useEffect(() => {
+    async function loadVisits() {
+      let all = [], from = 0
+      while (true) {
+        const { data } = await supabase
+          .from('store_visits')
+          .select('location_no')
+          .eq('cycle', CYCLE_LABEL)
+          .eq('schedule_state', 'Successful')
+          .range(from, from + 499)
+        if (!data || data.length === 0) break
+        all = [...all, ...data]
+        if (data.length < 500) break
+        from += 500
+      }
+      const counts = {}
+      all.forEach(v => {
+        const key = String(v.location_no)
+        counts[key] = (counts[key] || 0) + 1
+      })
+      setVisitCounts(counts)
+    }
+    loadVisits()
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -129,7 +174,11 @@ export default function PerfectStore() {
     })
   }, [rows, stateFilter, locationFilter, classFilter, search])
 
-  const sorted = useMemo(() => sortRows(filtered, sortCol, sortDir), [filtered, sortCol, sortDir])
+  const enriched = useMemo(() => filtered.map(r => ({
+    ...r, actual_visits: visitCounts[r.store_id] ?? 0
+  })), [filtered, visitCounts])
+
+  const sorted = useMemo(() => sortRows(enriched, sortCol, sortDir), [enriched, sortCol, sortDir])
 
   const visible = sorted.slice(0, page * PAGE_SIZE)
   const hasMore = visible.length < sorted.length
@@ -157,6 +206,7 @@ export default function PerfectStore() {
         <h1 className="ps-title">Perfect Store</h1>
         <p className="ps-sub">
           {loading ? 'Loading…' : `${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} stores`}
+          <span className="data-freshness"> · {CYCLE_LABEL} ({CYCLE_RANGE})</span>
           {freshness.bnb26 && <span className="data-freshness"> · 26wk data: {freshness.bnb26}</span>}
         </p>
       </div>
