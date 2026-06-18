@@ -74,7 +74,7 @@ function renderCell(r, key) {
       if (!target) return <span style={{ color: '#888' }}>{actual}</span>
       const ratio = actual / target
       const color = ratio >= 1 ? '#2e7d32' : ratio >= 0.5 ? '#e67e22' : '#b71c1c'
-      return <span style={{ fontWeight: 600, color }}>{actual} / {target}</span>
+      return <span style={{ fontWeight: 600, color }}>{actual}</span>
     }
     default:                 return r[key] ?? '—'
   }
