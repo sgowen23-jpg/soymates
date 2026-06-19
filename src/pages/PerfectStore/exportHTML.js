@@ -25,6 +25,7 @@ const COLS = [
   { label: 'Classification',   key: 'classification' },
   { label: 'Focus Store',      key: 'focus_store' },
   { label: 'Distribution %',   key: 'distribution_pct' },
+  { label: 'Eligible?',        key: 'eligible' },
   { label: 'UHT Core Gaps',    key: 'uht_core_gaps' },
   { label: 'UHT NonCore Gaps', key: 'uht_noncore_gaps' },
   { label: 'Chilled Opp',      key: 'chilled_opp' },
@@ -46,6 +47,20 @@ function cellValue(r, key) {
 }
 
 function cellHtml(r, key) {
+  if (key === 'eligible') {
+    const val = r.eligible
+    if (!val) return ''
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e67e2220;color:#e67e22;white-space:nowrap">${val}</span>`
+  }
+  if (key === 'call_freq_target') {
+    // rows passed to export already have `eligible` computed but not derived call_freq —
+    // export the stored value with a mismatch marker if the row carries it
+    const stored  = r.call_freq_target
+    const derived = r._rule_call_freq ?? null
+    const mismatch = derived != null && stored != null && derived !== stored
+    const display = derived ?? stored ?? '—'
+    return mismatch ? `${display} <span style="color:#e67e22" title="Stored value (${stored}) differs from rulebook">⚠</span>` : String(display)
+  }
   if (key === 'classification') {
     const val = r[key]
     if (!val) return '<span style="color:#888">—</span>'

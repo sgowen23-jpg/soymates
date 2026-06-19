@@ -41,6 +41,7 @@ const COLS = [
   { label: 'Classification',   key: 'classification',   type: 'str' },
   { label: 'Focus Store',      key: 'focus_store',      type: 'str' },
   { label: 'Distribution %',   key: 'distribution_pct', type: 'num' },
+  { label: 'Eligible?',        key: 'eligible',         type: 'str' },
   { label: 'UHT Core Gaps',    key: 'uht_core_gaps',    type: 'num' },
   { label: 'UHT NonCore Gaps', key: 'uht_noncore_gaps', type: 'num' },
   { label: 'Chilled Opp',      key: 'chilled_opp',      type: 'num' },
@@ -72,8 +73,31 @@ function sortRows(rows, col, dir) {
   })
 }
 
-function renderCell(r, key) {
+function renderCell(r, key, rules) {
   switch (key) {
+    case 'eligible': {
+      const val = r.eligible
+      if (!val) return null
+      return (
+        <span style={{
+          display: 'inline-block', padding: '2px 8px', borderRadius: 10,
+          fontSize: 11, fontWeight: 600,
+          background: '#e67e2220', color: '#e67e22',
+        }}>
+          {val}
+        </span>
+      )
+    }
+    case 'call_freq_target': {
+      const rule = rules?.[r.classification]
+      const derived = rule?.call_freq ?? null
+      const stored  = r.call_freq_target
+      const mismatch = derived != null && stored != null && derived !== stored
+      const display = derived ?? stored ?? '—'
+      return mismatch
+        ? <span title={`Stored value (${stored}) differs from rulebook (${derived})`}>{display} <span style={{ color: '#e67e22', fontSize: 12 }}>⚠</span></span>
+        : display
+    }
     case 'classification': {
       const val = r[key]
       if (!val) return <span style={{ color: '#888' }}>—</span>
@@ -109,6 +133,7 @@ export default function PerfectStore() {
   const [visitCounts, setVisitCounts] = useState({})
   const freshness                     = useDataFreshness()
 
+  const [rules,        setRules]        = useState({}) // keyed by classification
   const [stateFilter,    setStateFilter]    = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
   const [classFilter,    setClassFilter]    = useState('All')
@@ -117,6 +142,15 @@ export default function PerfectStore() {
   const [sortCol,      setSortCol]      = useState(null)
   const [sortDir,      setSortDir]      = useState('asc')
   const [selectedStore, setSelectedStore] = useState(null)
+
+  useEffect(() => {
+    supabase.from('ps_classification_rules').select('*').then(({ data }) => {
+      if (!data) return
+      const map = {}
+      data.forEach(r => { map[r.classification] = r })
+      setRules(map)
+    })
+  }, [])
 
   // Fetch visit counts for the current cycle — location_no only, paginated
   useEffect(() => {
@@ -196,9 +230,14 @@ export default function PerfectStore() {
     })
   }, [rows, stateFilter, locationFilter, classFilter, search])
 
-  const enriched = useMemo(() => filtered.map(r => ({
-    ...r, actual_visits: visitCounts[r.store_id] ?? 0
-  })), [filtered, visitCounts])
+  const enriched = useMemo(() => filtered.map(r => {
+    const rule = rules[r.classification]
+    const eligible = rule?.upgrade_threshold != null && r.distribution_pct != null
+      && r.distribution_pct >= rule.upgrade_threshold
+      ? `→ ${rule.upgrade_to}`
+      : null
+    return { ...r, actual_visits: visitCounts[r.store_id] ?? 0, eligible }
+  }), [filtered, visitCounts, rules])
 
   const sorted = useMemo(() => sortRows(enriched, sortCol, sortDir), [enriched, sortCol, sortDir])
 
@@ -276,7 +315,10 @@ export default function PerfectStore() {
               search                   ? `"${search}"`  : null,
             ].filter(Boolean)
             exportPerfectStoreHTML({
-              rows: sorted,
+              rows: sorted.map(r => ({
+                ...r,
+                _rule_call_freq: rules[r.classification]?.call_freq ?? null,
+              })),
               cycleLabel: CYCLE_LABEL,
               filterDesc: parts.length ? parts.join(' · ') : 'All stores',
             })
@@ -332,7 +374,7 @@ export default function PerfectStore() {
                         key={col.key}
                         className={col.key === 'total_opp' ? 'ps-total' : undefined}
                       >
-                        {renderCell(r, col.key)}
+                        {renderCell(r, col.key, rules)}
                       </td>
                     ))}
                   </tr>
