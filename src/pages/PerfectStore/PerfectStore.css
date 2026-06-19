@@ -186,3 +186,23 @@
   border-color: #CC0000;
   color: #CC0000;
 }
+
+/* ── Export ── */
+.ps-export-btn {
+  padding: 7px 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ps-export-btn:hover {
+  background: #f5f5f5;
+  border-color: #CC0000;
+  color: #CC0000;
+}

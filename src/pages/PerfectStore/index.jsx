@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import StoreProfile from '../StoreMap/StoreProfile'
 import { useDataFreshness } from '../../hooks/useDataFreshness'
 import { CURRENT_CYCLE, CYCLE_STARTS } from '../../constants'
+import { exportPerfectStoreHTML } from './exportHTML'
 import './PerfectStore.css'
 
 const CYCLE_YEAR      = CYCLE_STARTS[CURRENT_CYCLE].split('-')[0]
@@ -14,6 +15,13 @@ const _fmtD = d => `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul',
 const CYCLE_RANGE     = `${_fmtD(_cycleStart)} – ${_fmtD(_cycleEnd)}`
 
 const PAGE_SIZE = 100
+
+const CLASS_COLORS = {
+  'PERFECT STORE': '#2e7d32',
+  'GROW':          '#0e7490',
+  'DEVELOP':       '#e67e22',
+  'EXPAND':        '#546e7a',
+}
 
 const fmtPct = v => v == null ? '—' : `${(v * 100).toFixed(1)}%`
 const fmtNum = v => v == null ? '—' : v
@@ -66,6 +74,20 @@ function sortRows(rows, col, dir) {
 
 function renderCell(r, key) {
   switch (key) {
+    case 'classification': {
+      const val = r[key]
+      if (!val) return <span style={{ color: '#888' }}>—</span>
+      const color = CLASS_COLORS[val.toUpperCase().trim()] || '#888'
+      return (
+        <span style={{
+          display: 'inline-block', padding: '2px 8px', borderRadius: 10,
+          fontSize: 11, fontWeight: 600,
+          background: color + '20', color,
+        }}>
+          {val}
+        </span>
+      )
+    }
     case 'distribution_pct': return fmtPct(r[key])
     case 'uht_sos':          return fmtSos(r[key])
     case 'actual_visits': {
@@ -243,6 +265,25 @@ export default function PerfectStore() {
           value={search}
           onChange={e => { setSearch(e.target.value); resetPage() }}
         />
+
+        <button
+          className="ps-export-btn"
+          onClick={() => {
+            const parts = [
+              stateFilter    !== 'All' ? stateFilter    : null,
+              locationFilter !== 'All' ? locationFilter : null,
+              classFilter    !== 'All' ? classFilter    : null,
+              search                   ? `"${search}"`  : null,
+            ].filter(Boolean)
+            exportPerfectStoreHTML({
+              rows: sorted,
+              cycleLabel: CYCLE_LABEL,
+              filterDesc: parts.length ? parts.join(' · ') : 'All stores',
+            })
+          }}
+        >
+          Export HTML
+        </button>
       </div>
 
       {error && (
