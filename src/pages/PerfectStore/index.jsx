@@ -38,6 +38,10 @@ const COLS = [
   { label: 'Location',         key: 'location',         type: 'str' },
   { label: 'Store ID',         key: 'store_id',         type: 'str' },
   { label: 'Store Name',       key: 'store_name',       type: 'str' },
+  { label: 'Cluster',          key: 'cluster',          type: 'str' },
+  { label: 'MSO',              key: 'mso',              type: 'str' },
+  { label: 'Banner',           key: 'banner',           type: 'str' },
+  { label: 'Catalogue',        key: 'catalogue_format', type: 'str' },
   { label: 'Classification',   key: 'classification',   type: 'str' },
   { label: 'Focus Store',      key: 'focus_store',      type: 'str' },
   { label: 'Distribution %',   key: 'distribution_pct', type: 'num' },
@@ -48,6 +52,10 @@ const COLS = [
   { label: 'RTD Opp',          key: 'rtd_opp',          type: 'num' },
   { label: 'Yoghurt Opp',      key: 'yoghurt_opp',      type: 'num' },
   { label: 'Total Opp',        key: 'total_opp',        type: 'num' },
+  { label: 'Metcash Rank',     key: 'metcash_ranking',  type: 'num' },
+  { label: 'Vitasoy Rank',     key: 'vitasoy_ranking',  type: 'num' },
+  { label: 'Assumed Sales',    key: 'vitasoy_assumed_sales', type: 'num' },
+  { label: 'GSV Potential',    key: 'gsv_potential',    type: 'num' },
   { label: 'UHT SOS',          key: 'uht_sos',          type: 'num' },
   { label: 'T/Up Previous',    key: 'tup_previous',     type: 'str' },
   { label: 'Call Freq Target', key: 'call_freq_target', type: 'num' },
@@ -112,8 +120,10 @@ function renderCell(r, key, rules) {
         </span>
       )
     }
-    case 'distribution_pct': return fmtPct(r[key])
-    case 'uht_sos':          return fmtSos(r[key])
+    case 'distribution_pct':        return fmtPct(r[key])
+    case 'vitasoy_assumed_sales':
+    case 'gsv_potential':           return r[key] == null ? '—' : `$${Number(r[key]).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    case 'uht_sos':                 return fmtSos(r[key])
     case 'actual_visits': {
       const actual = r.actual_visits ?? 0
       const target = r.call_freq_target

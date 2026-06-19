@@ -22,6 +22,10 @@ const COLS = [
   { label: 'Location',         key: 'location' },
   { label: 'Store ID',         key: 'store_id' },
   { label: 'Store Name',       key: 'store_name' },
+  { label: 'Cluster',          key: 'cluster' },
+  { label: 'MSO',              key: 'mso' },
+  { label: 'Banner',           key: 'banner' },
+  { label: 'Catalogue',        key: 'catalogue_format' },
   { label: 'Classification',   key: 'classification' },
   { label: 'Focus Store',      key: 'focus_store' },
   { label: 'Distribution %',   key: 'distribution_pct' },
@@ -32,17 +36,25 @@ const COLS = [
   { label: 'RTD Opp',          key: 'rtd_opp' },
   { label: 'Yoghurt Opp',      key: 'yoghurt_opp' },
   { label: 'Total Opp',        key: 'total_opp' },
+  { label: 'Metcash Rank',     key: 'metcash_ranking' },
+  { label: 'Vitasoy Rank',     key: 'vitasoy_ranking' },
+  { label: 'Assumed Sales',    key: 'vitasoy_assumed_sales' },
+  { label: 'GSV Potential',    key: 'gsv_potential' },
   { label: 'UHT SOS',          key: 'uht_sos' },
   { label: 'T/Up Previous',    key: 'tup_previous' },
   { label: 'Call Freq Target', key: 'call_freq_target' },
   { label: 'Actual Visits',    key: 'actual_visits' },
 ]
 
+const fmtCurrency = v => v == null ? '—' : `$${Number(v).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+
 function cellValue(r, key) {
   switch (key) {
-    case 'distribution_pct': return fmtPct(r[key])
-    case 'uht_sos':          return fmtSos(r[key])
-    default:                 return fmtNum(r[key])
+    case 'distribution_pct':       return fmtPct(r[key])
+    case 'vitasoy_assumed_sales':
+    case 'gsv_potential':          return fmtCurrency(r[key])
+    case 'uht_sos':                return fmtSos(r[key])
+    default:                       return fmtNum(r[key])
   }
 }
 

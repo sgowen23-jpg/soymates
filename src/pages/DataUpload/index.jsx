@@ -58,7 +58,7 @@ function parseStoreFile(arrayBuffer) {
   return { records, skipped, totalRows: raw.length }
 }
 
-// ── Perfect Store parser ──────────────────────────────────────────────────────
+// ── Perfect Store — Team Target parser ───────────────────────────────────────
 const PS_SHEET = 'FY27 CYCLE 1 Team Target'
 
 // [colIndex, destField, parseFn] — column M (index 12) skipped: generated column in Supabase
@@ -80,8 +80,7 @@ const PS_COL_MAP = [
   [15, 'call_freq_target', toInt  ],
 ]
 
-function parsePsFile(arrayBuffer) {
-  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+function parsePsTeamTarget(wb) {
   const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === PS_SHEET.toLowerCase())
   if (!sheetName) return { error: `Sheet "${PS_SHEET}" not found. Found: ${wb.SheetNames.join(', ')}` }
 
@@ -103,6 +102,61 @@ function parsePsFile(arrayBuffer) {
   })
 
   return { records, skipped, totalRows: dataRows.length }
+}
+
+// ── Perfect Store — Master sheet commercial parser ────────────────────────────
+// Sheet: "FY27 Perfect Store " (trailing space — match by trim)
+// Layout: rows 1-2 blank, row 3 header, data from row 4 → slice(3) zero-based
+// Reads only columns 0-13 to avoid 16k phantom columns declared by Excel
+const PS_MASTER_SHEET = 'FY27 Perfect Store'   // matched after trim()
+
+const PS_MASTER_COL_MAP = [
+  [1,  'cluster',               toStr  ],
+  [6,  'mso',                   toStr  ],
+  [7,  'banner',                toStr  ],
+  [9,  'metcash_ranking',       toInt  ],
+  [10, 'vitasoy_ranking',       toInt  ],
+  [11, 'vitasoy_assumed_sales', toFloat],
+  [12, 'gsv_potential',         toFloat],
+  [13, 'catalogue_format',      toStr  ],
+]
+
+function parsePsMasterSheet(wb) {
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === PS_MASTER_SHEET.toLowerCase())
+  if (!sheetName) {
+    return { masterRecords: [], masterSkipped: 0, masterTotalRows: 0,
+             masterError: `Sheet "${PS_MASTER_SHEET}" not found in this file.` }
+  }
+
+  // Bound to columns 0-13 before parsing to avoid iterating 16k phantom columns
+  const ws = wb.Sheets[sheetName]
+  const ref = XLSX.utils.decode_range(ws['!ref'] || 'A1:N1')
+  ref.e.c = Math.min(ref.e.c, 13)
+  const bounded = { ...ws, '!ref': XLSX.utils.encode_range(ref) }
+
+  const rows = XLSX.utils.sheet_to_json(bounded, { header: 1, defval: null })
+  // rows[0-1] blank, rows[2] header, data from rows[3]
+  const dataRows = rows.slice(3)
+  if (!dataRows.length) {
+    return { masterRecords: [], masterSkipped: 0, masterTotalRows: 0,
+             masterError: `Sheet "${PS_MASTER_SHEET}" has no data rows.` }
+  }
+
+  let skipped = 0
+  const records = []
+  dataRows.forEach(row => {
+    const storeIdRaw = row[4]
+    if (storeIdRaw == null || storeIdRaw === '') { skipped++; return }
+    const store_id = String(storeIdRaw).trim()
+    if (!store_id) { skipped++; return }
+    const rec = { store_id }
+    PS_MASTER_COL_MAP.forEach(([idx, dest, parse]) => {
+      rec[dest] = parse(row[idx])
+    })
+    records.push(rec)
+  })
+
+  return { masterRecords: records, masterSkipped: skipped, masterTotalRows: dataRows.length }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -133,12 +187,19 @@ export default function DataUpload() {
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = evt => {
-      const res = activeTab === 'store-key'
-        ? parseStoreFile(evt.target.result)
-        : parsePsFile(evt.target.result)
-      if (res.error) { setErrMsg(res.error); setPhase('error'); return }
-      if (!res.records.length) { setErrMsg('No valid rows found (all rows missing Store ID).'); setPhase('error'); return }
-      setParseInfo(res)
+      if (activeTab === 'store-key') {
+        const res = parseStoreFile(evt.target.result)
+        if (res.error) { setErrMsg(res.error); setPhase('error'); return }
+        if (!res.records.length) { setErrMsg('No valid rows found (all rows missing Store ID).'); setPhase('error'); return }
+        setParseInfo(res)
+      } else {
+        const wb  = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' })
+        const tt  = parsePsTeamTarget(wb)
+        if (tt.error) { setErrMsg(tt.error); setPhase('error'); return }
+        if (!tt.records.length) { setErrMsg('No valid rows found (all rows missing Store ID).'); setPhase('error'); return }
+        const master = parsePsMasterSheet(wb)
+        setParseInfo({ ...tt, ...master })
+      }
       setPhase('parsed')
     }
     reader.readAsArrayBuffer(file)
@@ -153,19 +214,37 @@ export default function DataUpload() {
   async function handleUpload() {
     setPhase('uploading')
     setProgress(0)
-    const { records } = parseInfo
-    const total = records.length
+    const { records, masterRecords } = parseInfo
+    const total  = records.length
     const errors = []
-    const table = activeTab === 'store-key' ? 'stores' : 'perfect_store_v2'
+    const table  = activeTab === 'store-key' ? 'stores' : 'perfect_store_v2'
 
+    // ── Step 1: Team Target / Store Key upsert ────────────────────────────────
     for (let i = 0; i < total; i += CHUNK) {
       const chunk = records.slice(i, i + CHUNK)
       const { error } = await supabase.from(table).upsert(chunk, { onConflict: 'store_id' })
       if (error) errors.push(error.message)
-      setProgress(Math.round((Math.min(i + CHUNK, total) / total) * 100))
+      setProgress(Math.round((Math.min(i + CHUNK, total) / total) * (masterRecords?.length ? 60 : 100)))
     }
 
-    setResult({ count: total, errors })
+    // ── Step 2: Master commercial upsert (Perfect Store only) ─────────────────
+    let masterMatched = 0
+    if (activeTab === 'perfect-store' && masterRecords?.length && !errors.length) {
+      // Fetch existing store_ids to prevent ghost rows for unmatched ids
+      const { data: existing } = await supabase.from('perfect_store_v2').select('store_id')
+      const existingIds = new Set((existing || []).map(r => String(r.store_id)))
+      const filtered = masterRecords.filter(r => existingIds.has(String(r.store_id)))
+      masterMatched = filtered.length
+
+      for (let i = 0; i < filtered.length; i += CHUNK) {
+        const chunk = filtered.slice(i, i + CHUNK)
+        const { error } = await supabase.from('perfect_store_v2').upsert(chunk, { onConflict: 'store_id' })
+        if (error) errors.push(`Master: ${error.message}`)
+        setProgress(60 + Math.round((Math.min(i + CHUNK, filtered.length) / filtered.length) * 40))
+      }
+    }
+
+    setResult({ count: total, errors, masterMatched, masterTotal: masterRecords?.length ?? 0 })
     setPhase('done')
   }
 
@@ -225,9 +304,15 @@ export default function DataUpload() {
           <>
             <div className="du-alert du-alert-info">
               <div><strong>File:</strong> {fileName}</div>
-              <div><strong>{parseInfo.records.length.toLocaleString()}</strong> rows ready to upload</div>
+              <div><strong>{parseInfo.records.length.toLocaleString()}</strong> rows ready to upload (Team Target)</div>
               {parseInfo.skipped > 0 && (
                 <div className="du-warn">⚠ {parseInfo.skipped} rows skipped (no Store ID)</div>
+              )}
+              {isPs && parseInfo.masterRecords?.length > 0 && (
+                <div>+ <strong>{parseInfo.masterRecords.length.toLocaleString()}</strong> commercial records from Master sheet</div>
+              )}
+              {isPs && parseInfo.masterError && (
+                <div className="du-warn">⚠ Master sheet: {parseInfo.masterError}</div>
               )}
               {preview3?.length > 0 && (
                 <div className="du-preview-names">First {preview3.length}: {preview3.join(' · ')}</div>
@@ -261,7 +346,10 @@ export default function DataUpload() {
             ) : (
               <>
                 <strong>✅ Done!</strong>{' '}
-                {result.count.toLocaleString()} {isPs ? 'stores uploaded to Perfect Store Pipeline.' : 'stores uploaded.'}
+                {result.count.toLocaleString()} {isPs ? 'stores uploaded to Perfect Store Pipeline' : 'stores uploaded'}.
+                {isPs && result.masterTotal > 0 && (
+                  <span> · {result.masterMatched.toLocaleString()}/{result.masterTotal.toLocaleString()} commercial records matched and saved.</span>
+                )}
                 <button className="du-link" onClick={reset}>Upload another file</button>
               </>
             )}
