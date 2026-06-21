@@ -36,7 +36,11 @@ function fmtFocus(rule) {
   return rule.strategic_focus ?? rule.focus ?? rule.target ?? rule.notes ?? '—'
 }
 
-export default function MetricsPanel({ rules }) {
+export default function MetricsPanel({ rules, error }) {
+  if (error) {
+    return <div className="ps-error">Failed to load classification rules: {error}</div>
+  }
+
   const loading = Object.keys(rules).length === 0
 
   if (loading) {

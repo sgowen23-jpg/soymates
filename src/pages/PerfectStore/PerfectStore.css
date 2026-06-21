@@ -217,6 +217,98 @@
   border-bottom-color: #CC0000;
 }
 
+/* ── Scorecard Panel ── */
+.psc-panel {
+  max-width: 560px;
+}
+
+.psc-cycle-label {
+  font-size: 12px;
+  color: #aaa;
+  margin: 0 0 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.psc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+
+.psc-th-metric,
+.psc-th-value {
+  background: #f8f8f8;
+  color: #555;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #e8e8e8;
+  text-align: left;
+}
+
+.psc-th-value {
+  text-align: right;
+  width: 180px;
+}
+
+.psc-section-header td {
+  background: #f3f3f3;
+  color: #888;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 7px 14px;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.psc-row td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.psc-row:last-child td {
+  border-bottom: none;
+}
+
+.psc-label {
+  color: #1a1a1a;
+}
+
+.psc-sub {
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.psc-value {
+  text-align: right;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.psc-pending {
+  font-weight: 400;
+  color: #aaa;
+}
+
+.psc-pending-label {
+  font-size: 11px;
+  font-style: italic;
+  color: #ccc;
+}
+
 /* ── Metrics Panel ── */
 .psm-panel {
   padding: 4px 0;

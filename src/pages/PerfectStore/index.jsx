@@ -5,6 +5,7 @@ import { useDataFreshness } from '../../hooks/useDataFreshness'
 import { CURRENT_CYCLE, CYCLE_STARTS } from '../../constants'
 import { exportPerfectStoreHTML } from './exportHTML'
 import MetricsPanel from './MetricsPanel'
+import ScorecardPanel from './ScorecardPanel'
 import './PerfectStore.css'
 
 const CYCLE_YEAR      = CYCLE_STARTS[CURRENT_CYCLE].split('-')[0]
@@ -144,8 +145,9 @@ export default function PerfectStore() {
   const [visitCounts, setVisitCounts] = useState({})
   const freshness                     = useDataFreshness()
 
-  const [activeTab,    setActiveTab]    = useState('stores') // 'stores' | 'metrics'
+  const [activeTab,    setActiveTab]    = useState('stores') // 'stores' | 'metrics' | 'scorecard'
   const [rules,        setRules]        = useState({}) // keyed by classification
+  const [rulesError,   setRulesError]   = useState(null)
   const [stateFilter,    setStateFilter]    = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
   const [classFilter,    setClassFilter]    = useState('All')
@@ -156,7 +158,8 @@ export default function PerfectStore() {
   const [selectedStore, setSelectedStore] = useState(null)
 
   useEffect(() => {
-    supabase.from('ps_classification_rules').select('*').then(({ data }) => {
+    supabase.from('ps_classification_rules').select('*').then(({ data, error }) => {
+      if (error) { setRulesError(error.message); return }
       if (!data) return
       const map = {}
       data.forEach(r => { map[r.classification] = r })
@@ -297,9 +300,16 @@ export default function PerfectStore() {
         >
           Metrics
         </button>
+        <button
+          className={`ps-tab${activeTab === 'scorecard' ? ' ps-tab--active' : ''}`}
+          onClick={() => setActiveTab('scorecard')}
+        >
+          Scorecard
+        </button>
       </div>
 
-      {activeTab === 'metrics' && <MetricsPanel rules={rules} />}
+      {activeTab === 'metrics' && <MetricsPanel rules={rules} error={rulesError} />}
+      {activeTab === 'scorecard' && <ScorecardPanel rows={rows} cycleLabel={CYCLE_LABEL} />}
 
       {activeTab === 'stores' && <>
         <div className="ps-filters">
