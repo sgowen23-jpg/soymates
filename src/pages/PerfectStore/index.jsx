@@ -380,19 +380,15 @@ export default function PerfectStore() {
           <button
             className="ps-export-btn"
             onClick={() => {
-              const parts = [
-                stateFilter    !== 'All' ? stateFilter    : null,
-                locationFilter !== 'All' ? locationFilter : null,
-                classFilter    !== 'All' ? classFilter    : null,
-                search                   ? `"${search}"`  : null,
-              ].filter(Boolean)
               exportPerfectStoreHTML({
-                rows: sorted.map(r => ({
+                rows: enriched.map(r => ({
                   ...r,
                   _rule_call_freq: rules[r.classification]?.call_freq ?? null,
                 })),
+                rules,
+                visitMonthCounts,
                 cycleLabel: CYCLE_LABEL,
-                filterDesc: parts.length ? parts.join(' · ') : 'All stores',
+                cycleRange: CYCLE_RANGE,
               })
             }}
           >
