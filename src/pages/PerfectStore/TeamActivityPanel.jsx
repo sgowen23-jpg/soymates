@@ -224,7 +224,7 @@ export default function TeamActivityPanel({
   const colCount = 3 // activity summary column count (3 months)
 
   return (
-    <div className="psc-panel ta-panel">
+    <div className="ta-panel">
       <p className="psc-cycle-label">{cycleLabel} — successful visits only</p>
 
       {/* ── Section 1: Activity Summary ── */}

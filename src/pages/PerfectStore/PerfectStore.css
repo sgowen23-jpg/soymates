@@ -219,7 +219,6 @@
 
 /* ── Team Activity Panel ── */
 .ta-panel {
-  max-width: 100%;
 }
 
 .ta-section {
@@ -338,7 +337,6 @@
 
 /* ── Scorecard Panel ── */
 .psc-panel {
-  max-width: 560px;
 }
 
 .psc-cycle-label {
@@ -451,7 +449,6 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  max-width: 860px;
 }
 
 .psm-card {
