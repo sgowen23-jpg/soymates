@@ -326,6 +326,7 @@ export default function PerfectStore() {
           visitCounts={visitCounts}
           visitsLoading={visitsLoading}
           visitsError={visitsError}
+          rows={rows}
           cycleLabel={CYCLE_LABEL}
         />
       )}
