@@ -143,9 +143,10 @@ export default function PerfectStore() {
   const [rows,        setRows]        = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
-  const [visitCounts,   setVisitCounts]   = useState({})
-  const [visitsLoading, setVisitsLoading] = useState(true)
-  const [visitsError,   setVisitsError]   = useState(null)
+  const [visitCounts,      setVisitCounts]      = useState({})
+  const [visitMonthCounts, setVisitMonthCounts] = useState({})
+  const [visitsLoading,    setVisitsLoading]    = useState(true)
+  const [visitsError,      setVisitsError]      = useState(null)
   const freshness                     = useDataFreshness()
 
   const [activeTab,    setActiveTab]    = useState('stores') // 'stores' | 'metrics' | 'scorecard'
@@ -177,7 +178,7 @@ export default function PerfectStore() {
       while (true) {
         const { data, error } = await supabase
           .from('store_visits')
-          .select('location_no')
+          .select('location_no, date_scheduled')
           .eq('cycle', CYCLE_LABEL)
           .eq('schedule_state', 'Successful')
           .range(from, from + 499)
@@ -188,11 +189,17 @@ export default function PerfectStore() {
         from += 500
       }
       const counts = {}
+      const monthCounts = {}
       all.forEach(v => {
         const key = String(v.location_no)
         counts[key] = (counts[key] || 0) + 1
+        if (v.date_scheduled) {
+          const m = new Date(v.date_scheduled).getMonth()
+          monthCounts[m] = (monthCounts[m] || 0) + 1
+        }
       })
       setVisitCounts(counts)
+      setVisitMonthCounts(monthCounts)
       setVisitsLoading(false)
     }
     loadVisits()
@@ -324,6 +331,7 @@ export default function PerfectStore() {
       {activeTab === 'activity' && (
         <TeamActivityPanel
           visitCounts={visitCounts}
+          visitMonthCounts={visitMonthCounts}
           visitsLoading={visitsLoading}
           visitsError={visitsError}
           rows={rows}

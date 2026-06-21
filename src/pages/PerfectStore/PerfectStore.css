@@ -299,6 +299,43 @@
   border-bottom: none;
 }
 
+.ta-grid-dash {
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* Activity summary grid — narrower month columns since only 3 */
+.ta-activity-grid {
+  min-width: 400px;
+}
+
+.ta-activity-grid .ta-grid-th-month {
+  width: 90px;
+}
+
+/* ── Charts ── */
+.ta-chart-wrap {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  padding: 14px 16px 8px;
+}
+
+.ta-chart-svg {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+}
+
+.ta-chart-caption {
+  font-size: 11px;
+  color: #ccc;
+  font-style: italic;
+  margin: 6px 0 0;
+}
+
 /* ── Scorecard Panel ── */
 .psc-panel {
   max-width: 560px;
