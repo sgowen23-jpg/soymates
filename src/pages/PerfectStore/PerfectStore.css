@@ -219,6 +219,7 @@
 
 /* ── Team Activity Panel ── */
 .ta-panel {
+  min-width: 0;
 }
 
 .ta-section {
@@ -259,6 +260,9 @@
   border-bottom: 1px solid #e8e8e8;
   text-align: left;
   min-width: 200px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
 }
 
 .ta-grid-th-month {
@@ -277,6 +281,10 @@
   color: #1a1a1a;
   border-bottom: 1px solid #f0f0f0;
   font-weight: 500;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
 }
 
 .ta-grid-cell {
@@ -291,6 +299,10 @@
   color: #888;
   font-weight: 400;
   font-size: 11px;
+  background: #fafafa;
+}
+
+.ta-grid-row-target .ta-grid-label {
   background: #fafafa;
 }
 
