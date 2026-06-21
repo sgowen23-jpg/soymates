@@ -4,6 +4,7 @@ import StoreProfile from '../StoreMap/StoreProfile'
 import { useDataFreshness } from '../../hooks/useDataFreshness'
 import { CURRENT_CYCLE, CYCLE_STARTS } from '../../constants'
 import { exportPerfectStoreHTML } from './exportHTML'
+import MetricsPanel from './MetricsPanel'
 import './PerfectStore.css'
 
 const CYCLE_YEAR      = CYCLE_STARTS[CURRENT_CYCLE].split('-')[0]
@@ -143,6 +144,7 @@ export default function PerfectStore() {
   const [visitCounts, setVisitCounts] = useState({})
   const freshness                     = useDataFreshness()
 
+  const [activeTab,    setActiveTab]    = useState('stores') // 'stores' | 'metrics'
   const [rules,        setRules]        = useState({}) // keyed by classification
   const [stateFilter,    setStateFilter]    = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
@@ -282,130 +284,149 @@ export default function PerfectStore() {
         </p>
       </div>
 
-      <div className="ps-filters">
-        <select
-          className="ps-select"
-          value={stateFilter}
-          onChange={e => { setStateFilter(e.target.value); setLocationFilter('All'); resetPage() }}
-        >
-          {stateOptions.map(s => <option key={s}>{s}</option>)}
-        </select>
-
-        <select
-          className="ps-select"
-          value={locationFilter}
-          onChange={e => { setLocationFilter(e.target.value); resetPage() }}
-        >
-          {locationOptions.map(l => <option key={l}>{l}</option>)}
-        </select>
-
-        <select
-          className="ps-select"
-          value={classFilter}
-          onChange={e => { setClassFilter(e.target.value); resetPage() }}
-        >
-          {classOptions.map(c => <option key={c}>{c}</option>)}
-        </select>
-
-        <input
-          className="ps-search"
-          type="text"
-          placeholder="Search store…"
-          value={search}
-          onChange={e => { setSearch(e.target.value); resetPage() }}
-        />
-
+      <div className="ps-tabs">
         <button
-          className="ps-export-btn"
-          onClick={() => {
-            const parts = [
-              stateFilter    !== 'All' ? stateFilter    : null,
-              locationFilter !== 'All' ? locationFilter : null,
-              classFilter    !== 'All' ? classFilter    : null,
-              search                   ? `"${search}"`  : null,
-            ].filter(Boolean)
-            exportPerfectStoreHTML({
-              rows: sorted.map(r => ({
-                ...r,
-                _rule_call_freq: rules[r.classification]?.call_freq ?? null,
-              })),
-              cycleLabel: CYCLE_LABEL,
-              filterDesc: parts.length ? parts.join(' · ') : 'All stores',
-            })
-          }}
+          className={`ps-tab${activeTab === 'stores' ? ' ps-tab--active' : ''}`}
+          onClick={() => setActiveTab('stores')}
         >
-          Export HTML
+          Stores
+        </button>
+        <button
+          className={`ps-tab${activeTab === 'metrics' ? ' ps-tab--active' : ''}`}
+          onClick={() => setActiveTab('metrics')}
+        >
+          Metrics
         </button>
       </div>
 
-      {error && (
-        <div className="ps-error">Failed to load: {error}</div>
-      )}
+      {activeTab === 'metrics' && <MetricsPanel rules={rules} />}
 
-      {loading && !error && (
-        <div className="ps-loading">Loading…</div>
-      )}
+      {activeTab === 'stores' && <>
+        <div className="ps-filters">
+          <select
+            className="ps-select"
+            value={stateFilter}
+            onChange={e => { setStateFilter(e.target.value); setLocationFilter('All'); resetPage() }}
+          >
+            {stateOptions.map(s => <option key={s}>{s}</option>)}
+          </select>
 
-      {!loading && !error && (
-        <>
-          <div className="ps-table-wrap">
-            <table className="ps-table">
-              <thead>
-                <tr>
-                  {COLS.map(col => (
-                    <th
-                      key={col.key}
-                      className="ps-th-sortable"
-                      onClick={() => handleSort(col.key)}
-                    >
-                      {col.label}{thArrow(col.key)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(r => (
-                  <tr
-                    key={r.store_id}
-                    className="ps-row-clickable"
-                    onClick={() => setSelectedStore({
-                      id:     parseInt(r.store_id, 10),
-                      name:   r.store_name  ?? '',
-                      state:  r.state       ?? '',
-                      chain:  '',
-                      banner: '',
-                      address:'',
-                      region: '',
-                      rep:    '',
-                    })}
-                  >
+          <select
+            className="ps-select"
+            value={locationFilter}
+            onChange={e => { setLocationFilter(e.target.value); resetPage() }}
+          >
+            {locationOptions.map(l => <option key={l}>{l}</option>)}
+          </select>
+
+          <select
+            className="ps-select"
+            value={classFilter}
+            onChange={e => { setClassFilter(e.target.value); resetPage() }}
+          >
+            {classOptions.map(c => <option key={c}>{c}</option>)}
+          </select>
+
+          <input
+            className="ps-search"
+            type="text"
+            placeholder="Search store…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); resetPage() }}
+          />
+
+          <button
+            className="ps-export-btn"
+            onClick={() => {
+              const parts = [
+                stateFilter    !== 'All' ? stateFilter    : null,
+                locationFilter !== 'All' ? locationFilter : null,
+                classFilter    !== 'All' ? classFilter    : null,
+                search                   ? `"${search}"`  : null,
+              ].filter(Boolean)
+              exportPerfectStoreHTML({
+                rows: sorted.map(r => ({
+                  ...r,
+                  _rule_call_freq: rules[r.classification]?.call_freq ?? null,
+                })),
+                cycleLabel: CYCLE_LABEL,
+                filterDesc: parts.length ? parts.join(' · ') : 'All stores',
+              })
+            }}
+          >
+            Export HTML
+          </button>
+        </div>
+
+        {error && (
+          <div className="ps-error">Failed to load: {error}</div>
+        )}
+
+        {loading && !error && (
+          <div className="ps-loading">Loading…</div>
+        )}
+
+        {!loading && !error && (
+          <>
+            <div className="ps-table-wrap">
+              <table className="ps-table">
+                <thead>
+                  <tr>
                     {COLS.map(col => (
-                      <td
+                      <th
                         key={col.key}
-                        className={col.key === 'total_opp' ? 'ps-total' : undefined}
+                        className="ps-th-sortable"
+                        onClick={() => handleSort(col.key)}
                       >
-                        {renderCell(r, col.key, rules)}
-                      </td>
+                        {col.label}{thArrow(col.key)}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {!visible.length && (
-            <div className="ps-empty">No stores match your filters.</div>
-          )}
-
-          {hasMore && (
-            <div className="ps-load-more">
-              <button className="ps-load-btn" onClick={() => setPage(p => p + 1)}>
-                Load more ({(sorted.length - visible.length).toLocaleString()} remaining)
-              </button>
+                </thead>
+                <tbody>
+                  {visible.map(r => (
+                    <tr
+                      key={r.store_id}
+                      className="ps-row-clickable"
+                      onClick={() => setSelectedStore({
+                        id:     parseInt(r.store_id, 10),
+                        name:   r.store_name  ?? '',
+                        state:  r.state       ?? '',
+                        chain:  '',
+                        banner: '',
+                        address:'',
+                        region: '',
+                        rep:    '',
+                      })}
+                    >
+                      {COLS.map(col => (
+                        <td
+                          key={col.key}
+                          className={col.key === 'total_opp' ? 'ps-total' : undefined}
+                        >
+                          {renderCell(r, col.key, rules)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </>
-      )}
+
+            {!visible.length && (
+              <div className="ps-empty">No stores match your filters.</div>
+            )}
+
+            {hasMore && (
+              <div className="ps-load-more">
+                <button className="ps-load-btn" onClick={() => setPage(p => p + 1)}>
+                  Load more ({(sorted.length - visible.length).toLocaleString()} remaining)
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </>}
       <StoreProfile store={selectedStore} onClose={() => setSelectedStore(null)} />
     </div>
   )
