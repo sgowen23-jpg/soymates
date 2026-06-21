@@ -6,6 +6,7 @@ import { CURRENT_CYCLE, CYCLE_STARTS } from '../../constants'
 import { exportPerfectStoreHTML } from './exportHTML'
 import MetricsPanel from './MetricsPanel'
 import ScorecardPanel from './ScorecardPanel'
+import TeamActivityPanel from './TeamActivityPanel'
 import './PerfectStore.css'
 
 const CYCLE_YEAR      = CYCLE_STARTS[CURRENT_CYCLE].split('-')[0]
@@ -142,7 +143,9 @@ export default function PerfectStore() {
   const [rows,        setRows]        = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
-  const [visitCounts, setVisitCounts] = useState({})
+  const [visitCounts,   setVisitCounts]   = useState({})
+  const [visitsLoading, setVisitsLoading] = useState(true)
+  const [visitsError,   setVisitsError]   = useState(null)
   const freshness                     = useDataFreshness()
 
   const [activeTab,    setActiveTab]    = useState('stores') // 'stores' | 'metrics' | 'scorecard'
@@ -172,12 +175,13 @@ export default function PerfectStore() {
     async function loadVisits() {
       let all = [], from = 0
       while (true) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('store_visits')
           .select('location_no')
           .eq('cycle', CYCLE_LABEL)
           .eq('schedule_state', 'Successful')
           .range(from, from + 499)
+        if (error) { setVisitsError(error.message); setVisitsLoading(false); return }
         if (!data || data.length === 0) break
         all = [...all, ...data]
         if (data.length < 500) break
@@ -189,6 +193,7 @@ export default function PerfectStore() {
         counts[key] = (counts[key] || 0) + 1
       })
       setVisitCounts(counts)
+      setVisitsLoading(false)
     }
     loadVisits()
   }, [])
@@ -306,10 +311,24 @@ export default function PerfectStore() {
         >
           Scorecard
         </button>
+        <button
+          className={`ps-tab${activeTab === 'activity' ? ' ps-tab--active' : ''}`}
+          onClick={() => setActiveTab('activity')}
+        >
+          Team Activity
+        </button>
       </div>
 
       {activeTab === 'metrics' && <MetricsPanel rules={rules} error={rulesError} />}
       {activeTab === 'scorecard' && <ScorecardPanel rows={rows} cycleLabel={CYCLE_LABEL} />}
+      {activeTab === 'activity' && (
+        <TeamActivityPanel
+          visitCounts={visitCounts}
+          visitsLoading={visitsLoading}
+          visitsError={visitsError}
+          cycleLabel={CYCLE_LABEL}
+        />
+      )}
 
       {activeTab === 'stores' && <>
         <div className="ps-filters">
