@@ -326,17 +326,21 @@ export default function PerfectStore() {
         </button>
       </div>
 
-      {activeTab === 'metrics' && <MetricsPanel rules={rules} error={rulesError} />}
-      {activeTab === 'scorecard' && <ScorecardPanel rows={rows} cycleLabel={CYCLE_LABEL} />}
-      {activeTab === 'activity' && (
-        <TeamActivityPanel
-          visitCounts={visitCounts}
-          visitMonthCounts={visitMonthCounts}
-          visitsLoading={visitsLoading}
-          visitsError={visitsError}
-          rows={rows}
-          cycleLabel={CYCLE_LABEL}
-        />
+      {activeTab !== 'stores' && (
+        <div className="ps-tab-scroll">
+          {activeTab === 'metrics' && <MetricsPanel rules={rules} error={rulesError} />}
+          {activeTab === 'scorecard' && <ScorecardPanel rows={rows} cycleLabel={CYCLE_LABEL} />}
+          {activeTab === 'activity' && (
+            <TeamActivityPanel
+              visitCounts={visitCounts}
+              visitMonthCounts={visitMonthCounts}
+              visitsLoading={visitsLoading}
+              visitsError={visitsError}
+              rows={rows}
+              cycleLabel={CYCLE_LABEL}
+            />
+          )}
+        </div>
       )}
 
       {activeTab === 'stores' && <>

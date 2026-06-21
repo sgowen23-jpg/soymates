@@ -217,6 +217,15 @@
   border-bottom-color: #CC0000;
 }
 
+/* ── Tab scroll container (Metrics / Scorecard / Team Activity) ── */
+.ps-tab-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+  padding: 0 24px 24px;
+}
+
 /* ── Team Activity Panel ── */
 .ta-panel {
   min-width: 0;
