@@ -91,15 +91,7 @@ export default function StoreProfile({ store, onClose }) {
           }
         })
 
-        // Auto-expand the category with the most gaps
-        const gapsByCat = {}
-        mapped.forEach(r => {
-          gapsByCat[r.category] = (gapsByCat[r.category] || 0) + (r.isGap ? 1 : 0)
-        })
-        const topCat = Object.entries(gapsByCat).sort((a, b) => b[1] - a[1])[0]
-        if (topCat && topCat[1] > 0) setExpandedCats(new Set([topCat[0]]))
-
-        setBRows(mapped)
+setBRows(mapped)
         setLoading(false)
         return
       }
