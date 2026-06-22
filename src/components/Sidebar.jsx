@@ -28,14 +28,18 @@ const NAV_STRUCTURE = [
   { label: 'Leave Calendar', icon: '📅' },
 ]
 
-const ADMIN_ITEMS = [
-  { label: 'Data Upload',   icon: '📤' },
-  { label: 'Weekly Upload', icon: '📥' },
-  { label: 'Admin',         icon: '🛡️' },
-]
+const ADMIN_GROUP = {
+  group: 'Admin', icon: '🛡️',
+  children: [
+    { label: 'Data Upload',   icon: '📤' },
+    { label: 'Weekly Upload', icon: '📥' },
+    { label: 'Admin',         icon: '🛡️' },
+  ],
+}
 
 export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
-  const initialOpen = NAV_STRUCTURE.find(
+  const allGroups = [...NAV_STRUCTURE, ADMIN_GROUP]
+  const initialOpen = allGroups.find(
     item => item.children?.some(c => c.label === active)
   )?.group ?? null
 
@@ -109,16 +113,36 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
 
             <div className="sidebar-divider" />
 
-            {ADMIN_ITEMS.map(item => (
-              <button
-                key={item.label}
-                className={`sidebar-link ${active === item.label ? 'active' : ''}`}
-                onClick={() => onNavigate(item.label)}
-              >
-                <span className="sidebar-icon">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
+            {(() => {
+              const isGroupOpen = openMenu === ADMIN_GROUP.group
+              const hasActiveChild = ADMIN_GROUP.children.some(c => c.label === active)
+              return (
+                <div>
+                  <button
+                    className={`sidebar-link sidebar-group-header ${hasActiveChild ? 'active' : ''}`}
+                    onClick={() => toggleGroup(ADMIN_GROUP.group)}
+                  >
+                    <span className="sidebar-icon">{ADMIN_GROUP.icon}</span>
+                    {ADMIN_GROUP.group}
+                    <span className={`sidebar-chevron${isGroupOpen ? ' open' : ''}`}>›</span>
+                  </button>
+                  {isGroupOpen && (
+                    <div className="sidebar-group-children">
+                      {ADMIN_GROUP.children.map(child => (
+                        <button
+                          key={child.label}
+                          className={`sidebar-link sidebar-child ${active === child.label ? 'active' : ''}`}
+                          onClick={() => onNavigate(child.label)}
+                        >
+                          <span className="sidebar-icon">{child.icon}</span>
+                          {child.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </nav>
 
           <div className="sidebar-footer">
