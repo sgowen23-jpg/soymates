@@ -7,11 +7,11 @@ const NAV_STRUCTURE = [
   {
     group: 'Rep Planner', icon: '📋',
     children: [
+      { label: 'Distribution',   icon: '📦' },
       { label: 'Store Map',      icon: '🗺️' },
       { label: 'Store Contacts', icon: '📇' },
       { label: 'Cycle Planner',  icon: '📆' },
       { label: 'Promotions',     icon: '🏷️' },
-      { label: 'Distribution',   icon: '📦' },
     ],
   },
   { label: 'Perfect Store', icon: '🎯' },
