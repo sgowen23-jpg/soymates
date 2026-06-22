@@ -1,18 +1,32 @@
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './Sidebar.css'
 
-const NAV_ITEMS = [
+const NAV_STRUCTURE = [
   { label: 'Home', icon: '🏠' },
-  { label: 'Store Map', icon: '🗺️' },
-  { label: 'Distribution', icon: '📦' },
-  { label: 'Store Contacts', icon: '📇' },
-{ label: 'MSO Pipeline', icon: '📋' },
-  { label: 'Cycle Planner', icon: '📆' },
-  { label: 'Coverage',     icon: '📍' },
-  { label: 'Promotions',    icon: '🏷️' },
+  {
+    group: 'Rep Planner', icon: '📋',
+    children: [
+      { label: 'Store Map',      icon: '🗺️' },
+      { label: 'Store Contacts', icon: '📇' },
+      { label: 'Cycle Planner',  icon: '📆' },
+      { label: 'Promotions',     icon: '🏷️' },
+    ],
+  },
   { label: 'Perfect Store', icon: '🎯' },
-  { label: 'Data Upload',   icon: '📤' },
-  { label: 'Weekly Upload', icon: '📥' },
+  {
+    group: 'Data', icon: '📊',
+    children: [
+      { label: 'MSO Pipeline',          icon: '📋' },
+      { label: 'Coverage',              icon: '📍' },
+      { label: 'GSV',                   icon: '💰' },
+      { label: 'Vitasoy Store Ranking', icon: '🏆' },
+      { label: 'Targets',               icon: '🎯' },
+    ],
+  },
+  { label: 'Distribution',   icon: '📦' },
+  { label: 'Data Upload',    icon: '📤' },
+  { label: 'Weekly Upload',  icon: '📥' },
   { label: 'Leave Calendar', icon: '📅' },
 ]
 
@@ -21,8 +35,18 @@ const ADMIN_ITEMS = [
 ]
 
 export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
+  const initialOpen = NAV_STRUCTURE.find(
+    item => item.children?.some(c => c.label === active)
+  )?.group ?? null
+
+  const [openMenu, setOpenMenu] = useState(initialOpen)
+
   async function handleSignOut() {
     await supabase.auth.signOut()
+  }
+
+  function toggleGroup(groupName) {
+    setOpenMenu(prev => prev === groupName ? null : groupName)
   }
 
   return (
@@ -39,17 +63,49 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
       {isOpen && (
         <>
           <nav className="sidebar-nav">
-            {NAV_ITEMS.map(item => (
-              <button
-                key={item.label}
-                className={`sidebar-link ${active === item.label ? 'active' : ''}`}
-                onClick={() => onNavigate(item.label)}
-              >
-                <span className="sidebar-icon">{item.icon}</span>
-                {item.label}
-                {item.soon && <span className="sidebar-soon">soon</span>}
-              </button>
-            ))}
+            {NAV_STRUCTURE.map(item => {
+              if (item.group) {
+                const isGroupOpen = openMenu === item.group
+                const hasActiveChild = item.children.some(c => c.label === active)
+                return (
+                  <div key={item.group}>
+                    <button
+                      className={`sidebar-link sidebar-group-header ${hasActiveChild ? 'active' : ''}`}
+                      onClick={() => toggleGroup(item.group)}
+                    >
+                      <span className="sidebar-icon">{item.icon}</span>
+                      {item.group}
+                      <span className={`sidebar-chevron${isGroupOpen ? ' open' : ''}`}>›</span>
+                    </button>
+                    {isGroupOpen && (
+                      <div className="sidebar-group-children">
+                        {item.children.map(child => (
+                          <button
+                            key={child.label}
+                            className={`sidebar-link sidebar-child ${active === child.label ? 'active' : ''}`}
+                            onClick={() => onNavigate(child.label)}
+                          >
+                            <span className="sidebar-icon">{child.icon}</span>
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+              return (
+                <button
+                  key={item.label}
+                  className={`sidebar-link ${active === item.label ? 'active' : ''}`}
+                  onClick={() => onNavigate(item.label)}
+                >
+                  <span className="sidebar-icon">{item.icon}</span>
+                  {item.label}
+                  {item.soon && <span className="sidebar-soon">soon</span>}
+                </button>
+              )
+            })}
 
             <div className="sidebar-divider" />
 

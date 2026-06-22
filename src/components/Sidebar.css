@@ -121,6 +121,32 @@
   text-align: center;
 }
 
+.sidebar-group-header {
+  justify-content: flex-start;
+}
+
+.sidebar-chevron {
+  margin-left: auto;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.45);
+  display: inline-block;
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.sidebar-chevron.open {
+  transform: rotate(90deg);
+}
+
+.sidebar-child {
+  padding-left: 2.4rem;
+  font-size: 0.85rem;
+}
+
+.sidebar-child.active {
+  padding-left: calc(2.4rem - 3px);
+}
+
 .sidebar-soon {
   margin-left: auto;
   font-size: 0.6rem;
