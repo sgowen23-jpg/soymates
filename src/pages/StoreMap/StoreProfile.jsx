@@ -43,6 +43,8 @@ export default function StoreProfile({ store, onClose }) {
   // Beiersdorf state
   const [bRows, setBRows]               = useState([])
   const [expandedCats, setExpandedCats] = useState(new Set())
+  const [expandedTopSections, setExpandedTopSections] = useState(new Set())
+  const [expandedSubCats, setExpandedSubCats]         = useState(new Set())
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -55,6 +57,8 @@ export default function StoreProfile({ store, onClose }) {
       setRows([])
       setBRows([])
       setExpandedCats(new Set())
+      setExpandedTopSections(new Set())
+      setExpandedSubCats(new Set())
       return
     }
 
@@ -63,6 +67,8 @@ export default function StoreProfile({ store, onClose }) {
       setRows([])
       setBRows([])
       setExpandedCats(new Set())
+      setExpandedTopSections(new Set())
+      setExpandedSubCats(new Set())
 
       // ── Beiersdorf path ──────────────────────────────────────────────────────
       if (client === 'beiersdorf') {
@@ -164,6 +170,36 @@ export default function StoreProfile({ store, onClose }) {
       gapCount: bCatMap[cat].filter(r => r.isGap).length,
     }))
 
+  // ── Sea Salt / Must Have derived groupings ────────────────────────────────
+  function buildNestedGroup(filterFn) {
+    const catMap = {}
+    bRows.filter(filterFn).forEach(r => {
+      if (!catMap[r.category]) catMap[r.category] = []
+      catMap[r.category].push(r)
+    })
+    return Object.keys(catMap)
+      .sort((a, b) => a === 'OTHER' ? 1 : b === 'OTHER' ? -1 : a.localeCompare(b))
+      .map(cat => ({ cat, items: catMap[cat], gapCount: catMap[cat].filter(r => r.isGap).length }))
+  }
+  const ssGrouped = buildNestedGroup(r => r.isS)
+  const mhGrouped = buildNestedGroup(r => r.isM)
+
+  function toggleTopSection(key) {
+    setExpandedTopSections(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  function toggleSubCat(key) {
+    setExpandedSubCats(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
   function toggleCat(cat) {
     setExpandedCats(prev => {
       const next = new Set(prev)
@@ -213,6 +249,70 @@ export default function StoreProfile({ store, onClose }) {
                 </div>
 
                 <div className="sp-body">
+                  {/* ── Sea Salt and Must Have nested sections ── */}
+                  {[
+                    { key: 'ss', label: 'Sea Salt', groups: ssGrouped, totalGaps: bRows.filter(r => r.isS && r.isGap).length },
+                    { key: 'mh', label: 'Must Have', groups: mhGrouped, totalGaps: bRows.filter(r => r.isM && r.isGap).length },
+                  ].map(({ key, label, groups, totalGaps }) => groups.length > 0 && (
+                    <div key={key} className="sp-b-section sp-b-top-section">
+                      <button
+                        className="sp-b-cat-header sp-b-top-header"
+                        onClick={() => toggleTopSection(key)}
+                      >
+                        <span className="sp-b-cat-name">{label}</span>
+                        {totalGaps > 0 && (
+                          <span className="sp-b-gap-badge">
+                            {totalGaps} gap{totalGaps !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        <span className="sp-b-chevron">
+                          {expandedTopSections.has(key) ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {expandedTopSections.has(key) && (
+                        <div className="sp-b-nested">
+                          {groups.map(({ cat, items, gapCount }) => {
+                            const subKey = `${key}::${cat}`
+                            return (
+                              <div key={subKey} className="sp-b-section sp-b-sub-section">
+                                <button
+                                  className="sp-b-cat-header sp-b-sub-header"
+                                  onClick={() => toggleSubCat(subKey)}
+                                >
+                                  <span className="sp-b-cat-name">{cat}</span>
+                                  {gapCount > 0 && (
+                                    <span className="sp-b-gap-badge">
+                                      {gapCount} gap{gapCount !== 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                  <span className="sp-b-chevron">
+                                    {expandedSubCats.has(subKey) ? '▲' : '▼'}
+                                  </span>
+                                </button>
+
+                                {expandedSubCats.has(subKey) && (
+                                  <div className="sp-b-items">
+                                    {items.map(r => (
+                                      <div key={r.name} className="sp-b-item">
+                                        <span className="sp-b-item-name">{r.name}</span>
+                                        {r.isGap
+                                          ? <span className="sp-ind-dot">●</span>
+                                          : <span className="sp-ind-tick">✓</span>
+                                        }
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* ── Existing flat category sections ── */}
                   {bGrouped.map(({ cat, items, gapCount }) => (
                     <div key={cat} className="sp-b-section">
                       <button
