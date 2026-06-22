@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { APP_NAME } from '../constants'
 import './Login.css'
 
 export default function Login() {
@@ -25,7 +26,7 @@ export default function Login() {
           <div className="login-logo-icon">
             <img src="/vitasoy-logo-white.svg" alt="Vitasoy" className="login-vitasoy-logo" />
           </div>
-          <h1>Soymates</h1>
+          <h1>{APP_NAME}</h1>
           <p>Field Sales Portal</p>
         </div>
 

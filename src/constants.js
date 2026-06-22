@@ -1,3 +1,5 @@
+export const APP_NAME = 'Team VB'
+
 // ─── Current cycle ────────────────────────────────────────────────────────────
 export const CURRENT_CYCLE = 1
 export const CURRENT_YEAR  = 2026

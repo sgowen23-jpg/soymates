@@ -1,3 +1,5 @@
+import { APP_NAME } from '../../constants'
+
 const REP_ORDER = [
   'David Kerr', 'Shane Vandewardt', 'Sam Gowen', 'Dipen Surani',
   'Sean Cooper', 'David Saleeb', 'Ashleigh Tasdarian', 'Azra Horell',
@@ -258,7 +260,7 @@ table{border-collapse:collapse}
   </div>
 </div>
 
-<div class="footer">Snapshot exported from Soymates · ${exportedAt} · Contains only the filtered data visible at time of export</div>
+<div class="footer">Snapshot exported from ${APP_NAME} · ${exportedAt} · Contains only the filtered data visible at time of export</div>
 
 </div>
 </body>

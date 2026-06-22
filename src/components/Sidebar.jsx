@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { APP_NAME } from '../constants'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -34,7 +35,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
         {isOpen && (
           <>
             <img src="/vitasoy-logo-white.svg" alt="Vitasoy" className="sidebar-vitasoy-logo" />
-            <span className="sidebar-title">Soymates</span>
+            <span className="sidebar-title">{APP_NAME}</span>
           </>
         )}
       </div>
