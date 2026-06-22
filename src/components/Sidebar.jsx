@@ -17,21 +17,21 @@ const NAV_STRUCTURE = [
   {
     group: 'Data', icon: '📊',
     children: [
-      { label: 'MSO Pipeline',          icon: '📋' },
-      { label: 'Coverage',              icon: '📍' },
-      { label: 'GSV',                   icon: '💰' },
-      { label: 'Vitasoy Store Ranking', icon: '🏆' },
-      { label: 'Targets',               icon: '🎯' },
+      { label: 'Distribution',   icon: '📦' },
+      { label: 'MSO Pipeline',   icon: '📋' },
+      { label: 'Coverage',       icon: '📍' },
+      { label: 'GSV',            icon: '💰' },
+      { label: 'Store Ranking',  icon: '🏆' },
+      { label: 'Targets',        icon: '🎯' },
     ],
   },
-  { label: 'Distribution',   icon: '📦' },
-  { label: 'Data Upload',    icon: '📤' },
-  { label: 'Weekly Upload',  icon: '📥' },
   { label: 'Leave Calendar', icon: '📅' },
 ]
 
 const ADMIN_ITEMS = [
-  { label: 'Admin', icon: '🛡️' },
+  { label: 'Data Upload',   icon: '📤' },
+  { label: 'Weekly Upload', icon: '📥' },
+  { label: 'Admin',         icon: '🛡️' },
 ]
 
 export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {

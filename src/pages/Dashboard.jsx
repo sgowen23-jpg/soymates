@@ -28,7 +28,7 @@ function PageSpinner() {
   )
 }
 
-const PLACEHOLDER_PAGES = ['GSV', 'Vitasoy Store Ranking', 'Targets']
+const PLACEHOLDER_PAGES = ['GSV', 'Store Ranking', 'Targets']
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Home')
