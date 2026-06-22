@@ -173,7 +173,7 @@ export default function StoreProfile({ store, onClose }) {
   // ── Sea Salt / Must Have derived groupings ────────────────────────────────
   function buildNestedGroup(filterFn) {
     const catMap = {}
-    bRows.filter(filterFn).forEach(r => {
+    bRows.filter(r => filterFn(r) && r.isGap).forEach(r => {
       if (!catMap[r.category]) catMap[r.category] = []
       catMap[r.category].push(r)
     })
