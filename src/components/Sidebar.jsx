@@ -35,6 +35,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
         {isOpen && (
           <>
             <img src="/vitasoy-logo-white.svg" alt="Vitasoy" className="sidebar-vitasoy-logo" />
+            <img src="/team-vb-logo.svg" alt="Team VB" width="32" height="32" style={{ borderRadius: 7 }} />
             <span className="sidebar-title">{APP_NAME}</span>
           </>
         )}
