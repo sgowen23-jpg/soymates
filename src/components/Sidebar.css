@@ -1,6 +1,6 @@
 .sidebar {
   height: 100vh;
-  background: #CC0000;
+  background: #0032A1;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -9,10 +9,9 @@
   z-index: 200;
 }
 
-.sidebar.open  { width: 220px; }
+.sidebar.open   { width: 220px; }
 .sidebar.closed { width: 48px; }
 
-/* Mobile: sidebar overlays */
 @media (max-width: 767px) {
   .sidebar {
     position: fixed;
@@ -23,8 +22,21 @@
   .sidebar.closed { width: 0; }
 }
 
-/* Hamburger button */
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.sidebar-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  min-height: 72px;
+}
+
 .hamburger {
+  position: absolute;
+  left: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -49,13 +61,125 @@
   background: #fff;
 }
 
-.sidebar-header {
+.sidebar-vb-badge {
+  border-radius: 10px;
+  border: 2px solid #fff;
+  box-sizing: border-box;
+  display: block;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────────────── */
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 1rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  min-height: 56px;
+  gap: 0.65rem;
+  padding: 0.6rem 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Top-level items: red rounded bars ───────────────────────────────────── */
+
+.sidebar-link:not(.sidebar-child) {
+  background: #C21531;
+  color: #fff;
+  border-radius: 9px;
+  margin: 3.5px 8px;
+  width: calc(100% - 16px);
+}
+
+.sidebar-link:not(.sidebar-child):hover {
+  background: #d01a35;
+  color: #fff;
+}
+
+.sidebar-link:not(.sidebar-child).active {
+  background: #E0223F;
+  color: #fff;
+  border-left: 3px solid rgba(255, 255, 255, 0.85);
+  padding-left: calc(1rem - 3px);
+}
+
+/* ── Child items inside expanded groups ──────────────────────────────────── */
+
+.sidebar-child {
+  padding-left: 2rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar-child:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.sidebar-child.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-left: 3px solid rgba(255, 255, 255, 0.75);
+  padding-left: calc(2rem - 3px);
+}
+
+/* ── Group header chevron ────────────────────────────────────────────────── */
+
+.sidebar-group-header {
+  justify-content: flex-start;
+}
+
+.sidebar-chevron {
+  margin-left: auto;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.6);
+  display: inline-block;
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.sidebar-chevron.open {
+  transform: rotate(90deg);
+}
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+
+.sidebar-divider {
+  margin: 6px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-icon {
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.sidebar-soon {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 
 .sidebar-vitasoy-logo {
@@ -73,109 +197,7 @@
   white-space: nowrap;
 }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  padding: 0.75rem 0;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.65rem 1rem;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background 0.12s, color 0.12s;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
-}
-
-.sidebar-link.active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  border-left: 3px solid #fff;
-  padding-left: calc(1rem - 3px);
-}
-
-/* Top-level items (not children inside groups) get blue background */
-.sidebar-link:not(.sidebar-child) {
-  background: #0E7AA6;
-  color: #fff;
-}
-
-.sidebar-link:not(.sidebar-child):hover {
-  background: #1088b8;
-  color: #fff;
-}
-
-.sidebar-link:not(.sidebar-child).active {
-  background: #1aa3d4;
-  color: #fff;
-  border-left: 3px solid rgba(255, 255, 255, 0.9);
-  padding-left: calc(1rem - 3px);
-}
-
-.sidebar-divider {
-  margin: 0.5rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-icon {
-  font-size: 1rem;
-  width: 1.25rem;
-  text-align: center;
-}
-
-.sidebar-group-header {
-  justify-content: flex-start;
-}
-
-.sidebar-chevron {
-  margin-left: auto;
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.45);
-  display: inline-block;
-  transition: transform 0.15s;
-  line-height: 1;
-}
-
-.sidebar-chevron.open {
-  transform: rotate(90deg);
-}
-
-.sidebar-child {
-  padding-left: 2.4rem;
-  font-size: 0.85rem;
-}
-
-.sidebar-child.active {
-  padding-left: calc(2.4rem - 3px);
-}
-
-.sidebar-soon {
-  margin-left: auto;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.6);
-  padding: 2px 5px;
-  border-radius: 4px;
-}
+/* ── Client switcher (used inside pages, not sidebar) ───────────────────── */
 
 .sidebar-client-switcher {
   display: flex;
@@ -209,9 +231,11 @@
   border-color: rgba(255, 255, 255, 0.5);
 }
 
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-signout {

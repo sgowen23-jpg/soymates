@@ -1,5 +1,8 @@
 export const APP_NAME = 'Team VB'
 
+export const VITASOY_RED  = '#C21531'
+export const NIVEA_BLUE   = '#0032A1'
+
 // ─── Current cycle ────────────────────────────────────────────────────────────
 export const CURRENT_CYCLE = 1
 export const CURRENT_YEAR  = 2026

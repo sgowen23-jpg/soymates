@@ -60,7 +60,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
           <span /><span /><span />
         </button>
         {isOpen && (
-          <img src="/team-vb-logo.svg" alt="Team VB" width="48" height="48" style={{ borderRadius: 10, margin: '0 8px' }} />
+          <img src="/team-vb-logo.svg" alt="Team VB" width="48" height="48" className="sidebar-vb-badge" />
         )}
       </div>
 
