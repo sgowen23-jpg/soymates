@@ -11,13 +11,13 @@ const NAV_STRUCTURE = [
       { label: 'Store Contacts', icon: '📇' },
       { label: 'Cycle Planner',  icon: '📆' },
       { label: 'Promotions',     icon: '🏷️' },
+      { label: 'Distribution',   icon: '📦' },
     ],
   },
   { label: 'Perfect Store', icon: '🎯' },
   {
     group: 'Data', icon: '📊',
     children: [
-      { label: 'Distribution',   icon: '📦' },
       { label: 'MSO Pipeline',   icon: '📋' },
       { label: 'Coverage',       icon: '📍' },
       { label: 'GSV',            icon: '💰' },
