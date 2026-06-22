@@ -110,6 +110,24 @@
   padding-left: calc(1rem - 3px);
 }
 
+/* Top-level items (not children inside groups) get blue background */
+.sidebar-link:not(.sidebar-child) {
+  background: #0E7AA6;
+  color: #fff;
+}
+
+.sidebar-link:not(.sidebar-child):hover {
+  background: #1088b8;
+  color: #fff;
+}
+
+.sidebar-link:not(.sidebar-child).active {
+  background: #1aa3d4;
+  color: #fff;
+  border-left: 3px solid rgba(255, 255, 255, 0.9);
+  padding-left: calc(1rem - 3px);
+}
+
 .sidebar-divider {
   margin: 0.5rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
