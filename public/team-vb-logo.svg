@@ -5,7 +5,7 @@
   </defs>
   <g clip-path="url(#badge)">
     <rect x="0" y="0" width="100" height="50" fill="#E8202A"/>
-    <rect x="0" y="50" width="100" height="50" fill="#0E7AA6"/>
+    <rect x="0" y="50" width="100" height="50" fill="#0032A1"/>
   </g>
   <text x="50" y="38" text-anchor="middle" fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="36" font-weight="500">V</text>
   <text x="50" y="86" text-anchor="middle" fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="36" font-weight="500">B</text>
