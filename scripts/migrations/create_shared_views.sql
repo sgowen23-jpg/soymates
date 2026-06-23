@@ -31,3 +31,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- No UPDATE or DELETE policies — rows are immutable once created.
+
+-- Explicit SELECT grant needed for anon role — RLS policy alone is not sufficient.
+GRANT SELECT ON shared_views TO anon;
