@@ -115,8 +115,6 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             const p = prefix ? prefix[1].toUpperCase() : ''
             if (p.includes('S')) { if (ssMap[storeId] === undefined) ssMap[storeId] = 0; if (isGap) ssMap[storeId]++ }
             if (p.includes('M')) { if (mhMap[storeId] === undefined) mhMap[storeId] = 0; if (isGap) mhMap[storeId]++ }
-
-            if (!rowMatchesBdfCat(r, bdfCat)) return
             if (map[storeId] === undefined) map[storeId] = 0
             if (isGap) map[storeId]++
           })
@@ -226,22 +224,6 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     fetchGaps()
   }, [stores, filters?.state, filters?.rep, filters?.classification, bnbPeriod, client])
 
-  // When bdfCat tab changes, recompute gaps from cached rows without re-fetching
-  useEffect(() => {
-    const rows = bdfCacheRef.current
-    if (!rows.length) return
-    const storeIdByName = {}
-    stores.forEach(s => { storeIdByName[s.name] = String(s.id) })
-    const map = {}
-    rows.forEach(r => {
-      if (!rowMatchesBdfCat(r, bdfCat)) return
-      const storeId = storeIdByName[r.store_name]
-      if (!storeId) return
-      if (map[storeId] === undefined) map[storeId] = 0
-      if ((r.ranging_gap ?? 0) > 0) map[storeId]++
-    })
-    setGapMap(map)
-  }, [bdfCat, stores])
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -277,12 +259,14 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     })
   }, [search, chainFilter, filters])
 
+  const activeGapMap = bdfCat === 'Sea Salt' ? ssGapMap : bdfCat === 'Must Have' ? mhGapMap : gapMap
+
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let va, vb
       if (sortCol === 'gaps') {
-        va = gapMap[a.id] ?? -1
-        vb = gapMap[b.id] ?? -1
+        va = activeGapMap[a.id] ?? -1
+        vb = activeGapMap[b.id] ?? -1
       } else if (sortCol === 'ss') {
         va = ssGapMap[a.id] ?? -1
         vb = ssGapMap[b.id] ?? -1
@@ -322,7 +306,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       'Chain':      store.chain,
       'State':      store.state,
       'Region':     store.region,
-      'Gaps':       gapMap[store.id] ?? '',
+      'Gaps':       activeGapMap[store.id] ?? '',
       ...(isBdf ? { 'Sea Salt Gaps': ssGapMap[store.id] ?? '', 'Must Have Gaps': mhGapMap[store.id] ?? '' } : {}),
       'Rep':        store.rep,
     }))
@@ -403,7 +387,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           </thead>
           <tbody>
             {sorted.map(store => {
-              const gaps = gapMap[store.id]
+              const gaps = activeGapMap[store.id]
               return (
                 <tr key={store.id} onClick={() => onStoreClick(store)}>
                   <td>
