@@ -32,6 +32,8 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   const [sortCol, setSortCol] = useState('name')
   const [sortAsc, setSortAsc] = useState(true)
   const [gapMap, setGapMap] = useState({})
+  const [ssGapMap, setSsGapMap] = useState({})
+  const [mhGapMap, setMhGapMap] = useState({})
   const [loading, setLoading] = useState(true)
 
   const ALL_CHAINS = useMemo(() => [...new Set(stores.map(s => s.chain))].filter(Boolean).sort(), [stores])
@@ -104,13 +106,22 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           const latestRows = all.filter(r => r.uploaded_at === maxUploaded)
           bdfCacheRef.current = latestRows  // cache for bdfCat changes
 
+          const ssMap = {}, mhMap = {}
           latestRows.forEach(r => {
-            if (!rowMatchesBdfCat(r, bdfCat)) return
             const storeId = storeIdByName[r.store_name]
             if (!storeId) return
+            const isGap = (r.ranging_gap ?? 0) > 0
+            const prefix = (r.item_name || '').match(/^\(\s*([^)]+)\)/i)
+            const p = prefix ? prefix[1].toUpperCase() : ''
+            if (p.includes('S')) { if (ssMap[storeId] === undefined) ssMap[storeId] = 0; if (isGap) ssMap[storeId]++ }
+            if (p.includes('M')) { if (mhMap[storeId] === undefined) mhMap[storeId] = 0; if (isGap) mhMap[storeId]++ }
+
+            if (!rowMatchesBdfCat(r, bdfCat)) return
             if (map[storeId] === undefined) map[storeId] = 0
-            if ((r.ranging_gap ?? 0) > 0) map[storeId]++
+            if (isGap) map[storeId]++
           })
+          setSsGapMap(ssMap)
+          setMhGapMap(mhMap)
         }
 
         setGapMap(map)
@@ -272,6 +283,12 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       if (sortCol === 'gaps') {
         va = gapMap[a.id] ?? -1
         vb = gapMap[b.id] ?? -1
+      } else if (sortCol === 'ss') {
+        va = ssGapMap[a.id] ?? -1
+        vb = ssGapMap[b.id] ?? -1
+      } else if (sortCol === 'mh') {
+        va = mhGapMap[a.id] ?? -1
+        vb = mhGapMap[b.id] ?? -1
       } else {
         va = (a[sortCol] || '').toString().toLowerCase()
         vb = (b[sortCol] || '').toString().toLowerCase()
@@ -298,14 +315,16 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     const clientLabel = client === 'beiersdorf' ? 'Beiersdorf' : 'Vitasoy'
     const date = new Date().toISOString().slice(0, 10)
 
+    const isBdf = client === 'beiersdorf'
     const rows = sorted.map(store => ({
-      'Store':  store.name,
-      'Suburb': store.suburb,
-      'Chain':  store.chain,
-      'State':  store.state,
-      'Region': store.region,
-      'Gaps':   gapMap[store.id] ?? '',
-      'Rep':    store.rep,
+      'Store':      store.name,
+      'Suburb':     store.suburb,
+      'Chain':      store.chain,
+      'State':      store.state,
+      'Region':     store.region,
+      'Gaps':       gapMap[store.id] ?? '',
+      ...(isBdf ? { 'Sea Salt Gaps': ssGapMap[store.id] ?? '', 'Must Have Gaps': mhGapMap[store.id] ?? '' } : {}),
+      'Rep':        store.rep,
     }))
 
     const ws = XLSX.utils.json_to_sheet(rows)
@@ -377,6 +396,8 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
               <th onClick={() => toggleSort('state')}>State{sortIcon('state')}</th>
               <th onClick={() => toggleSort('region')}>Region{sortIcon('region')}</th>
               <th onClick={() => toggleSort('gaps')}>Gaps{sortIcon('gaps')}</th>
+              {client === 'beiersdorf' && <th onClick={() => toggleSort('ss')}>SS{sortIcon('ss')}</th>}
+              {client === 'beiersdorf' && <th onClick={() => toggleSort('mh')}>MH{sortIcon('mh')}</th>}
               <th onClick={() => toggleSort('rep')}>Rep{sortIcon('rep')}</th>
             </tr>
           </thead>
@@ -408,6 +429,32 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
                       <span className="gap-pill green">✓</span>
                     )}
                   </td>
+                  {client === 'beiersdorf' && (
+                    <td>
+                      {loading ? (
+                        <span className="gap-pill grey">…</span>
+                      ) : ssGapMap[store.id] === undefined ? (
+                        <span className="gap-pill grey">—</span>
+                      ) : ssGapMap[store.id] > 0 ? (
+                        <span className="gap-pill red">{ssGapMap[store.id]}</span>
+                      ) : (
+                        <span className="gap-pill green">✓</span>
+                      )}
+                    </td>
+                  )}
+                  {client === 'beiersdorf' && (
+                    <td>
+                      {loading ? (
+                        <span className="gap-pill grey">…</span>
+                      ) : mhGapMap[store.id] === undefined ? (
+                        <span className="gap-pill grey">—</span>
+                      ) : mhGapMap[store.id] > 0 ? (
+                        <span className="gap-pill red">{mhGapMap[store.id]}</span>
+                      ) : (
+                        <span className="gap-pill green">✓</span>
+                      )}
+                    </td>
+                  )}
                   <td className="rep-cell">{store.rep}</td>
                 </tr>
               )
