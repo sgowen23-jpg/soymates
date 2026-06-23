@@ -100,6 +100,15 @@
   z-index: 1;
 }
 
+.sv-th-sort {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sv-th-sort:hover {
+  background: #e4e8f2;
+}
+
 .sv-table tbody tr {
   border-bottom: 1px solid #eee;
   cursor: pointer;

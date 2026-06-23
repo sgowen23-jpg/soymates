@@ -9,6 +9,8 @@ export default function ShareView({ slug }) {
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState(null)
   const [selectedStore, setSelectedStore] = useState(null)
+  const [sortCol, setSortCol] = useState('name')
+  const [sortAsc, setSortAsc] = useState(true)
 
   useEffect(() => {
     supabase
@@ -34,11 +36,31 @@ export default function ShareView({ slug }) {
     filters.search         && filters.search.trim()            ? `"${filters.search.trim()}"` : null,
   ].filter(Boolean)
 
-  const stores = (view.snapshot || []).map(s => ({
-    ...s,
-    ssCount: s.rows.filter(r => r.isS).length,
-    mhCount: s.rows.filter(r => r.isM).length,
-  }))
+  function toggleSort(col) {
+    if (sortCol === col) setSortAsc(a => !a)
+    else { setSortCol(col); setSortAsc(true) }
+  }
+
+  function sortIcon(col) {
+    if (sortCol !== col) return ' ↕'
+    return sortAsc ? ' ↑' : ' ↓'
+  }
+
+  const stores = (view.snapshot || [])
+    .map(s => ({
+      ...s,
+      ssCount: s.rows.filter(r => r.isS).length,
+      mhCount: s.rows.filter(r => r.isM).length,
+    }))
+    .sort((a, b) => {
+      let va, vb
+      if (sortCol === 'ss')      { va = a.ssCount; vb = b.ssCount }
+      else if (sortCol === 'mh') { va = a.mhCount; vb = b.mhCount }
+      else { va = (a[sortCol] || '').toLowerCase(); vb = (b[sortCol] || '').toLowerCase() }
+      if (va < vb) return sortAsc ? -1 : 1
+      if (va > vb) return sortAsc ? 1 : -1
+      return 0
+    })
 
   // frozenData: rows from snapshot with isGap: true added (all stored rows are gaps by construction)
   const frozenRows = selectedStore
@@ -82,11 +104,11 @@ export default function ShareView({ slug }) {
             <table className="sv-table">
               <thead>
                 <tr>
-                  <th>Store</th>
-                  <th>Chain</th>
+                  <th className="sv-th-sort" onClick={() => toggleSort('name')}>Store{sortIcon('name')}</th>
+                  <th className="sv-th-sort" onClick={() => toggleSort('chain')}>Chain{sortIcon('chain')}</th>
                   <th>State</th>
-                  <th>SS Gaps</th>
-                  <th>MH Gaps</th>
+                  <th className="sv-th-sort" onClick={() => toggleSort('ss')}>SS Gaps{sortIcon('ss')}</th>
+                  <th className="sv-th-sort" onClick={() => toggleSort('mh')}>MH Gaps{sortIcon('mh')}</th>
                   <th>Rep</th>
                 </tr>
               </thead>
