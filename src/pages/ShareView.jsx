@@ -19,7 +19,7 @@ export default function ShareView({ slug }) {
       .eq('id', slug)
       .single()
       .then(({ data, error: err }) => {
-        if (err || !data) setError('Shared view not found.')
+        if (err || !data) setError(err ? `${err.message} [${err.code}]` : 'No row returned.')
         else setView(data)
         setLoading(false)
       })
