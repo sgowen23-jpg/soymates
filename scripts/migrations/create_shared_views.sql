@@ -12,12 +12,12 @@ CREATE TABLE IF NOT EXISTS shared_views (
 
 ALTER TABLE shared_views ENABLE ROW LEVEL SECURITY;
 
--- Anon can read (needed for public /share/{slug} render with no auth)
+-- Public read — no role restriction so anon, authenticated, and service_role all match.
+-- TO anon alone does not match unauthenticated Supabase JS client requests reliably.
 DO $$ BEGIN
-  CREATE POLICY "anon_select_shared_views"
+  CREATE POLICY "public_select_shared_views"
     ON shared_views
     FOR SELECT
-    TO anon
     USING (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
