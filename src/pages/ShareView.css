@@ -1,0 +1,172 @@
+.sv-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f5f6f8;
+  font-family: inherit;
+}
+
+/* ── Header ── */
+
+.sv-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #1a2b5e;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.sv-brand {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.sv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sv-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sv-filters {
+  font-size: 11px;
+  color: #b0bcd8;
+}
+
+.sv-date {
+  font-size: 11px;
+  color: #7a8fc4;
+}
+
+.sv-readonly {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.15);
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: #c5d0e8;
+  white-space: nowrap;
+}
+
+/* ── Body layout ── */
+
+.sv-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sv-list-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* ── Table ── */
+
+.sv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.sv-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f0f2f7;
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+  border-bottom: 2px solid #dde1ea;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.sv-table tbody tr {
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sv-table tbody tr:hover {
+  background: #f0f4ff;
+}
+
+.sv-row-active {
+  background: #e8eef6 !important;
+}
+
+.sv-td-name {
+  font-weight: 600;
+  color: #1a2b5e;
+}
+
+.sv-table td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+/* ── Chain badge ── */
+
+.sv-chain-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* ── Gap pills ── */
+
+.sv-gap-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sv-gap-red {
+  background: #fdecea;
+  color: #c62828;
+}
+
+.sv-gap-green {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* ── States ── */
+
+.sv-loading,
+.sv-error,
+.sv-empty {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+.sv-error {
+  color: #c62828;
+}

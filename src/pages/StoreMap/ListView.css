@@ -176,6 +176,80 @@
   cursor: default;
 }
 
+.lv-share-btn {
+  padding: 5px 12px;
+  border: 1px solid #1a2b5e;
+  border-radius: 5px;
+  background: #fff;
+  color: #1a2b5e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.lv-share-btn:hover:not(:disabled) {
+  background: #1a2b5e;
+  color: #fff;
+}
+
+.lv-share-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lv-share-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #eef2fb;
+  border-bottom: 1px solid #c5d0e8;
+  flex-shrink: 0;
+}
+
+.lv-share-url {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #b0bcd8;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #222;
+  background: #fff;
+  cursor: text;
+}
+
+.lv-share-copy {
+  padding: 5px 12px;
+  background: #1a2b5e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lv-share-copy:hover {
+  background: #142248;
+}
+
+.lv-share-dismiss {
+  padding: 5px 8px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lv-share-dismiss:hover {
+  color: #444;
+}
+
 .list-wrap {
   flex: 1;
   overflow-y: auto;

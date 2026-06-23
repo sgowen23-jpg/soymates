@@ -35,6 +35,8 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
   const [ssGapMap, setSsGapMap] = useState({})
   const [mhGapMap, setMhGapMap] = useState({})
   const [loading, setLoading] = useState(true)
+  const [sharing, setSharing] = useState(false)
+  const [shareUrl, setShareUrl] = useState('')
 
   const ALL_CHAINS = useMemo(() => [...new Set(stores.map(s => s.chain))].filter(Boolean).sort(), [stores])
 
@@ -317,6 +319,74 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
     XLSX.writeFile(wb, `Distribution_${clientLabel}_${period}_${date}.xlsx`)
   }
 
+  async function handleShare() {
+    const cached = bdfCacheRef.current
+    if (!cached.length) return
+    setSharing(true)
+    setShareUrl('')
+    try {
+      // 8-char slug via crypto — no external dependency
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+      const arr   = new Uint8Array(8)
+      crypto.getRandomValues(arr)
+      const slug  = Array.from(arr, b => chars[b % chars.length]).join('')
+
+      // Build store lookup
+      const storeByName = {}
+      stores.forEach(s => { storeByName[s.name] = s })
+
+      // Capture scope: SS or MH gaps only.
+      // Exact parseRanging logic copied from StoreProfile.jsx — character-for-character.
+      const storeRowsMap = {}
+      cached.forEach(r => {
+        const match = (r.item_name || '').match(/^\(\s*([^)]+)\)/)
+        if (!match) return
+        const p   = match[1].toUpperCase()
+        const isS = p.includes('S')
+        const isM = p.includes('M')
+        if (!isS && !isM) return                     // not SS or MH — omit
+        if (!((r.ranging_gap ?? 0) > 0)) return      // stocked — omit
+
+        const store = storeByName[r.store_name]
+        if (!store) return
+
+        if (!storeRowsMap[store.id]) storeRowsMap[store.id] = { store, rows: [] }
+        storeRowsMap[store.id].rows.push({
+          name:     r.item_name,
+          category: r.pog_category ? r.pog_category.toUpperCase() : 'OTHER',
+          isS,
+          isM,
+        })
+      })
+
+      // Omit stores with zero SS+MH gaps
+      const snapshot = Object.values(storeRowsMap)
+        .filter(e => e.rows.length > 0)
+        .map(e => ({
+          id:      e.store.id,
+          name:    e.store.name,
+          state:   e.store.state,
+          chain:   e.store.chain,
+          banner:  e.store.banner  ?? '',
+          address: e.store.address ?? '',
+          region:  e.store.region,
+          rep:     e.store.rep,
+          rows:    e.rows,
+        }))
+
+      const { error } = await supabase
+        .from('shared_views')
+        .insert({ id: slug, client: 'beiersdorf', filter_state: filters ?? {}, snapshot })
+
+      if (error) throw error
+      setShareUrl(`${window.location.origin}/share/${slug}`)
+    } catch (e) {
+      alert('Share failed: ' + e.message)
+    } finally {
+      setSharing(false)
+    }
+  }
+
   return (
     <div className="list-view">
       <div className="list-toolbar">
@@ -357,7 +427,30 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           onClick={handleExport}
           disabled={loading || sorted.length === 0}
         >Export</button>
+        {client === 'beiersdorf' && (
+          <button
+            className="lv-share-btn"
+            onClick={handleShare}
+            disabled={sharing || loading || !bdfCacheRef.current.length}
+          >{sharing ? 'Sharing…' : 'Share'}</button>
+        )}
       </div>
+
+      {shareUrl && (
+        <div className="lv-share-banner">
+          <input
+            className="lv-share-url"
+            value={shareUrl}
+            readOnly
+            onClick={e => e.target.select()}
+          />
+          <button
+            className="lv-share-copy"
+            onClick={() => navigator.clipboard.writeText(shareUrl)}
+          >Copy</button>
+          <button className="lv-share-dismiss" onClick={() => setShareUrl('')}>✕</button>
+        </div>
+      )}
 
       {client === 'beiersdorf' && (
         <div className="bdf-cat-bar">

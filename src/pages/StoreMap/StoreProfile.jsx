@@ -33,8 +33,9 @@ function parseRanging(name) {
   return { isS: prefix.includes('S'), isM: prefix.includes('M') }
 }
 
-export default function StoreProfile({ store, onClose }) {
-  const { client } = useClient()
+export default function StoreProfile({ store, onClose, frozenData }) {
+  const ctx    = useClient()
+  const client = ctx?.client ?? 'vitasoy'
 
   // Vitasoy state
   const [rows, setRows]       = useState([])
@@ -56,6 +57,15 @@ export default function StoreProfile({ store, onClose }) {
     if (!store) {
       setRows([])
       setBRows([])
+      setExpandedCats(new Set())
+      setExpandedTopSections(new Set())
+      setExpandedSubCats(new Set())
+      return
+    }
+
+    // Frozen snapshot path — skip DB call entirely, render from prop
+    if (frozenData) {
+      setBRows(frozenData.map(r => ({ ...r, isGap: true })))
       setExpandedCats(new Set())
       setExpandedTopSections(new Set())
       setExpandedSubCats(new Set())
@@ -138,7 +148,7 @@ setBRows(mapped)
     }
 
     fetchData()
-  }, [store, client])
+  }, [store, client, frozenData])
 
   // ── Vitasoy grouping (unchanged) ───────────────────────────────────────────
   const grouped = CATEGORY_ORDER
@@ -217,8 +227,8 @@ setBRows(mapped)
             </div>
           </div>
 
-          {/* ── Beiersdorf render path ── */}
-          {client === 'beiersdorf' ? (
+          {/* ── Beiersdorf render path (also used for frozen share view) ── */}
+          {client === 'beiersdorf' || !!frozenData ? (
             loading ? (
               <div className="sp-no-data">Loading…</div>
             ) : bRows.length === 0 ? (
@@ -304,8 +314,8 @@ setBRows(mapped)
                     </div>
                   ))}
 
-                  {/* ── Existing flat category sections ── */}
-                  {bGrouped.map(({ cat, items, gapCount }) => (
+                  {/* ── Flat category sections (live view only; frozen view scoped to SS+MH) ── */}
+                  {!frozenData && bGrouped.map(({ cat, items, gapCount }) => (
                     <div key={cat} className="sp-b-section">
                       <button
                         className="sp-b-cat-header"
