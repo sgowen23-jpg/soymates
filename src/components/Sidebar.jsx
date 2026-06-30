@@ -12,6 +12,7 @@ const NAV_STRUCTURE = [
       { label: 'Store Contacts', icon: '📇' },
       { label: 'Cycle Planner',  icon: '📆' },
       { label: 'Promotions',     icon: '🏷️' },
+      { label: 'Order Sheets',   icon: '📝', href: '/vitasoy-aug26-order.html' },
     ],
   },
   { label: 'Perfect Store', icon: '🎯' },
@@ -83,7 +84,18 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
                     </button>
                     {isGroupOpen && (
                       <div className="sidebar-group-children">
-                        {item.children.map(child => (
+                        {item.children.map(child => child.href ? (
+                          <a
+                            key={child.label}
+                            href={child.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="sidebar-link sidebar-child"
+                          >
+                            <span className="sidebar-icon">{child.icon}</span>
+                            {child.label}
+                          </a>
+                        ) : (
                           <button
                             key={child.label}
                             className={`sidebar-link sidebar-child ${active === child.label ? 'active' : ''}`}
@@ -96,6 +108,20 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
                       </div>
                     )}
                   </div>
+                )
+              }
+              if (item.href) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar-link"
+                  >
+                    <span className="sidebar-icon">{item.icon}</span>
+                    {item.label}
+                  </a>
                 )
               }
               return (
