@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitasoy Month – August 2026 Order Sheet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#fff5f5;color:#222;min-height:100vh}
+
+/* ── Header ── */
+.header{background:#cc1111;color:#fff;padding:18px 24px;display:flex;align-items:center;gap:16px}
+.header-logo{font-size:28px;font-weight:900;letter-spacing:-1px;color:#fff}
+.header-logo span{color:#fff}
+.header-text h1{font-size:20px;font-weight:700;line-height:1.2}
+.header-text p{font-size:13px;opacity:.85;margin-top:2px}
+
+/* ── Store info ── */
+.store-bar{background:#fff;border-bottom:3px solid #cc1111;padding:14px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px}
+.field-group input{border:1px solid #ccc;border-radius:5px;padding:7px 11px;font-size:13px;width:180px;transition:border .2s}
+.field-group input:focus{outline:none;border-color:#cc1111}
+
+/* ── Tab bar ── */
+.tab-bar{background:#fff;border-bottom:3px solid #cc1111;display:flex;overflow-x:auto}
+.tab-btn{padding:13px 22px;font-size:14px;font-weight:700;color:#666;border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-3px;transition:color .2s}
+.tab-btn:hover{color:#cc1111}
+.tab-btn.active{color:#cc1111;border-bottom-color:#cc1111}
+
+/* ── Print button ── */
+.toolbar{padding:10px 24px;text-align:right;background:#f0f4f0}
+.btn{border:none;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s}
+.btn-print{background:#555;color:#fff}
+.btn-print:hover{background:#333}
+.btn-reset{background:#e53935;color:#fff;margin-left:8px}
+.btn-reset:hover{background:#c62828}
+
+/* ── Section ── */
+.section{display:none;padding:20px 24px 28px}
+.section.active{display:block}
+
+/* ── Card ── */
+.card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* ── Section header ── */
+.sec-head{background:#cc1111;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.sec-head-left h2{font-size:17px;font-weight:700;margin-bottom:3px}
+.sec-head-left .comm{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:10px;font-size:11px;display:inline-block;margin-top:2px}
+.sec-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sec-head-right label{font-size:12px;white-space:nowrap;font-weight:600}
+.sec-head-right input[type=date]{border:none;border-radius:5px;padding:6px 9px;font-size:13px;background:#fff;color:#222}
+
+/* ── Tier bar (UHT only) ── */
+.tier-bar{background:#fff8f8;border-bottom:1px solid #ece0e0;padding:10px 18px;display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.tier-bar .label{font-size:12px;font-weight:700;color:#555;margin-right:4px}
+.tier-chip{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;border:2px solid transparent;transition:all .2s}
+.tier-chip.d1{border-color:#cc1111;color:#cc1111}
+
+.tier-chip.d2{border-color:#e67e00;color:#e67e00}
+.tier-chip.d3{border-color:#c62828;color:#c62828}
+.tier-chip.d1.lit{background:#cc1111;color:#fff}
+.tier-chip.d2.lit{background:#e67e00;color:#fff}
+.tier-chip.d3.lit{background:#c62828;color:#fff}
+.tier-bar .ctn-count{margin-left:auto;font-size:13px;font-weight:700;color:#333}
+
+/* ── Note ── */
+.note{background:#fff0f0;border-left:4px solid #cc1111;padding:9px 14px;font-size:12px;color:#555;line-height:1.5}
+.note strong{color:#333}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{background:#f4f4f4;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#666;text-align:left;border-bottom:2px solid #ddd}
+td{padding:9px 12px;border-bottom:1px solid #eee;font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fff8f8}
+.mono{font-family:monospace;font-size:12px;color:#888}
+.deal-price{font-weight:700;color:#aa0000}
+.qty-input{width:72px;border:1px solid #ccc;border-radius:5px;padding:6px 8px;font-size:14px;text-align:center;font-weight:700}
+.qty-input:focus{outline:none;border-color:#cc1111}
+.line-total{font-weight:700;font-size:14px;color:#222;min-width:80px}
+.dh{text-align:center;font-size:11px}
+.dh small{font-weight:400;display:block;margin-top:2px;opacity:.8}
+.dh-active{background:#cc1111!important;color:#fff!important}
+.dcell{text-align:center;color:#999;font-weight:600;font-size:13px}
+.dcell-active{color:#cc1111!important;font-weight:900;font-size:15px;background:#fff0f0}
+
+/* ── Total footer ── */
+.total-foot{background:#cc1111;color:#fff;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
+.total-foot .tlabel{font-size:15px;font-weight:700}
+.total-foot .tamount{font-size:24px;font-weight:900;letter-spacing:-.5px}
+
+/* ── Summary card ── */
+.summary-wrap{padding:20px 24px 28px}
+.summary-card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden}
+.summary-card h3{background:#222;color:#fff;padding:13px 18px;font-size:16px}
+.sum-row{display:flex;justify-content:space-between;padding:11px 18px;border-bottom:1px solid #eee;font-size:14px}
+.sum-row:last-child{border-bottom:none}
+.sum-grand{display:flex;justify-content:space-between;padding:14px 18px;background:#cc1111;color:#fff;font-size:18px;font-weight:900}
+
+/* ── Print ── */
+@media print{
+  .tab-bar,.toolbar{display:none}
+  .section{display:block!important;page-break-after:always}
+  .summary-wrap{page-break-after:avoid}
+}
+
+@media(max-width:600px){
+  .header{flex-direction:column;align-items:flex-start;gap:8px}
+  .sec-head{flex-direction:column;align-items:flex-start}
+  .store-bar .field-group input{width:140px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">VITA<span>SOY</span></div>
+  <div class="header-text">
+    <h1>Vitasoy Month &mdash; August 2026</h1>
+    <p>Promotional Order Sheet &nbsp;·&nbsp; Valid August 2026</p>
+  </div>
+</div>
+
+<!-- STORE INFO -->
+<div class="store-bar">
+  <div class="field-group">
+    <label>Store Name</label>
+    <input type="text" placeholder="Enter store name">
+  </div>
+  <div class="field-group">
+    <label>Account Number</label>
+    <input type="text" placeholder="e.g. 10234">
+  </div>
+  <div class="field-group">
+    <label>Rep Name</label>
+    <input type="text" placeholder="Sales rep name">
+  </div>
+  <div class="field-group">
+    <label>Order Date</label>
+    <input type="date">
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('uht',this)">UHT Long Life Milk</button>
+  <button class="tab-btn" onclick="showTab('white',this)">Best Selling White Chilled</button>
+  <button class="tab-btn" onclick="showTab('flavoured',this)">New Flavoured Chilled</button>
+  <button class="tab-btn" onclick="showTab('summary',this)">Order Summary</button>
+</div>
+
+<div class="toolbar">
+  <button class="btn btn-print" onclick="window.print()">&#128438; Print All</button>
+  <button class="btn btn-reset" onclick="resetAll()">&#8635; Reset Quantities</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SECTION 1 · UHT LONG LIFE MILK
+═══════════════════════════════════════ -->
+<div id="tab-uht" class="section active">
+  <div class="card">
+    <div class="sec-head">
+      <div class="sec-head-left">
+        <h2>Vitasoy UHT Long Life Milk</h2>
+        <div class="comm">Comm No: 7302</div>
+      </div>
+      <div class="sec-head-right">
+        <label>Delivery Date:</label>
+        <input type="date" id="uht-date">
+      </div>
+    </div>
+
+    <div class="tier-bar">
+      <span class="label">Active Deal:</span>
+      <span class="tier-chip d1 lit" id="chip-d1">Deal 1 &nbsp;(1–24 ctns) &nbsp;10% off</span>
+      <span class="tier-chip d2" id="chip-d2">Deal 2 &nbsp;(25–89 ctns) &nbsp;27.4% off</span>
+      <span class="tier-chip d3" id="chip-d3">Deal 3 &nbsp;(90+ ctns) &nbsp;38.5% off</span>
+      <span class="ctn-count">Total CTNs: <span id="uht-ctn-count">0</span></span>
+    </div>
+
+    <div class="note">
+      Deal tier is determined by <strong>total UHT cartons ordered</strong> across all products below. Price shown updates automatically as you enter quantities.
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Description</th>
+            <th>Item No</th>
+            <th>Subrange</th>
+            <th>Ctn Qty</th>
+            <th class="dh d1h">Deal 1<br><small>1–24 ctns</small></th>
+            <th class="dh d2h">Deal 2<br><small>25–89 ctns</small></th>
+            <th class="dh d3h">Deal 3<br><small>90+ ctns</small></th>
+            <th>CTNs Ordered</th>
+            <th>Top-Up Payment</th>
+          </tr>
+        </thead>
+        <tbody id="uht-body"></tbody>
+      </table>
+    </div>
+
+    <div class="total-foot">
+      <span class="tlabel">Total Top-Up Payment &mdash; UHT Long Life Milk</span>
+      <span class="tamount" id="uht-total">$0.00</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SECTION 2 · WHITE CHILLED
+═══════════════════════════════════════ -->
+<div id="tab-white" class="section">
+  <div class="card">
+    <div class="sec-head">
+      <div class="sec-head-left">
+        <h2>Vitasoy Best Selling White Chilled</h2>
+        <div class="comm">Comm No: 16004</div>
+      </div>
+      <div class="sec-head-right">
+        <label>Delivery Date:</label>
+        <input type="date" id="white-date">
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Mix N' Match</strong> &mdash; Minimum order of <strong>1 of each SKU</strong> (5 different products) for <strong>30% off</strong>. Rebate per carton shown below.
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Description</th>
+            <th>Item No</th>
+            <th>Subrange</th>
+            <th>Ctn Qty</th>
+            <th>Rebate / CTN</th>
+            <th>CTNs Ordered</th>
+            <th>Top-Up Payment</th>
+          </tr>
+        </thead>
+        <tbody id="white-body"></tbody>
+      </table>
+    </div>
+
+    <div class="total-foot">
+      <span class="tlabel">Total Top-Up Payment &mdash; Best Selling White Chilled</span>
+      <span class="tamount" id="white-total">$0.00</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SECTION 3 · FLAVOURED CHILLED
+═══════════════════════════════════════ -->
+<div id="tab-flavoured" class="section">
+  <div class="card">
+    <div class="sec-head">
+      <div class="sec-head-left">
+        <h2>Vitasoy New Flavoured Chilled</h2>
+        <div class="comm">Comm No: 16004</div>
+      </div>
+      <div class="sec-head-right">
+        <label>Delivery Date:</label>
+        <input type="date" id="flavoured-date">
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Range Buy</strong> &mdash; Order <strong>1 of each SKU</strong> (all 4 products) to receive <strong>40% off</strong>. Rebate per carton shown below.
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Description</th>
+            <th>Item No</th>
+            <th>Subrange</th>
+            <th>Ctn Qty</th>
+            <th>Rebate / CTN</th>
+            <th>CTNs Ordered</th>
+            <th>Top-Up Payment</th>
+          </tr>
+        </thead>
+        <tbody id="flavoured-body"></tbody>
+      </table>
+    </div>
+
+    <div class="total-foot">
+      <span class="tlabel">Total Top-Up Payment &mdash; New Flavoured Chilled</span>
+      <span class="tamount" id="flavoured-total">$0.00</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ORDER SUMMARY (always visible at bottom,
+     also its own tab)
+═══════════════════════════════════════ -->
+<div id="tab-summary" class="section">
+  <!-- placeholder – summary card is outside tabs so it always shows -->
+  <p style="color:#888;font-size:14px;padding:10px 0">Scroll down to see the full order summary.</p>
+</div>
+
+<div class="summary-wrap">
+  <div class="summary-card">
+    <h3>&#128203; Order Summary</h3>
+    <div class="sum-row">
+      <span>UHT Long Life Milk</span>
+      <span id="sum-uht">$0.00</span>
+    </div>
+    <div class="sum-row">
+      <span>Best Selling White Chilled</span>
+      <span id="sum-white">$0.00</span>
+    </div>
+    <div class="sum-row">
+      <span>New Flavoured Chilled</span>
+      <span id="sum-flavoured">$0.00</span>
+    </div>
+    <div class="sum-grand">
+      <span>TOTAL TOP-UP PAYMENT</span>
+      <span id="sum-grand">$0.00</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────
+
+const UHT = [
+  { desc:'VITASOY HOME BAR UHT ALM 1L',    item:'972498', sub:'20811', ctn:12, d1:3.20, d2:8.76,  d3:12.30 },
+  { desc:'VITASOY HOME BAR UHT OAT 1L',    item:'972370', sub:'20811', ctn:12, d1:3.20, d2:8.76,  d3:12.30 },
+  { desc:'VITASOY UHT ALMOND MILKY 1L',    item:'433339', sub:'9798',  ctn:12, d1:2.81, d2:7.68,  d3:10.80 },
+  { desc:'VITASOY UHT ALMOND U/SWT 1L',    item:'433342', sub:'11581', ctn:12, d1:3.13, d2:8.58,  d3:12.06 },
+  { desc:'VITASOY UHT OAT MILKY UHT 1L',   item:'243297', sub:'9798',  ctn:12, d1:2.81, d2:7.68,  d3:10.80 },
+  { desc:'VITASOY UHT OAT U/SWT 1L',       item:'355293', sub:'11581', ctn:12, d1:3.13, d2:8.58,  d3:12.06 },
+  { desc:'VITASOY UHT SOY MILKY LITE 1L',  item:'75851',  sub:'5912',  ctn:12, d1:2.29, d2:6.28,  d3:8.82  },
+  { desc:'VITASOY UHT SOY MILKY REG 1L',   item:'75699',  sub:'5912',  ctn:12, d1:2.29, d2:6.28,  d3:8.82  },
+];
+
+const WHITE = [
+  { desc:'VITASOY FRSH ALM U/SWT PRIS 1L', item:'601623', sub:'12725', ctn:6, price:5.31 },
+  { desc:'VITASOY FRSH OAT U/SWT 1L',      item:'418070', sub:'—',     ctn:6, price:4.79 },
+  { desc:'VITASOY FRSH SOY CALCI PLS 1L',  item:'128549', sub:'1976',  ctn:6, price:4.84 },
+  { desc:'VITASOY FRSH SOY MILKY LITE 1L', item:'123900', sub:'3387',  ctn:6, price:3.99 },
+  { desc:'VITASOY FRSH SOY MILKY REG 1L',  item:'123895', sub:'3387',  ctn:6, price:3.99 },
+];
+
+const FLAVOURED = [
+  { desc:'VITASOY FRSH OAT CHOC BRWN 1L',  item:'401748', sub:'21893', ctn:6, price:9.36 },
+  { desc:'VITASOY FRSH OAT ICED LATTE 1L', item:'401772', sub:'21893', ctn:6, price:9.36 },
+  { desc:'VITASOY FRSH OAT SLTD CRML 1L',  item:'401934', sub:'21893', ctn:6, price:9.36 },
+  { desc:'VITASOY FRSH SOY I/COFF 1L',     item:'176291', sub:'14419', ctn:6, price:6.78 },
+];
+
+// ─── Helpers ─────────────────────────────────────────────
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + n.toFixed(2);
+
+// ─── Build UHT table ─────────────────────────────────────
+
+function buildUHT() {
+  const tbody = $('uht-body');
+  UHT.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.desc}</td>
+      <td class="mono">${p.item}</td>
+      <td class="mono">${p.sub}</td>
+      <td>${p.ctn}</td>
+      <td class="deal-price dcell d1c" id="ud1-${i}">${fmt(p.d1)}</td>
+      <td class="deal-price dcell d2c" id="ud2-${i}">${fmt(p.d2)}</td>
+      <td class="deal-price dcell d3c" id="ud3-${i}">${fmt(p.d3)}</td>
+      <td><input class="qty-input" type="number" min="0" value="" placeholder="0" id="uq-${i}" oninput="calcUHT()"></td>
+      <td class="line-total" id="ul-${i}">—</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function calcUHT() {
+  let totalCtns = 0;
+  UHT.forEach((_, i) => {
+    totalCtns += parseInt($(`uq-${i}`).value) || 0;
+  });
+
+  const tier = totalCtns >= 90 ? 3 : totalCtns >= 25 ? 2 : 1;
+
+  // Update tier chips
+  ['d1','d2','d3'].forEach((d, idx) => {
+    $(`chip-${d}`).classList.toggle('lit', tier === idx + 1);
+  });
+  $('uht-ctn-count').textContent = totalCtns;
+
+  // Highlight active deal column header
+  document.querySelectorAll('.dh').forEach(el => el.classList.remove('dh-active'));
+  document.querySelectorAll(`.d${tier}h`).forEach(el => el.classList.add('dh-active'));
+
+  let total = 0;
+  UHT.forEach((p, i) => {
+    const qty = parseInt($(`uq-${i}`).value) || 0;
+    const price = tier === 3 ? p.d3 : tier === 2 ? p.d2 : p.d1;
+
+    // Highlight active cell per row
+    [`ud1-${i}`,'d1c'],[`ud2-${i}`,'d2c'],[`ud3-${i}`,'d3c']
+    document.querySelectorAll(`#ud1-${i},#ud2-${i},#ud3-${i}`).forEach(el => el.classList.remove('dcell-active'));
+    $(`ud${tier}-${i}`).classList.add('dcell-active');
+
+    const line = qty * price;
+    total += line;
+    $(`ul-${i}`).textContent = qty > 0 ? fmt(line) : '—';
+  });
+
+  $('uht-total').textContent = fmt(total);
+  $('sum-uht').textContent = fmt(total);
+  updateGrand();
+}
+
+// ─── Build simple table (White / Flavoured) ──────────────
+
+function buildSimple(products, tbodyId, prefix, totalId, sumId) {
+  const tbody = $(tbodyId);
+  products.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.desc}</td>
+      <td class="mono">${p.item}</td>
+      <td class="mono">${p.sub}</td>
+      <td>${p.ctn}</td>
+      <td class="deal-price">${fmt(p.price)}</td>
+      <td><input class="qty-input" type="number" min="0" value="" placeholder="0" id="${prefix}-q-${i}" oninput="calcSimple('${prefix}')"></td>
+      <td class="line-total" id="${prefix}-l-${i}">—</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function calcSimple(prefix) {
+  const products = prefix === 'wh' ? WHITE : FLAVOURED;
+  const totalId  = prefix === 'wh' ? 'white-total'    : 'flavoured-total';
+  const sumId    = prefix === 'wh' ? 'sum-white'      : 'sum-flavoured';
+
+  let total = 0;
+  products.forEach((p, i) => {
+    const qty = parseInt($(`${prefix}-q-${i}`).value) || 0;
+    const line = qty * p.price;
+    total += line;
+    $(`${prefix}-l-${i}`).textContent = qty > 0 ? fmt(line) : '—';
+  });
+
+  $(totalId).textContent = fmt(total);
+  $(sumId).textContent   = fmt(total);
+  updateGrand();
+}
+
+// ─── Grand total ─────────────────────────────────────────
+
+function updateGrand() {
+  const parse = id => parseFloat($(id).textContent.replace('$','')) || 0;
+  const grand = parse('uht-total') + parse('white-total') + parse('flavoured-total');
+  $('sum-grand').textContent = fmt(grand);
+}
+
+// ─── Tab switching ───────────────────────────────────────
+
+function showTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─── Reset ───────────────────────────────────────────────
+
+function resetAll() {
+  document.querySelectorAll('.qty-input').forEach(el => { el.value = ''; });
+  calcUHT();
+  calcSimple('wh');
+  calcSimple('fl');
+}
+
+// ─── Init ────────────────────────────────────────────────
+
+buildUHT();
+buildSimple(WHITE,    'white-body',    'wh');
+buildSimple(FLAVOURED,'flavoured-body','fl');
+calcUHT();
+calcSimple('wh');
+calcSimple('fl');
+</script>
+</body>
+</html>
