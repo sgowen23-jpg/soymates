@@ -100,16 +100,19 @@ tr:hover td{background:#fff8f8}
 .sum-grand{display:flex;justify-content:space-between;padding:14px 18px;background:#cc1111;color:#fff;font-size:18px;font-weight:900}
 
 /* ── Print ── */
-@page{size:A4 portrait;margin:6mm}
+@page{size:A4 portrait;margin:4mm}
 @media print{
   .tab-bar,.toolbar,.summary-wrap{display:none}
-  .section{display:block!important}
-  #tab-uht,#tab-white{page-break-after:always}
-  #tab-flavoured{page-break-after:avoid}
+  .section{display:block!important;page-break-inside:avoid}
   #tab-summary{display:none!important}
-  html{zoom:0.62}
+  * {page-break-after:avoid!important;page-break-before:avoid!important}
+  html{zoom:0.38}
   body{background:#fff}
   .card{box-shadow:none}
+  .note{display:none}
+  .tier-bar{padding:4px 10px}
+  .sec-head{padding:6px 10px}
+  td,th{padding:4px 8px}
 }
 
 @media(max-width:600px){
