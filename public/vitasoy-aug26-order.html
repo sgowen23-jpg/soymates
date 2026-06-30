@@ -102,9 +102,12 @@ tr:hover td{background:#fff8f8}
 /* ── Print ── */
 @page{size:A4 portrait;margin:6mm}
 @media print{
-  .tab-bar,.toolbar{display:none}
-  .summary-wrap{display:none}
-  html{zoom:0.72}
+  .tab-bar,.toolbar,.summary-wrap{display:none}
+  .section{display:block!important}
+  #tab-uht,#tab-white{page-break-after:always}
+  #tab-flavoured{page-break-after:avoid}
+  #tab-summary{display:none!important}
+  html{zoom:0.62}
   body{background:#fff}
   .card{box-shadow:none}
 }
