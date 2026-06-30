@@ -12,7 +12,13 @@ const NAV_STRUCTURE = [
       { label: 'Store Contacts', icon: '📇' },
       { label: 'Cycle Planner',  icon: '📆' },
       { label: 'Promotions',     icon: '🏷️' },
-      { label: 'Order Sheets',   icon: '📝', href: '/vitasoy-aug26-order.html' },
+      {
+        group: 'Order Sheets', icon: '📝',
+        children: [
+          { label: 'Vitasoy Aug 2026', icon: '🥛', href: '/vitasoy-aug26-order.html' },
+          { label: 'NIVEA SUN 2026',   icon: '☀️', href: '/nivea-sun-order.html' },
+        ],
+      },
     ],
   },
   { label: 'Perfect Store', icon: '🎯' },
@@ -45,6 +51,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
   )?.group ?? null
 
   const [openMenu, setOpenMenu] = useState(initialOpen)
+  const [openSubMenu, setOpenSubMenu] = useState(null)
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -84,27 +91,63 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
                     </button>
                     {isGroupOpen && (
                       <div className="sidebar-group-children">
-                        {item.children.map(child => child.href ? (
-                          <a
-                            key={child.label}
-                            href={child.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="sidebar-link sidebar-child"
-                          >
-                            <span className="sidebar-icon">{child.icon}</span>
-                            {child.label}
-                          </a>
-                        ) : (
-                          <button
-                            key={child.label}
-                            className={`sidebar-link sidebar-child ${active === child.label ? 'active' : ''}`}
-                            onClick={() => onNavigate(child.label)}
-                          >
-                            <span className="sidebar-icon">{child.icon}</span>
-                            {child.label}
-                          </button>
-                        ))}
+                        {item.children.map(child => {
+                          if (child.group) {
+                            const isSubOpen = openSubMenu === child.group
+                            return (
+                              <div key={child.group}>
+                                <button
+                                  className="sidebar-link sidebar-child sidebar-group-header"
+                                  onClick={() => setOpenSubMenu(prev => prev === child.group ? null : child.group)}
+                                >
+                                  <span className="sidebar-icon">{child.icon}</span>
+                                  {child.group}
+                                  <span className={`sidebar-chevron${isSubOpen ? ' open' : ''}`}>›</span>
+                                </button>
+                                {isSubOpen && (
+                                  <div className="sidebar-group-children" style={{ paddingLeft: '0.75rem' }}>
+                                    {child.children.map(link => (
+                                      <a
+                                        key={link.label}
+                                        href={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="sidebar-link sidebar-child"
+                                      >
+                                        <span className="sidebar-icon">{link.icon}</span>
+                                        {link.label}
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          }
+                          if (child.href) {
+                            return (
+                              <a
+                                key={child.label}
+                                href={child.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="sidebar-link sidebar-child"
+                              >
+                                <span className="sidebar-icon">{child.icon}</span>
+                                {child.label}
+                              </a>
+                            )
+                          }
+                          return (
+                            <button
+                              key={child.label}
+                              className={`sidebar-link sidebar-child ${active === child.label ? 'active' : ''}`}
+                              onClick={() => onNavigate(child.label)}
+                            >
+                              <span className="sidebar-icon">{child.icon}</span>
+                              {child.label}
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
