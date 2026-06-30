@@ -103,11 +103,10 @@ tr:hover td{background:#fff8f8}
 @page{size:A4 landscape;margin:6mm}
 @media print{
   .tab-bar,.toolbar{display:none}
-  .section{display:block!important;page-break-after:avoid;page-break-inside:avoid}
-  .summary-wrap{page-break-after:avoid;page-break-inside:avoid}
-  html{zoom:0.58}
+  .summary-wrap{display:none}
+  html{zoom:0.72}
   body{background:#fff}
-  .card,.summary-card{box-shadow:none}
+  .card{box-shadow:none}
 }
 
 @media(max-width:600px){
