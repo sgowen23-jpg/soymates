@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIVEA SUN – Super Save Sun Deals 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f4f9;color:#222;min-height:100vh}
+
+/* Header */
+.header{background:#003087;color:#fff;padding:18px 24px;display:flex;align-items:center;gap:16px}
+.header-logo{font-size:26px;font-weight:900;letter-spacing:1px;color:#fff}
+.header-logo span{color:#009ee3}
+.header-text h1{font-size:19px;font-weight:700;line-height:1.2}
+.header-text p{font-size:13px;opacity:.8;margin-top:3px}
+
+/* Store info */
+.store-bar{background:#fff;border-bottom:3px solid #003087;padding:14px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px}
+.field-group input{border:1px solid #ccc;border-radius:5px;padding:7px 11px;font-size:13px;width:180px}
+.field-group input:focus{outline:none;border-color:#003087}
+
+/* Toolbar */
+.toolbar{padding:10px 24px;text-align:right;background:#f0f4f9;display:flex;justify-content:flex-end;gap:8px}
+.btn{border:none;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-print{background:#555;color:#fff}
+.btn-print:hover{background:#333}
+.btn-reset{background:#c0392b;color:#fff}
+.btn-reset:hover{background:#a93226}
+
+/* Card */
+.main{padding:20px 24px 28px}
+.card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* Section header */
+.sec-head{background:#003087;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.sec-head h2{font-size:17px;font-weight:700}
+.sec-head .sub{font-size:12px;opacity:.8;margin-top:2px}
+.date-field{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.date-field label{font-size:12px;font-weight:600;white-space:nowrap}
+.date-field input{border:none;border-radius:5px;padding:6px 9px;font-size:13px}
+
+/* Deal bar */
+.deal-bar{background:#e8f0fb;border-bottom:1px solid #c8d8f0;padding:12px 18px;display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.deal-bar .dlabel{font-size:12px;font-weight:700;color:#555}
+.deal-chip{padding:5px 14px;border-radius:12px;font-size:12px;font-weight:700;border:2px solid transparent;transition:all .2s}
+.deal-chip.d1{border-color:#003087;color:#003087}
+.deal-chip.d2{border-color:#009ee3;color:#009ee3}
+.deal-chip.none{border-color:#bbb;color:#999}
+.deal-chip.lit.d1{background:#003087;color:#fff}
+.deal-chip.lit.d2{background:#009ee3;color:#fff}
+.deal-chip.lit.none{background:#bbb;color:#fff}
+.ctn-count{margin-left:auto;font-size:13px;font-weight:700;color:#333}
+
+/* Note */
+.note{background:#e8f0fb;border-left:4px solid #003087;padding:9px 14px;font-size:12px;color:#444;line-height:1.5}
+.note strong{color:#003087}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th{background:#f4f6fb;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#555;text-align:left;border-bottom:2px solid #dde3ef}
+td{padding:9px 12px;border-bottom:1px solid #eef0f5;font-size:13px;vertical-align:middle}
+tr:hover td{background:#f8faff}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;font-size:12px;color:#888}
+.rank{font-weight:700;color:#003087;text-align:center}
+.rrp{font-weight:600}
+.cost{color:#555}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-must{background:#d4edda;color:#155724}
+.badge-new{background:#cce5ff;color:#004085}
+.badge-relaunch{background:#fff3cd;color:#856404}
+.qty-input{width:72px;border:1px solid #ccc;border-radius:5px;padding:6px 8px;font-size:14px;text-align:center;font-weight:700}
+.qty-input:focus{outline:none;border-color:#003087}
+.line-total{font-weight:700;font-size:14px;min-width:90px}
+
+/* Summary footer */
+.summary-foot{background:#003087;color:#fff;padding:0}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,.15);font-size:14px}
+.sum-row .slabel{opacity:.85}
+.sum-row .sval{font-weight:700;font-size:15px}
+.sum-row.rebate-row{background:rgba(0,158,227,.25)}
+.sum-row.rebate-row .sval{color:#7dd3f5}
+.sum-row.grand{background:#001f5e;padding:14px 20px}
+.sum-row.grand .slabel{font-size:16px;font-weight:700;opacity:1}
+.sum-row.grand .sval{font-size:24px;font-weight:900}
+
+@media print{
+  .toolbar{display:none}
+  .card{box-shadow:none}
+}
+@media(max-width:600px){
+  .header{flex-direction:column;align-items:flex-start}
+  .sec-head{flex-direction:column;align-items:flex-start}
+  .store-bar .field-group input{width:140px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">NIVEA<span> SUN</span></div>
+  <div class="header-text">
+    <h1>Super Save Sun Deals 2026</h1>
+    <p>Promotional Order Sheet &nbsp;·&nbsp; Excludes Prepack</p>
+  </div>
+</div>
+
+<!-- STORE INFO -->
+<div class="store-bar">
+  <div class="field-group">
+    <label>Store Name</label>
+    <input type="text" placeholder="Enter store name">
+  </div>
+  <div class="field-group">
+    <label>Account Number</label>
+    <input type="text" placeholder="Metcode account">
+  </div>
+  <div class="field-group">
+    <label>Rep Name</label>
+    <input type="text" placeholder="Sales rep name">
+  </div>
+  <div class="field-group">
+    <label>Order Date</label>
+    <input type="date">
+  </div>
+</div>
+
+<div class="toolbar">
+  <button class="btn btn-print" onclick="window.print()">&#128438; Print</button>
+  <button class="btn btn-reset" onclick="resetAll()">&#8635; Reset</button>
+</div>
+
+<!-- MAIN CARD -->
+<div class="main">
+  <div class="card">
+
+    <!-- Section head -->
+    <div class="sec-head">
+      <div>
+        <h2>NIVEA SUN Range</h2>
+        <div class="sub">Off-location rebate deal — min. 4 week display required</div>
+      </div>
+      <div class="date-field">
+        <label>Delivery Date:</label>
+        <input type="date" id="del-date">
+      </div>
+    </div>
+
+    <!-- Deal status bar -->
+    <div class="deal-bar">
+      <span class="dlabel">Active Deal:</span>
+      <span class="deal-chip none lit" id="chip-none">No deal (&lt;17 ctns)</span>
+      <span class="deal-chip d1" id="chip-d1">Deal 1 &nbsp;(17–29 ctns) &nbsp;$50 rebate</span>
+      <span class="deal-chip d2" id="chip-d2">Deal 2 &nbsp;(30+ ctns) &nbsp;$100 rebate</span>
+      <span class="ctn-count">Total CTNs: <span id="ctn-count">0</span></span>
+    </div>
+
+    <div class="note">
+      Order <strong>17+ cartons</strong> for a <strong>$50 off-location rebate</strong> &nbsp;·&nbsp; Order <strong>30+ cartons</strong> for a <strong>$100 off-location rebate</strong>. Display must be maintained for a minimum of 4 weeks.
+    </div>
+
+    <!-- Product table -->
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Metcode</th>
+            <th>RRP</th>
+            <th>Cost/CTN</th>
+            <th>Type</th>
+            <th>Grade</th>
+            <th>CTNs Ordered</th>
+          </tr>
+        </thead>
+        <tbody id="prod-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Summary footer -->
+    <div class="summary-foot">
+      <div class="sum-row grand">
+        <span class="slabel">Off-location Rebate Earned</span>
+        <span class="sval" id="rebate-val">—</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PRODUCTS = [
+  { rank:1,  desc:'NIVEA SUN LOTION MOIST SPF50+ 400ML',                    meta:'667001', pk:3, rrp:'$28.00',   cost:55.69, type:'Must Stock',    grade:'R' },
+  { rank:2,  desc:'NIVEA SUN LOTION PRT AND MOIST SPF50+ 100ML',            meta:'665122', pk:4, rrp:'$15.00',   cost:39.70, type:'Must Stock',    grade:'A' },
+  { rank:3,  desc:'NIVEA SUN PROTECT & MOISTURE TRIGGER SPRAY SPF50+ 270ML',meta:'529795', pk:4, rrp:'$28.00',   cost:74.26, type:'Hard Relaunch', grade:'A' },
+  { rank:4,  desc:'NIVEA SUN KIDS CARING ROLL ON SPF50 65ML',               meta:'402883', pk:4, rrp:'$15.00',   cost:39.70, type:'Must Stock',    grade:'A' },
+  { rank:5,  desc:'NIVEA SUN LOTION MOIST SPF50+ 200ML',                    meta:'378539', pk:4, rrp:'$21.50',   cost:56.98, type:'',              grade:'A' },
+  { rank:6,  desc:'NIVEA SUN SPRAY ULTRA SPORT SPF50+ 200ML',               meta:'327062', pk:5, rrp:'$23.50',   cost:76.73, type:'',              grade:'A' },
+  { rank:7,  desc:'NIVEA SUN ULTRA SPORT TRIGGER SPF50+ 270ML',             meta:'529847', pk:4, rrp:'$28.00',   cost:74.26, type:'Hard Relaunch', grade:'A' },
+  { rank:8,  desc:'NIVEA SUN SPRAY ULTRA BEACH SPF50+ 200ML',               meta:'147459', pk:5, rrp:'$23.50',   cost:76.73, type:'',              grade:'A' },
+  { rank:9,  desc:'NIVEA SUN UV FACE SHINE CONTROL SPF50+ 40ML',            meta:'529960', pk:6, rrp:'$15.00',   cost:59.67, type:'New',           grade:'B' },
+  { rank:10, desc:'NIVEA SUN KIDS PROTECT & PLAY 270ML',                    meta:'527332', pk:4, rrp:'$28.00',   cost:74.26, type:'New',           grade:'A' },
+  { rank:11, desc:'NIVEA SUN SPRAY CARING SPF30 200ML',                     meta:'94083',  pk:5, rrp:'$23.50',   cost:77.95, type:'',              grade:'A' },
+];
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + n.toFixed(2);
+
+function typeBadge(t) {
+  if (!t) return '';
+  if (t === 'Must Stock')    return `<span class="badge badge-must">${t}</span>`;
+  if (t === 'New')           return `<span class="badge badge-new">${t}</span>`;
+  if (t === 'Hard Relaunch') return `<span class="badge badge-relaunch">${t}</span>`;
+  return t;
+}
+
+function buildTable() {
+  const tbody = $('prod-body');
+  PRODUCTS.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank">${p.rank}</td>
+      <td>${p.desc}</td>
+      <td class="mono">${p.meta}</td>
+      <td class="rrp">${p.rrp}</td>
+      <td class="cost">${fmt(p.cost)}</td>
+      <td>${typeBadge(p.type)}</td>
+      <td style="text-align:center;font-weight:700;color:#003087">${p.grade}</td>
+      <td><input class="qty-input" type="number" min="0" value="" placeholder="0" id="q-${i}" oninput="calc()"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function calc() {
+  let totalCtns = 0;
+
+  PRODUCTS.forEach((_, i) => {
+    totalCtns += parseInt($(`q-${i}`).value) || 0;
+  });
+
+  $('ctn-count').textContent = totalCtns;
+
+  // Deal tier
+  let dealLabel = '—';
+  if (totalCtns >= 30)      dealLabel = '$100 off-location rebate';
+  else if (totalCtns >= 17) dealLabel = '$50 off-location rebate';
+
+  // Chips
+  $('chip-none').classList.toggle('lit', totalCtns < 17);
+  $('chip-d1').classList.toggle('lit', totalCtns >= 17 && totalCtns < 30);
+  $('chip-d2').classList.toggle('lit', totalCtns >= 30);
+
+  $('rebate-val').textContent = dealLabel;
+}
+
+function resetAll() {
+  document.querySelectorAll('.qty-input').forEach(el => el.value = '');
+  calc();
+}
+
+buildTable();
+calc();
+</script>
+</body>
+</html>
