@@ -1,5 +1,7 @@
 # Soymates — Claude Code Context
 
+> **Canonical repo: C:\Users\sgowe\Documents\soymates. If your working directory is anything else, STOP and tell the user — do not make changes.**
+
 ## What is this?
 Soymates is an internal sales team web app for Vitasoy field reps in SA and VIC. It replaces Excel and Teams workflows for a 6-person team. It is NOT a public-facing product.
 
