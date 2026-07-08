@@ -38,22 +38,27 @@ const isNumericStr = v => { if (v == null || v === '') return false; return !isN
 
 // ── Column maps ───────────────────────────────────────────────────────────────
 
+// srcs lists accepted header aliases: old xlsx export first, new CSV export second.
+// Matching is trim + lowercase, so headers differing only by case need no alias
+// (e.g. 'State' already matches 'STATE'). rep_name is no longer read from the
+// file — it is derived from the stores table at upload time (deriveRepName).
+// store_region is absent from the new CSV export, so it is optional (null when missing).
+// New-export-only columns BANNER, POG, IN UNIVERSE, STORE COUNT are deliberately unmapped.
 const BNB_COLS = [
-  { src: 'State',                   dest: 'state',                   parse: toStr   },
-  { src: 'Store Region',            dest: 'store_region',            parse: toStr   },
-  { src: 'Store Name',              dest: 'store_name',              parse: toStr   },
-  { src: 'Store ID',                dest: 'store_id',                parse: toInt   },
-  { src: 'MSO',                     dest: 'mso',                     parse: toStr   },
-  { src: 'Item Name',               dest: 'item_name',               parse: toStr   },
-  { src: 'Item ID',                 dest: 'item_id',                 parse: toInt   },
-  { src: 'POG Category',            dest: 'pog_category',            parse: toStr   },
-  { src: 'Rep Name',                dest: 'rep_name',                parse: toStr   },
-  { src: 'Count of Ranging',        dest: 'count_of_ranging',        parse: toInt   },
-  { src: 'Sum of Ranging',          dest: 'sum_of_ranging',          parse: toInt   },
-  { src: 'Distribution Percentage', dest: 'distribution_percentage', parse: toFloat },
-  { src: 'Ranging Gap',             dest: 'ranging_gap',             parse: toInt   },
-  { src: 'To Target Percentage',    dest: 'to_target_percentage',    parse: toFloat },
-  { src: 'Buy Rate Latest',         dest: 'buy_rate_latest',         parse: toFloat },
+  { srcs: ['State'],                                     dest: 'state',                   parse: toStr,   required: true },
+  { srcs: ['Store Region'],                              dest: 'store_region',            parse: toStr                   },
+  { srcs: ['Store Name'],                                dest: 'store_name',              parse: toStr,   required: true },
+  { srcs: ['Store ID'],                                  dest: 'store_id',                parse: toInt,   required: true },
+  { srcs: ['MSO'],                                       dest: 'mso',                     parse: toStr,   required: true },
+  { srcs: ['Item Name'],                                 dest: 'item_name',               parse: toStr,   required: true },
+  { srcs: ['Item ID'],                                   dest: 'item_id',                 parse: toInt,   required: true },
+  { srcs: ['POG Category'],                              dest: 'pog_category',            parse: toStr,   required: true },
+  { srcs: ['Count of Ranging', 'COUNT RANGING'],         dest: 'count_of_ranging',        parse: toInt,   required: true },
+  { srcs: ['Sum of Ranging', 'SUM RANGING'],             dest: 'sum_of_ranging',          parse: toInt,   required: true },
+  { srcs: ['Distribution Percentage', 'DISTRIBUTION %'], dest: 'distribution_percentage', parse: toFloat, required: true },
+  { srcs: ['Ranging Gap'],                               dest: 'ranging_gap',             parse: toInt,   required: true },
+  { srcs: ['To Target Percentage', 'TO TARGET %'],       dest: 'to_target_percentage',    parse: toFloat, required: true },
+  { srcs: ['Buy Rate Latest'],                           dest: 'buy_rate_latest',         parse: toFloat, required: true },
 ]
 
 const DIST_COLS = [
@@ -121,22 +126,39 @@ const VISITS_COLS = [
 
 // ── Parser ────────────────────────────────────────────────────────────────────
 
-function parseSheet(arrayBuffer, sheetTarget, colMap) {
+function parseSheet(arrayBuffer, sheetTarget, colMap, { singleSheetFallback = false } = {}) {
   const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
-  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === sheetTarget.toLowerCase())
+  // A CSV parses as a single sheet (named "Sheet1"), so when enabled a
+  // one-sheet workbook is used regardless of name; otherwise match by name.
+  const sheetName = (singleSheetFallback && wb.SheetNames.length === 1)
+    ? wb.SheetNames[0]
+    : wb.SheetNames.find(n => n.trim().toLowerCase() === sheetTarget.toLowerCase())
   if (!sheetName) return { error: `Sheet "${sheetTarget}" not found. Found: ${wb.SheetNames.join(', ')}` }
 
   const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null })
-  if (!raw.length) return { error: `Sheet "${sheetTarget}" is empty.` }
+  if (!raw.length) return { error: `Sheet "${sheetName}" is empty.` }
 
   const norm = h => String(h).trim().toLowerCase()
   const lookup = {}
   Object.keys(raw[0]).forEach(h => { lookup[norm(h)] = h })
 
+  // Resolve each column's file header via its alias list ({ srcs: [...] } or legacy { src })
+  const keyByDest = {}
+  colMap.forEach(col => {
+    const srcs = col.srcs ?? [col.src]
+    keyByDest[col.dest] = srcs.map(s => lookup[norm(s)]).find(k => k !== undefined)
+  })
+
+  const missing = colMap.filter(col => col.required && keyByDest[col.dest] === undefined)
+  if (missing.length) {
+    const names = missing.map(col => (col.srcs ?? [col.src]).join(' / ')).join(', ')
+    return { error: `Missing required headers: ${names}. Nothing was uploaded.` }
+  }
+
   const records = raw.map(row => {
     const rec = {}
     colMap.forEach(col => {
-      const key = lookup[norm(col.src)]
+      const key = keyByDest[col.dest]
       rec[col.dest] = key !== undefined ? col.parse(row[key]) : null
     })
     return rec
@@ -183,7 +205,7 @@ function parseVisitsSheet(arrayBuffer) {
 
 // ── Uploader component ────────────────────────────────────────────────────────
 
-function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client, rowFilter, customParser, upsertMode, upsertKey }) {
+function Uploader({ label, description, sheetName = 'Export', colMap, table, deleteQuery, onSuccess, client, rowFilter, customParser, upsertMode, upsertKey, acceptCsv, deriveRepName }) {
   const [phase,     setPhase]     = useState('idle')
   const [fileName,  setFileName]  = useState('')
   const [parseInfo, setParseInfo] = useState(null)
@@ -206,7 +228,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
     reader.onload = evt => {
       const res = customParser
         ? customParser(evt.target.result)
-        : parseSheet(evt.target.result, sheetName, colMap)
+        : parseSheet(evt.target.result, sheetName, colMap, { singleSheetFallback: acceptCsv })
       if (res.error) { setErrMsg(res.error); setPhase('error'); return }
       if (!res.records.length) { setErrMsg('No valid rows found after parsing.'); setPhase('error'); return }
       setParseInfo(res)
@@ -225,6 +247,29 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
     setPhase('uploading')
     setProgress(0)
 
+    // rep_name is not trusted from the file — derive it from the stores table.
+    // Fetched before the delete so a failed lookup never wipes existing data.
+    let repByStoreId = null
+    if (deriveRepName) {
+      repByStoreId = new Map()
+      let from = 0
+      while (true) {
+        const { data, error: repErr } = await supabase
+          .from('stores')
+          .select('store_id, rep_name')
+          .range(from, from + 999)
+        if (repErr) {
+          setErrMsg(`Could not load rep names from stores: ${repErr.message}`)
+          setPhase('error')
+          return
+        }
+        if (!data || data.length === 0) break
+        data.forEach(s => repByStoreId.set(String(s.store_id), s.rep_name ?? null))
+        if (data.length < 1000) break
+        from += 1000
+      }
+    }
+
     if (!upsertMode) {
       const { error: delErr } = await deleteQuery()
       if (delErr) {
@@ -234,7 +279,13 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
       }
     }
 
-    const records = rowFilter ? rowFilter(parseInfo.records) : parseInfo.records
+    let records = rowFilter ? rowFilter(parseInfo.records) : parseInfo.records
+    if (repByStoreId) {
+      records = records.map(r => ({
+        ...r,
+        rep_name: repByStoreId.get(String(r.store_id)) ?? null,
+      }))
+    }
     const total = records.length
     const errors = []
     const uploadedAt = new Date().toISOString()
@@ -272,8 +323,8 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
           onClick={() => fileRef.current.click()}
         >
           <span className="wu-drop-icon">📂</span>
-          <span className="wu-drop-text">Drop .xlsx or click to browse</span>
-          <input ref={fileRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={handleFile} />
+          <span className="wu-drop-text">Drop {acceptCsv ? '.xlsx or .csv' : '.xlsx'} or click to browse</span>
+          <input ref={fileRef} type="file" accept={acceptCsv ? '.xlsx,.csv' : '.xlsx'} style={{ display: 'none' }} onChange={handleFile} />
         </div>
       )}
 
@@ -361,6 +412,8 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_26wk"
           client={client}
+          acceptCsv
+          deriveRepName
           rowFilter={bnbStateFilter}
           deleteQuery={() => supabase.from('bnb_26wk').delete().eq('client', client)}
           onSuccess={async () => {
@@ -373,6 +426,8 @@ export default function WeeklyUpload() {
           colMap={BNB_COLS}
           table="bnb_13wk"
           client={client}
+          acceptCsv
+          deriveRepName
           rowFilter={bnbStateFilter}
           deleteQuery={() => supabase.from('bnb_13wk').delete().eq('client', client)}
         />
