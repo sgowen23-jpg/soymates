@@ -11,6 +11,7 @@ const Tools        = lazy(() => import('./Tools'))
 const Admin        = lazy(() => import('./Admin'))
 const DataUpload    = lazy(() => import('./DataUpload'))
 const WeeklyUpload  = lazy(() => import('./WeeklyUpload'))
+const UploadLogs    = lazy(() => import('./UploadLogs'))
 const LeaveCalendar = lazy(() => import('./LeaveCalendar'))
 const MSOPipeline  = lazy(() => import('./MSOPipeline'))
 const CyclePlanner = lazy(() => import('./CyclePlanner'))
@@ -72,6 +73,7 @@ export default function Dashboard() {
           {activePage === 'Admin'         && <Admin />}
           {activePage === 'Data Upload'    && <DataUpload />}
           {activePage === 'Weekly Upload'  && <WeeklyUpload />}
+          {activePage === 'Upload Logs'    && <UploadLogs />}
           {activePage === 'Leave Calendar'&& <LeaveCalendar />}
           {activePage === 'MSO Pipeline'  && <MSOPipeline />}
           {activePage === 'Cycle Planner' && <CyclePlanner />}

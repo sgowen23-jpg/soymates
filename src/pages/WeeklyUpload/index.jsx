@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { logUpload, countDistinctStores } from '../../lib/uploadLog'
 import { useClient } from '../../context/ClientContext'
 import './WeeklyUpload.css'
 
@@ -261,6 +262,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
         if (repErr) {
           setErrMsg(`Could not load rep names from stores: ${repErr.message}`)
           setPhase('error')
+          logUpload({ client: client ?? null, uploadType: label, fileName, status: `failed: rep lookup — ${repErr.message}` })
           return
         }
         if (!data || data.length === 0) break
@@ -275,6 +277,7 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
       if (delErr) {
         setErrMsg(`Delete failed: ${delErr.message}`)
         setPhase('error')
+        logUpload({ client: client ?? null, uploadType: label, fileName, status: `failed: delete — ${delErr.message}` })
         return
       }
     }
@@ -304,6 +307,14 @@ function Uploader({ label, description, sheetName = 'Export', colMap, table, del
 
     setResult({ count: total, errors, rejected: parseInfo.rejected })
     setPhase('done')
+    logUpload({
+      client: client ?? null,
+      uploadType: label,
+      fileName,
+      rowCount: total,
+      storeCount: countDistinctStores(records),
+      status: errors.length ? `failed: ${errors[0]}` : 'success',
+    })
     if (!errors.length && onSuccess) await onSuccess()
   }
 

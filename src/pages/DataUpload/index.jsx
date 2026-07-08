@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { logUpload, countDistinctStores } from '../../lib/uploadLog'
 import './DataUpload.css'
 
 const CHUNK = 200
@@ -246,6 +247,13 @@ export default function DataUpload() {
 
     setResult({ count: total, errors, masterMatched, masterTotal: masterRecords?.length ?? 0 })
     setPhase('done')
+    logUpload({
+      uploadType: activeTab === 'store-key' ? 'Store Key' : 'Perfect Store Pipeline',
+      fileName,
+      rowCount: total,
+      storeCount: countDistinctStores(records),
+      status: errors.length ? `failed: ${errors[0]}` : 'success',
+    })
   }
 
   const isPs = activeTab === 'perfect-store'

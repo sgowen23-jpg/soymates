@@ -40,6 +40,7 @@ const ADMIN_GROUP = {
   children: [
     { label: 'Data Upload',   icon: '📤' },
     { label: 'Weekly Upload', icon: '📥' },
+    { label: 'Upload Logs',   icon: '📜' },
     { label: 'Admin',         icon: '🛡️' },
   ],
 }
