@@ -42,6 +42,7 @@
 - [ ] **Fix REP_COLORS discrepancy** — Shane is `#CC0000` in Targets and `#c0392b` in LeaveCalendar. Shared constants file will fix this.
 - [ ] **Contact edit from mobile** — Rep can update a store contact's details directly from the store panel without needing a re-upload.
 - [ ] **File attachment library** — Supabase Storage bucket for email attachments. Cap at 5 PDF + 2 Excel files to stay within free-tier storage limits.
+- [ ] **Home.jsx pie chart: add client filter** — `fetchPieData` queries `bnb_26wk` with no `client` filter, so Beiersdorf rows are counted in the Vitasoy pie buckets. Pre-existing (noted 2026-07-10 during product_master wiring), review later.
 
 ## Low — Cleanup
 

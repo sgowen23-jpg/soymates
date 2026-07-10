@@ -1,7 +1,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useClient } from '../../context/ClientContext'
-import { getProductCategory } from '../../utils/productCategory'
+import { getProductCategory, loadProductMaster } from '../../utils/productCategory'
 import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { parseBdfPrefix } from '../../utils/bdfPrefix'
 import { chainColor } from './chainColors'
@@ -112,6 +112,7 @@ setBRows(mapped)
           .select('item_id, sum_of_ranging, uploaded_at')
           .eq('store_id', store.id),
         getRules(),
+        loadProductMaster(),
       ])
 
       const bnb26 = latestBatch(bnb26Res.data)

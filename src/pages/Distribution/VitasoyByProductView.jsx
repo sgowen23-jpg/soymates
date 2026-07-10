@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
-import { getProductCategory } from '../../utils/productCategory'
+import { getProductCategory, loadProductMaster } from '../../utils/productCategory'
 import './BeiersdorfTargetsView.css'
 
 const CATEGORY_ORDER = ['UHT Core', 'Non Core UHT', 'Fresh', 'RTD', 'Yoghurt']
@@ -40,6 +40,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
       setGapStores([])
 
       try {
+        const masterReady = loadProductMaster()
         const { data, error: rpcError } = await supabase.rpc('get_vitasoy_distribution_summary', {
           p_state:          state          === 'All' ? 'All' : state,
           p_rep:            rep            === 'All' ? 'All' : rep,
@@ -47,6 +48,7 @@ export default function VitasoyByProductView({ state, rep, classification }) {
         })
 
         if (rpcError) throw rpcError
+        await masterReady
         if (!cancelled) setProducts(data || [])
       } catch (e) {
         if (!cancelled) setError(e.message)

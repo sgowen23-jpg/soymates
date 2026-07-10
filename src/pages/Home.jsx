@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
 import { CYCLE_YEAR_MAP } from '../constants'
-import { getProductCategory } from '../utils/productCategory'
+import { getProductCategory, loadProductMaster } from '../utils/productCategory'
 import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Home.css'
 
@@ -115,6 +115,7 @@ export default function Home({ onNavigate }) {
 
   useEffect(() => {
     async function fetchPieData() {
+      const masterReady = loadProductMaster()
       let all = [], from = 0
       while (true) {
         const { data } = await supabase
@@ -126,6 +127,7 @@ export default function Home({ onNavigate }) {
         if (data.length < 1000) break
         from += 1000
       }
+      await masterReady
       if (all.length) setPieData(buildPieData(all))
     }
     fetchPieData()
