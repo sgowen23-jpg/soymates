@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
+import { parseBdfPrefix, cleanBdfName as cleanName } from '../../utils/bdfPrefix'
 import './BeiersdorfTargetsView.css'
 
 const STATE_TO_REP = {
@@ -17,9 +18,9 @@ const BDF_CATS = ['All', 'Sea Salt', 'Must Have']
 
 function itemMatchesCat(itemName, cat) {
   if (cat === 'All') return true
-  const prefix = (itemName || '').match(/^\(\s*([^)]+)\)/i)
-  if (cat === 'Sea Salt')  return !!(prefix && prefix[1].toUpperCase().includes('S'))
-  if (cat === 'Must Have') return !!(prefix && prefix[1].toUpperCase().includes('M'))
+  const { isSS, isMSL } = parseBdfPrefix(itemName || '')
+  if (cat === 'Sea Salt')  return isSS
+  if (cat === 'Must Have') return isMSL
   return true
 }
 
@@ -27,11 +28,6 @@ function distColor(pct) {
   if (pct >= 80) return '#16a085'
   if (pct >= 50) return '#e67e22'
   return '#CC0000'
-}
-
-// Strip name prefix like "( S / M ) ", "( M ) ", "( DEL ) "
-function cleanName(name) {
-  return name.replace(/^\(\s*[^)]*\)\s*/i, '').trim()
 }
 
 export default function BeiersdorfTargetsView({ state, rep, classification }) {

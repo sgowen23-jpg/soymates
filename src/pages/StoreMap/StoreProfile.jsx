@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useClient } from '../../context/ClientContext'
 import { getProductCategory } from '../../utils/productCategory'
 import { getRules, isProductValidForStore } from '../../utils/rangingRules'
+import { parseBdfPrefix } from '../../utils/bdfPrefix'
 import { chainColor } from './chainColors'
 import './StoreProfile.css'
 
@@ -25,13 +26,6 @@ function latestBatch(data) {
   return data.filter(r => r.uploaded_at === max)
 }
 
-// Parse ( S ), ( M ), ( S / M ) ranging prefixes from Beiersdorf product names
-function parseRanging(name) {
-  const match = name.match(/^\(\s*([^)]+)\)/)
-  if (!match) return { isS: false, isM: false }
-  const prefix = match[1].toUpperCase()
-  return { isS: prefix.includes('S'), isM: prefix.includes('M') }
-}
 
 export default function StoreProfile({ store, onClose, frozenData }) {
   const ctx    = useClient()
@@ -91,7 +85,7 @@ export default function StoreProfile({ store, onClose, frozenData }) {
         const latest = latestBatch(raw || [])
 
         const mapped = latest.map(r => {
-          const { isS, isM } = parseRanging(r.item_name || '')
+          const { isSS: isS, isMSL: isM } = parseBdfPrefix(r.item_name || '')
           return {
             name:     r.item_name || '',
             category: r.pog_category ? r.pog_category.toUpperCase() : 'OTHER',

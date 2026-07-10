@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useClient } from '../context/ClientContext'
 import { getProductCategory } from '../utils/productCategory'
 import { getRules, isProductValidForStore } from '../utils/rangingRules'
+import { parseBdfPrefix } from '../utils/bdfPrefix'
 import './ByProductView.css'
 
 const VITASOY_SEGMENTS = ['All', 'UHT Core', 'UHT', 'Fresh', 'Yoghurt']
@@ -11,12 +12,10 @@ const BDF_SEGMENTS     = ['All', 'Sea Salt', 'Must Have']
 // Clean product display name (strip leading * and spaces)
 function cleanName(p) { return p.replace(/^\*\s*/, '').trim() }
 
-// Beiersdorf sub-range from product name prefix: (S), (M), (SM)
+// Beiersdorf sub-range from product name prefix — shared parser, local shape
 function bdfPrefix(name) {
-  const m = name.match(/^\(\s*([^)]+)\)/i)
-  if (!m) return { isS: false, isM: false }
-  const p = m[1].toUpperCase()
-  return { isS: p.includes('S'), isM: p.includes('M') }
+  const { isSS, isMSL } = parseBdfPrefix(name)
+  return { isS: isSS, isM: isMSL }
 }
 
 function bdfCategory(name) {

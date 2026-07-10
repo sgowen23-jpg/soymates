@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useClient } from '../../context/ClientContext'
 import { getProductCategory } from '../../utils/productCategory'
 import { getRules, isProductValidForStore } from '../../utils/rangingRules'
+import { parseBdfPrefix } from '../../utils/bdfPrefix'
 import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
 import './ListView.css'
@@ -12,9 +13,9 @@ const BDF_POG_SET = new Set(['deodorants', 'lip care', 'medicinal', 'men groomin
 
 function rowMatchesBdfCat(row, cat) {
   if (cat === 'All') return true
-  const prefix = (row.item_name || '').match(/^\(\s*([^)]+)\)/i)
-  if (cat === 'Sea Salt')  return !!(prefix && prefix[1].toUpperCase().includes('S'))
-  if (cat === 'Must Have') return !!(prefix && prefix[1].toUpperCase().includes('M'))
+  const { isSS, isMSL } = parseBdfPrefix(row.item_name || '')
+  if (cat === 'Sea Salt')  return isSS
+  if (cat === 'Must Have') return isMSL
   if (cat === 'Other') return !BDF_POG_SET.has((row.pog_category || '').toLowerCase())
   return (row.pog_category || '').toLowerCase() === cat.toLowerCase()
 }
@@ -113,10 +114,9 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
             const storeId = storeIdByName[r.store_name]
             if (!storeId) return
             const isGap = (r.ranging_gap ?? 0) > 0
-            const prefix = (r.item_name || '').match(/^\(\s*([^)]+)\)/i)
-            const p = prefix ? prefix[1].toUpperCase() : ''
-            if (p.includes('S')) { if (ssMap[storeId] === undefined) ssMap[storeId] = 0; if (isGap) ssMap[storeId]++ }
-            if (p.includes('M')) { if (mhMap[storeId] === undefined) mhMap[storeId] = 0; if (isGap) mhMap[storeId]++ }
+            const { isSS, isMSL } = parseBdfPrefix(r.item_name || '')
+            if (isSS)  { if (ssMap[storeId] === undefined) ssMap[storeId] = 0; if (isGap) ssMap[storeId]++ }
+            if (isMSL) { if (mhMap[storeId] === undefined) mhMap[storeId] = 0; if (isGap) mhMap[storeId]++ }
             if (map[storeId] === undefined) map[storeId] = 0
             if (isGap) map[storeId]++
           })
@@ -336,14 +336,10 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       stores.forEach(s => { storeByName[s.name] = s })
 
       // Capture scope: SS or MH gaps only.
-      // Exact parseRanging logic copied from StoreProfile.jsx — character-for-character.
+      // Same parseBdfPrefix logic as StoreProfile.jsx.
       const storeRowsMap = {}
       cached.forEach(r => {
-        const match = (r.item_name || '').match(/^\(\s*([^)]+)\)/)
-        if (!match) return
-        const p   = match[1].toUpperCase()
-        const isS = p.includes('S')
-        const isM = p.includes('M')
+        const { isSS: isS, isMSL: isM } = parseBdfPrefix(r.item_name || '')
         if (!isS && !isM) return                     // not SS or MH — omit
         if (!((r.ranging_gap ?? 0) > 0)) return      // stocked — omit
 
