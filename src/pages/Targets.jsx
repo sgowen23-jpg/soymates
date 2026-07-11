@@ -198,6 +198,10 @@ export default function Targets() {
         <div className="tgt-gsv-strip">
           {gsv == null ? (
             <span className="tgt-gsv-na">GSV unavailable</span>
+          ) : gsv.valuedCount === 0 ? (
+            // No valued gains yet — show an explicit empty state so it reads
+            // distinctly from a genuine computed $0.
+            <span className="tgt-gsv-empty">No gains in current cycle yet</span>
           ) : (
             <>
               <div className="tgt-gsv-headline">
