@@ -96,6 +96,65 @@
   font-size: 0.9rem;
 }
 
+/* ─── GSV summary strip ────────────────────────────────────────────────────────── */
+.tgt-gsv-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background: #f7f9fc;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 12px;
+}
+
+.tgt-gsv-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tgt-gsv-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+}
+
+.tgt-gsv-amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #16a085;
+  line-height: 1;
+}
+
+.tgt-gsv-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #b26a00;
+  background: #fff4e0;
+  border: 1px solid #ffe0a8;
+  padding: 2px 7px;
+  border-radius: 999px;
+  align-self: center;
+}
+
+.tgt-gsv-unvalued {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.tgt-gsv-na {
+  font-size: 0.85rem;
+  color: #b26a00;
+  font-weight: 600;
+}
+
 /* ─── Cards grid ───────────────────────────────────────────────────────────────── */
 .tgt-cards {
   display: grid;

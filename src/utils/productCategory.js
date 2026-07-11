@@ -2,8 +2,10 @@ import { supabase } from '../lib/supabase'
 
 const RTD_ITEM_IDS = ['849103', '289772']
 
-// product_master.category → app category strings used everywhere else
-const MASTER_CATEGORY_MAP = {
+// product_master.category → app category strings used everywhere else.
+// Exported so the GSV util can re-key gsv_assumptions (same category strings)
+// through the one translation layer instead of re-declaring it.
+export const MASTER_CATEGORY_MAP = {
   'UHT CORE':     'UHT Core',
   'UHT NON CORE': 'UHT',
   'CHILLED':      'Fresh',

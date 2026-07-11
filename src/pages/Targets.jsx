@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
-import { CURRENT_CYCLE } from '../constants'
+import { CURRENT_CYCLE, CYCLE_STARTS } from '../constants'
+import { loadProductMaster, getProductCategory } from '../utils/productCategory'
+import { loadGsvAssumptions, computeGSV } from '../utils/gsv'
 import './Targets.css'
 
 const REPS = ['Sam Gowen', 'David Saleeb', 'David Kerr', 'Dipen Surani', 'Shane Vandewardt']
@@ -12,12 +14,16 @@ const CATEGORIES = [
   { key: 'DAIRY - YOGHURTS & DESSERTS',          label: 'Yoghurt' },
 ]
 
-const CYCLE_START = '2026-03-20'
+const CYCLE_START = CYCLE_STARTS[CURRENT_CYCLE]
 
 function gainColor(actual, target) {
   if (actual >= target) return '#16a085'
   if (actual >= target * 0.8) return '#e67e22'
   return '#CC0000'
+}
+
+function fmtGsv(v) {
+  return `$${Math.round(v).toLocaleString()}`
 }
 
 export default function Targets() {
@@ -27,6 +33,8 @@ export default function Targets() {
   const [targets, setTargets] = useState({})  // { pog_category: { gains_target, target_dist_pct } }
   const [bnb, setBnb]         = useState({})  // { pog_category: { avgDist, sumGap } }
   const [dis, setDis]         = useState({})  // { pog_category: gainsActual }
+  const [gsv, setGsv]         = useState(null)   // computeGSV result, or null if unavailable
+  const [gsvProvisional, setGsvProvisional] = useState(false)
 
   useEffect(() => { load(rep) }, [rep])
 
@@ -96,23 +104,37 @@ export default function Targets() {
       // C) DIS actuals — gains from store_distribution since cycle start
       const { data: disRows, error: disErr } = await supabase
         .from('store_distribution')
-        .select('id, item_code, movement_type')
+        .select('id, item_code, item_name, movement_type, uploaded_at')
         .eq('rep_name', selectedRep)
         .gte('uploaded_at', CYCLE_START)
         .in('movement_type', ['Gain', 'New Gain'])
       if (disErr) throw disErr
 
-      // Deduplicate by id, join to bnb item→category map
+      // GSV needs product_master (5-way category, incl. the UHT Core/Non-Core split
+      // that pog_category alone can't give) and the assumptions table — both cached.
+      const [, gsvData] = await Promise.all([loadProductMaster(), loadGsvAssumptions()])
+
+      // Deduplicate by id. Two tallies off the same rows:
+      //   gainsByCat — per pog_category (3 buckets), for the DIS gain-count cards
+      //   gsvGains   — per app category (5-way), for GSV valuation
       const seen = new Set()
       const gainsByCat = {}
+      const gsvGains = []
       disRows?.forEach(r => {
         if (seen.has(r.id)) return
         seen.add(r.id)
+        gsvGains.push({
+          category: getProductCategory(r.item_name, null, r.item_code),
+          cartons:  1,   // no carton-quantity column populated; 1 gain row = 1 carton
+          date:     new Date(r.uploaded_at),
+        })
         const cat = itemCatMap.get(Number(r.item_code))
         if (!cat) return
         gainsByCat[cat] = (gainsByCat[cat] || 0) + 1
       })
       setDis(gainsByCat)
+      setGsv(gsvData ? computeGSV(gsvGains, gsvData.assumptions) : null)
+      setGsvProvisional(gsvData?.provisional ?? false)
 
     } catch (e) {
       setErr(e.message)
@@ -171,6 +193,31 @@ export default function Targets() {
       )}
 
       {err && <div className="tgt-error">Error: {err}</div>}
+
+      {!loading && !err && (
+        <div className="tgt-gsv-strip">
+          {gsv == null ? (
+            <span className="tgt-gsv-na">GSV unavailable</span>
+          ) : (
+            <>
+              <div className="tgt-gsv-headline">
+                <span className="tgt-gsv-label">Est. GSV from gains · Cycle {CURRENT_CYCLE}</span>
+                <span className="tgt-gsv-amount">{fmtGsv(gsv.total)}</span>
+                {gsvProvisional && (
+                  <span className="tgt-gsv-badge" title="Based on provisional GSV assumptions — not final figures">
+                    provisional
+                  </span>
+                )}
+              </div>
+              {gsv.unvaluedCount > 0 && (
+                <span className="tgt-gsv-unvalued">
+                  {gsv.unvaluedCount} gain{gsv.unvaluedCount === 1 ? '' : 's'} unvalued (no GSV assumption, e.g. RTD)
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {!loading && !err && (
         <div className="tgt-cards">
