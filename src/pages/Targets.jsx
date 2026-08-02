@@ -6,7 +6,7 @@ import { loadProductMaster, getProductCategory } from '../utils/productCategory'
 import { loadGsvAssumptions, computeGSV } from '../utils/gsv'
 import './Targets.css'
 
-const REPS = ['Sam Gowen', 'David Saleeb', 'David Kerr', 'Dipen Surani', 'Shane Vandewardt']
+const REPS = ['Sam Gowen', 'Melissa Robbie', 'David Kerr', 'Dipen Surani', 'Shane Vandewardt']
 
 const CATEGORIES = [
   { key: 'BEVERAGES - MILK & CREAM LONG LIFE', label: 'UHT' },

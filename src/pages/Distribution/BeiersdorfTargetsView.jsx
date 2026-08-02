@@ -5,7 +5,7 @@ import './BeiersdorfTargetsView.css'
 
 const STATE_TO_REP = {
   SA:  'Sam Gowen',
-  NSW: 'David Saleeb',
+  NSW: 'Melissa Robbie',
   QLD: 'David Kerr',
   WA:  'Dipen Surani',
   VIC: 'Shane Vandewardt',

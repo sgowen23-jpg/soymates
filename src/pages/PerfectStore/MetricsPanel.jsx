@@ -7,7 +7,7 @@ const CLASS_COLORS = {
   'EXPAND':        '#546e7a',
 }
 
-// Display order matches Azra's sheet
+// Display order matches the master sheet
 const ORDER = ['EXPAND', 'DEVELOP', 'GROW', 'PERFECT STORE']
 
 function fmtThreshold(rule) {

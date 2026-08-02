@@ -10,10 +10,9 @@ const PS_CYCLE = String(CURRENT_CYCLE) // Perfect Store cycle — separate from 
 const REP_STATES = {
   'Sam Gowen':          ['South Australia'],
   'Dipen Surani':       ['Western Australia'],
-  'David Saleeb':        ['New South Wales'],
+  'Melissa Robbie':     ['New South Wales'],
   'David Kerr':         ['Queensland'],
   'Shane Vandewardt':   ['Victoria'],
-  'Azra Horell':        ['Victoria'],
 }
 
 const ACTION_TYPES = [

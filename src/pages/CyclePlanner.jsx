@@ -6,12 +6,11 @@ import './CyclePlanner.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const REPS = [
-  'David Saleeb',
+  'Melissa Robbie',
   'Shane Vandewardt',
   'David Kerr',
   'Sam Gowen',
   'Dipen Surani',
-  'Azra Horell',
 ]
 
 const CYCLE_STARTS = {
@@ -24,10 +23,9 @@ const CYCLE_STARTS = {
 const REP_STATES = {
   'Sam Gowen':          ['South Australia'],
   'Dipen Surani':       ['Western Australia'],
-  'David Saleeb':        ['New South Wales'],
+  'Melissa Robbie':     ['New South Wales'],
   'David Kerr':         ['Queensland'],
   'Shane Vandewardt':   ['Victoria'],
-  'Azra Horell':        ['Victoria'],
 }
 
 // Parse FQY target string → visits per 12-wk cycle

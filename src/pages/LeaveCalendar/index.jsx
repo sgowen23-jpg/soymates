@@ -3,8 +3,7 @@ import { supabase } from '../../lib/supabase'
 import './LeaveCalendar.css'
 
 export const REPS = [
-  'Azra Horell',
-  'David Saleeb',
+  'Melissa Robbie',
   'David Kerr',
   'Dipen Surani',
   'Sam Gowen',
@@ -14,8 +13,7 @@ export const REPS = [
 const LEAVE_TYPES = ['Annual Leave', 'Sick Leave', 'RDO', 'Training', 'Regional Trip', 'Public Holiday', 'Other']
 
 export const REP_COLORS = {
-  'Azra Horell':        '#CC0000',
-  'David Saleeb':        '#1a2b5e',
+  'Melissa Robbie':     '#1a2b5e',
   'David Kerr':         '#e67e22',
   'Dipen Surani':       '#8e44ad',
   'Sam Gowen':          '#16a085',

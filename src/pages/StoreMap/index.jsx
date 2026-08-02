@@ -6,7 +6,7 @@ import { useClient } from '../../context/ClientContext'
 import './StoreMap.css'
 
 const STATES = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
-const REPS   = ['All', 'Azra Horell', 'David Kerr', 'David Saleeb', 'Dipen Surani', 'Sam Gowen', 'Shane Vandewardt']
+const REPS   = ['All', 'David Kerr', 'Dipen Surani', 'Melissa Robbie', 'Sam Gowen', 'Shane Vandewardt']
 
 export default function StoreMap() {
   const [selectedStore, setSelectedStore] = useState(null)

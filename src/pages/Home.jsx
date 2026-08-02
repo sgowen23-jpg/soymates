@@ -11,8 +11,7 @@ const CYCLE_START = new Date('2026-03-30')
 const CYCLE_WEEKS = 12
 
 const REPS = [
-  'Azra Horell',
-  'David Saleeb',
+  'Melissa Robbie',
   'David Kerr',
   'Dipen Surani',
   'Sam Gowen',

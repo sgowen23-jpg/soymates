@@ -13,10 +13,7 @@ const REP_ORDER = [
   'Shane Vandewardt',
   'Sam Gowen',
   'Dipen Surani',
-  'Sean Cooper',
-  'David Saleeb',
-  'Ashleigh Tasdarian',
-  'Azra Horell',
+  'Melissa Robbie',
 ]
 
 const REP_COLORS = {
@@ -24,10 +21,7 @@ const REP_COLORS = {
   'Shane Vandewardt':   '#CC0000',
   'David Kerr':         '#16a085',
   'Dipen Surani':       '#e67e22',
-  'Ashleigh Tasdarian': '#8e44ad',
-  'Azra Horell':        '#2980b9',
-  'David Saleeb':       '#888888',
-  'Sean Cooper':        '#aaaaaa',
+  'Melissa Robbie':     '#2980b9',
 }
 
 function repColor(rep) { return REP_COLORS[rep] || '#555' }
