@@ -197,6 +197,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
               const { data: batch } = await supabase
                 .from(table)
                 .select('store_id, item_id, item_name, pog_category, sum_of_ranging')
+                .eq('client', 'vitasoy')
                 .in('store_id', visibleIds)
                 .range(from, from + 999)
               if (!batch || batch.length === 0) break

@@ -120,6 +120,7 @@ export default function Home({ onNavigate }) {
         const { data } = await supabase
           .from('bnb_26wk')
           .select('item_id, item_name, pog_category, sum_of_ranging, ranging_gap')
+          .eq('client', 'vitasoy')
           .range(from, from + 999)
         if (!data || data.length === 0) break
         all = [...all, ...data]

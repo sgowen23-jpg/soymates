@@ -107,9 +107,11 @@ setBRows(mapped)
           .eq('location_id', store.id),
         supabase.from('bnb_26wk')
           .select('item_id, sum_of_ranging, pog_category, uploaded_at')
+          .eq('client', 'vitasoy')
           .eq('store_id', store.id),
         supabase.from('bnb_13wk')
           .select('item_id, sum_of_ranging, uploaded_at')
+          .eq('client', 'vitasoy')
           .eq('store_id', store.id),
         getRules(),
         loadProductMaster(),

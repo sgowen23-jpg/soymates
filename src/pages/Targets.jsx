@@ -64,6 +64,7 @@ export default function Targets() {
       const { data: latestRow, error: latestErr } = await supabase
         .from('bnb_26wk')
         .select('uploaded_at')
+        .eq('client', 'vitasoy')
         .eq('rep_name', selectedRep)
         .order('uploaded_at', { ascending: false })
         .limit(1)
@@ -77,6 +78,7 @@ export default function Targets() {
         const { data: bnbRows, error: bnbErr } = await supabase
           .from('bnb_26wk')
           .select('pog_category, distribution_percentage, ranging_gap, item_id')
+          .eq('client', 'vitasoy')
           .eq('rep_name', selectedRep)
           .eq('uploaded_at', latestRow.uploaded_at)
         if (bnbErr) throw bnbErr
