@@ -145,6 +145,10 @@
   border: 1.5px solid #e8eaf0;
   border-radius: 10px;
   overflow: hidden;
+  /* Prevent the flex column parent (.bdft-page) from squishing sections to fit
+     the viewport — which, combined with overflow:hidden, clipped expanded gap
+     panels on short (mobile) screens instead of letting the page scroll. */
+  flex-shrink: 0;
 }
 
 .bdft-section-hdr {
