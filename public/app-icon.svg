@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Team VB">
+  <title>Team VB</title>
+  <!-- full-bleed blue field (safe for maskable icons) -->
+  <rect x="0" y="0" width="512" height="512" fill="#0032A1"/>
+  <!-- VB wordmark, reversed white, kept inside the maskable safe zone -->
+  <text x="256" y="320" text-anchor="middle" fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" font-size="215" font-weight="800" letter-spacing="-8">VB</text>
+  <!-- red accent underscore -->
+  <rect x="211" y="356" width="90" height="15" rx="7" fill="#DC2A3A"/>
+</svg>
