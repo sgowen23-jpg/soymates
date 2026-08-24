@@ -1,27 +1,369 @@
+/* ============================================================================
+   Soymates / Team VB — Design System
+   Single source of truth for colour, type, spacing, radius, shadow.
+   Palette: clean slate-neutral base + ONE refined red accent.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 :root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* App is a light-mode product — opt native form controls, scrollbars and
+     UA widgets into the light scheme so they never render dark on dark-mode OS. */
+  color-scheme: light;
+
+  /* ── Typeface ─────────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, -apple-system, sans-serif;
+
+  /* ── Neutral base (cool slate) ────────────────────────────────────────── */
+  --bg: #f5f6f8;            /* app canvas */
+  --surface: #ffffff;       /* cards, panels */
+  --surface-2: #f2f4f7;     /* subtle fills, hovered rows */
+  --surface-3: #e9edf2;     /* pressed / stronger fills */
+
+  --border: #e7e9ef;        /* hairline borders */
+  --border-strong: #d5d9e2; /* dividers with more weight */
+
+  --text: #161b26;          /* primary */
+  --text-secondary: #4b5462;/* secondary body */
+  --text-muted: #7a828f;    /* muted / captions */
+  --text-faint: #a6adb8;    /* faint / placeholders */
+
+  /* ── Brand accent (single refined red) ────────────────────────────────── */
+  --brand: #dc2a3a;
+  --brand-hover: #c31f2e;
+  --brand-active: #a81a27;
+  --brand-weak: #fdecee;    /* tinted background */
+  --brand-contrast: #ffffff;
+
+  /* ── Team VB blue (structural accent — sidebar groups, outlines) ──────── */
+  --blue: #0032a1;
+  --blue-hover: #002784;
+  --blue-weak: #eaf0fb;     /* tinted background */
+  --blue-border: #b9cbec;   /* soft blue hairline */
+
+  /* ── Structural dark (deep surfaces / overlays) ───────────────────────── */
+  --ink: #131722;
+  --ink-2: #1c212e;
+  --ink-line: rgba(255, 255, 255, 0.09);
+  --ink-text: rgba(255, 255, 255, 0.68);
+  --ink-text-strong: #ffffff;
+
+  /* ── Semantic (real status only) ──────────────────────────────────────── */
+  --success: #16a34a;
+  --success-weak: #e8f6ee;
+  --success-text: #15803d;
+  --warning: #e08a1e;
+  --warning-weak: #fdf3e5;
+  --warning-text: #b4650a;
+  --danger: #dc2626;
+  --danger-weak: #fdecec;
+  --danger-text: #b91c1c;
+
+  /* ── Type scale ───────────────────────────────────────────────────────── */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-3xl: 32px;
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heavy: 800;
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+
+  /* ── Spacing scale (4px base) ─────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* ── Shadow (soft, layered — depth over hard outlines) ────────────────── */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 2px 4px rgba(16, 24, 40, 0.05), 0 6px 16px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 10px 28px rgba(16, 24, 40, 0.12), 0 3px 8px rgba(16, 24, 40, 0.06);
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --transition: 0.15s ease;
+  --transition-slow: 0.28s ease;
+
+  font-family: var(--font-sans);
   font-size: 16px;
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
-  background: #f5f5f0;
-  color: #1a1a1a;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: var(--leading-normal);
 }
 
 #root {
   min-height: 100vh;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4 {
   margin: 0;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.011em;
+  color: var(--text);
+  font-weight: var(--fw-bold);
 }
 
 p {
   margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Consistent, refined focus ring across the app */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--brand-weak);
+  color: var(--brand-active);
+}
+
+/* Refined scrollbars (WebKit) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: #c2c8d2; background-clip: padding-box; }
+
+
+/* ============================================================================
+   COMPONENT KIT — reusable, opt-in utility classes.
+   These do not touch existing class hooks; pages adopt them where useful.
+   ============================================================================ */
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--pad {
+  padding: var(--space-5);
+}
+
+.card--hover {
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  cursor: pointer;
+}
+.card--hover:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+/* ── Section header ───────────────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+/* Small UPPERCASE label */
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--text-md);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn--primary {
+  background: var(--brand);
+  color: var(--brand-contrast);
+  box-shadow: var(--shadow-sm);
+}
+.btn--primary:hover:not(:disabled) { background: var(--brand-hover); }
+.btn--primary:active:not(:disabled) { background: var(--brand-active); }
+
+.btn--ghost {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* ── Stat tile / KPI ──────────────────────────────────────────────────────── */
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.stat-tile__label {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.stat-tile__value {
+  font-size: var(--text-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ── Badge ────────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+.badge--success { background: var(--success-weak); color: var(--success-text); }
+.badge--warning { background: var(--warning-weak); color: var(--warning-text); }
+.badge--danger  { background: var(--danger-weak);  color: var(--danger-text); }
+.badge--brand   { background: var(--brand-weak);   color: var(--brand-active); }
+
+/* ── Data table ───────────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+}
+.data-table thead th {
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.data-table tbody td {
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.data-table tbody tr:hover td { background: var(--surface-2); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state__icon {
+  font-size: 28px;
+  opacity: 0.6;
+  margin-bottom: var(--space-1);
+}
+.empty-state__title {
+  font-size: var(--text-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+}
+.empty-state__hint {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  max-width: 32ch;
+}
+
+/* ── Skeleton / loading ───────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }

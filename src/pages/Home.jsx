@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { CYCLE_NUMBER, CATEGORIES, getCategorySummary, getOverallSummary } from '../data/targets'
-import { CYCLE_YEAR_MAP } from '../constants'
+import { CYCLE_NUMBER, CATEGORIES, getCategorySummary } from '../data/targets'
+import { CYCLE_YEAR_MAP, REPS, REP_STATES, STATE_COLORS } from '../constants'
 import { getProductCategory, loadProductMaster } from '../utils/productCategory'
 import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Home.css'
@@ -10,12 +10,20 @@ import './Home.css'
 const CYCLE_START = new Date('2026-03-30')
 const CYCLE_WEEKS = 12
 
-const REPS = [
-  'Melissa Robbie',
-  'David Kerr',
-  'Dipen Surani',
-  'Sam Gowen',
-  'Shane Vandewardt',
+// Quick-action tiles across the top — real tab names.
+const QUICK_ACTIONS = [
+  { label: 'Promotions',     icon: '🏷️' },
+  { label: 'Perfect Store',  icon: '🎯' },
+  { label: 'Leave Calendar', icon: '📅' },
+]
+
+// Where a rep tile drills into. `page` navigates in-app; `href` opens externally.
+const REP_TOOLS = [
+  { label: 'Distribution',   icon: '📦', page: 'Distribution' },
+  { label: 'Store Map',      icon: '🗺️', page: 'Store Map' },
+  { label: 'Store Contacts', icon: '📇', page: 'Store Contacts' },
+  { label: 'Cycle Planner',  icon: '📆', page: 'Cycle Planner' },
+  { label: 'Order Sheets',   icon: '📝', href: '/vitasoy-aug26-order.html' },
 ]
 
 function buildPieData(rows) {
@@ -49,7 +57,6 @@ function buildPieData(rows) {
     { label: 'Yoghurt',         segments: toSegments(buckets.Yoghurt) },
   ]
 }
-
 
 function toDateStr(d) {
   const y = d.getFullYear()
@@ -104,9 +111,14 @@ function PieChart({ segments, size = 80 }) {
   )
 }
 
+function initialsOf(name) {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+}
+
 export default function Home({ onNavigate }) {
   const [leaveEntries, setLeaveEntries] = useState([])
   const [pieData,      setPieData]      = useState(null)
+  const [drillRep,     setDrillRep]     = useState(null)  // rep object or {name:'Everyone'}
   const freshness = useDataFreshness()
   const today     = new Date()
   const todayStr  = toDateStr(today)
@@ -145,65 +157,96 @@ export default function Home({ onNavigate }) {
     fetchLeave()
   }, [])
 
-  // Build per-rep leave status for today
   function getRepLeave(rep) {
     return leaveEntries.filter(e => e.rep_name === rep)
   }
-
   function isOnLeave(rep) {
     return getRepLeave(rep).length > 0
   }
-
   function leaveTooltip(rep) {
     const entries = getRepLeave(rep)
-    if (!entries.length) return 'Available'
+    if (!entries.length) return 'Available today'
     return entries.map(e =>
       `${e.leave_type}: ${fmtShort(e.start_date)}${e.start_date !== e.end_date ? ' → ' + fmtShort(e.end_date) : ''}`
     ).join('\n')
   }
 
+  // Open a rep's tools; `rep === null` means "Everyone" (no rep filter downstream).
+  function openTool(tool) {
+    if (tool.href) {
+      window.open(tool.href, '_blank', 'noopener,noreferrer')
+    } else {
+      onNavigate(tool.page, drillRep?.name === 'Everyone' ? null : drillRep?.name)
+    }
+    setDrillRep(null)
+  }
+
+  const drillColor = drillRep && drillRep.name !== 'Everyone'
+    ? STATE_COLORS[REP_STATES[drillRep.name]]?.c
+    : '#6b7280'
+
   return (
-    <div className="home-page">
+    <div className="launcher">
       {/* Header */}
-      <div className="home-header">
-        <div className="home-date">{formatDate(today)}</div>
-        <div className="home-cycle-badge">
+      <div className="lc-header">
+        <div className="lc-date">{formatDate(today)}</div>
+        <div className="lc-cycle-badge">
           {daysLeft != null
             ? `Cycle starts in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
             : `Cycle ${CYCLE_NUMBER} ${CYCLE_YEAR_MAP[CYCLE_NUMBER]} — ${label}`}
         </div>
       </div>
 
-      {/* Team Availability */}
-      <section className="home-section">
-        <h2 className="home-section-title">
-          Team Availability
-          <span className="home-section-hint"> — click a rep to view leave calendar</span>
-        </h2>
-        <div className="rep-cards">
+      {/* Quick actions */}
+      <section>
+        <h2 className="lc-label">Quick actions</h2>
+        <div className="lc-grid3">
+          {QUICK_ACTIONS.map(a => (
+            <button key={a.label} className="qa-tile" onClick={() => onNavigate(a.label)}>
+              <span className="qa-icon">{a.icon}</span>
+              <span className="qa-title">{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Reps */}
+      <section>
+        <h2 className="lc-label">Reps <span className="lc-hint">— tap a name to open their tools</span></h2>
+        <div className="lc-grid3">
           {REPS.map(rep => {
+            const state   = REP_STATES[rep]
+            const colors  = STATE_COLORS[state] || { c: '#6b7280', border: 'var(--border)' }
             const onLeave = isOnLeave(rep)
-            const tip = leaveTooltip(rep)
-            const initials = rep.split(' ').map(n => n[0]).join('')
             return (
               <button
                 key={rep}
-                className={`rep-card ${onLeave ? 'unavailable' : 'available'}`}
-                onClick={() => onNavigate('Leave Calendar')}
+                className="rep-tile"
+                style={{ '--rep-c': colors.c, '--rep-border': colors.border }}
+                onClick={() => setDrillRep({ name: rep })}
+                title={leaveTooltip(rep)}
               >
-                <div className="rep-tooltip">{tip}</div>
-                <span className="rep-status-dot" />
-                <span className="rep-initials">{initials}</span>
-                <span className="rep-name">{rep.split(' ')[0]}</span>
+                <span className={`rep-dot ${onLeave ? 'off' : 'ok'}`} />
+                <span className="rep-ini">{initialsOf(rep)}</span>
+                <span className="rep-first">{rep.split(' ')[0]}</span>
+                <span className="rep-state">{state}</span>
               </button>
             )
           })}
+          <button
+            className="rep-tile everyone"
+            onClick={() => setDrillRep({ name: 'Everyone' })}
+          >
+            <span className="rep-ini">👥</span>
+            <span className="rep-first">Everyone</span>
+            <span className="rep-state">All reps</span>
+          </button>
         </div>
       </section>
 
       {/* Cycle Progress */}
-      <section className="home-section">
-        <h2 className="home-section-title">Cycle Progress — Cycle {CYCLE_NUMBER}</h2>
+      <section className="lc-panel">
+        <h2 className="lc-label">Cycle Progress — Cycle {CYCLE_NUMBER}</h2>
         <div className="cycle-progress-wrap">
           <div className="cycle-weeks">
             {Array.from({ length: CYCLE_WEEKS }, (_, i) => i + 1).map(w => (
@@ -222,10 +265,10 @@ export default function Home({ onNavigate }) {
       </section>
 
       {/* Distribution Charts */}
-      <section className="home-section">
-        <h2 className="home-section-title">
+      <section className="lc-panel">
+        <h2 className="lc-label">
           Distribution Summary
-          <span className="home-section-hint"> — click to view details</span>
+          <span className="lc-hint"> — click to view details</span>
         </h2>
         {(freshness.bnb26 || freshness.bnb13 || freshness.dis) && (
           <p className="home-freshness">
@@ -249,15 +292,15 @@ export default function Home({ onNavigate }) {
               </div>
             </button>
           ))}
-          {!pieData && <span className="home-section-hint">Loading…</span>}
+          {!pieData && <span className="lc-hint">Loading…</span>}
         </div>
       </section>
 
       {/* Targets */}
-      <section className="home-section">
-        <h2 className="home-section-title">
+      <section className="lc-panel">
+        <h2 className="lc-label">
           Distribution Targets — Cycle {CYCLE_NUMBER}
-          <span className="home-section-hint"> — click to view details</span>
+          <span className="lc-hint"> — click to view details</span>
         </h2>
         <div className="pie-row">
           {CATEGORIES.map(cat => {
@@ -291,6 +334,32 @@ export default function Home({ onNavigate }) {
           })}
         </div>
       </section>
+
+      {/* Rep drill-down sheet */}
+      {drillRep && (
+        <div className="rep-scrim" onClick={e => { if (e.target === e.currentTarget) setDrillRep(null) }}>
+          <div className="rep-sheet">
+            <div className="rep-sheet-head">
+              <div className="rep-sheet-badge" style={{ background: drillColor }}>
+                {drillRep.name === 'Everyone' ? '👥' : initialsOf(drillRep.name)}
+              </div>
+              <div>
+                <div className="rep-sheet-title">{drillRep.name}</div>
+                <div className="rep-sheet-sub">Where to?</div>
+              </div>
+              <button className="rep-sheet-close" onClick={() => setDrillRep(null)} aria-label="Close">✕</button>
+            </div>
+            <div className="rep-sheet-grid">
+              {REP_TOOLS.map(tool => (
+                <button key={tool.label} className="rep-dest" onClick={() => openTool(tool)}>
+                  <span className="rep-dest-icon">{tool.icon}</span>
+                  <span className="rep-dest-label">{tool.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

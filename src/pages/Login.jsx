@@ -24,7 +24,7 @@ export default function Login() {
       <div className="login-card">
         <div className="login-logo">
           <div className="login-logo-icon">
-            <img src="/vitasoy-logo-white.svg" alt="Vitasoy" className="login-vitasoy-logo" />
+            <img src="/team-vb-logo.svg" alt="Team VB" className="login-vb-logo" />
           </div>
           <h1>{APP_NAME}</h1>
           <p>Field Sales Portal</p>

@@ -1,15 +1,16 @@
 .sidebar {
   height: 100vh;
-  background: #0032A1;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: width 0.2s ease;
   overflow: hidden;
   z-index: 200;
+  border-right: 1px solid var(--border);
 }
 
-.sidebar.open   { width: 220px; }
+.sidebar.open   { width: 232px; }
 .sidebar.closed { width: 48px; }
 
 @media (max-width: 767px) {
@@ -18,6 +19,7 @@
     top: 0;
     left: 0;
     height: 100%;
+    box-shadow: var(--shadow-lg);
   }
   .sidebar.closed { width: 0; }
 }
@@ -30,7 +32,7 @@
   align-items: center;
   justify-content: center;
   padding: 14px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid var(--border);
   min-height: 72px;
 }
 
@@ -45,25 +47,26 @@
   background: none;
   border: none;
   cursor: pointer;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
+  transition: background var(--transition);
 }
+
+.hamburger:hover { background: var(--surface-2); }
 
 .hamburger span {
   display: block;
   width: 18px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--text-secondary);
   border-radius: 2px;
-  transition: background 0.12s;
+  transition: background var(--transition);
 }
 
-.hamburger:hover span {
-  background: #fff;
-}
+.hamburger:hover span { background: var(--text); }
 
 .sidebar-vb-badge {
-  border-radius: 10px;
-  border: 2px solid #fff;
+  border-radius: 11px;
   box-sizing: border-box;
   display: block;
 }
@@ -81,62 +84,76 @@
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem 1rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background 0.12s, color 0.12s;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  margin: 2px 8px;
+  width: calc(100% - 16px);
+  color: var(--text);
+  font-size: var(--text-md);
+  font-weight: var(--fw-medium);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
   background: none;
-  border: none;
-  width: 100%;
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
 }
 
-/* ── Top-level items: red rounded bars ───────────────────────────────────── */
-
-.sidebar-link:not(.sidebar-child) {
-  background: #C21531;
-  color: #fff;
-  border-radius: 9px;
-  margin: 3.5px 8px;
-  width: calc(100% - 16px);
+.sidebar-link:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
-.sidebar-link:not(.sidebar-child):hover {
-  background: #d01a35;
-  color: #fff;
+/* Active leaf / top-level item — red outline (the current page) */
+.sidebar-link.active {
+  background: var(--brand-weak);
+  border-color: var(--brand);
+  color: var(--brand-active);
+  font-weight: var(--fw-semibold);
 }
+.sidebar-link.active:hover { background: var(--brand-weak); }
 
-.sidebar-link:not(.sidebar-child).active {
-  background: #E0223F;
-  color: #fff;
-  border-left: 3px solid rgba(255, 255, 255, 0.85);
-  padding-left: calc(1rem - 3px);
+/* Expanded / active section — blue outline (distinct from the red active page) */
+.sidebar-group-header.open,
+.sidebar-group-header.active {
+  background: var(--blue-weak);
+  border-color: var(--blue-border);
+  color: var(--blue);
+  font-weight: var(--fw-semibold);
+}
+.sidebar-group-header.open:hover,
+.sidebar-group-header.active:hover { background: var(--blue-weak); }
+
+/* A child sub-group header (e.g. Order Sheets) sits inside a group — keep it
+   readable when collapsed, blue when open */
+.sidebar-child.sidebar-group-header:not(.open) {
+  color: var(--text-secondary);
+  background: none;
+  border-color: transparent;
 }
 
 /* ── Child items inside expanded groups ──────────────────────────────────── */
 
 .sidebar-child {
   padding-left: 2rem;
-  font-size: 0.875rem;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  margin: 1px 8px;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
 }
 
 .sidebar-child:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .sidebar-child.active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-left: 3px solid rgba(255, 255, 255, 0.75);
-  padding-left: calc(2rem - 3px);
+  background: var(--brand-weak);
+  border-color: var(--brand);
+  color: var(--brand-active);
+  font-weight: var(--fw-semibold);
+  padding-left: calc(2rem - 1px);
 }
 
 /* ── Group header chevron ────────────────────────────────────────────────── */
@@ -147,12 +164,15 @@
 
 .sidebar-chevron {
   margin-left: auto;
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.05rem;
+  color: var(--text-faint);
   display: inline-block;
-  transition: transform 0.15s;
+  transition: transform var(--transition);
   line-height: 1;
 }
+
+.sidebar-group-header.open .sidebar-chevron,
+.sidebar-group-header.active .sidebar-chevron { color: var(--blue); }
 
 .sidebar-chevron.open {
   transform: rotate(90deg);
@@ -161,24 +181,25 @@
 /* ── Misc ────────────────────────────────────────────────────────────────── */
 
 .sidebar-divider {
-  margin: 6px 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 8px 12px;
+  border-top: 1px solid var(--border);
 }
 
 .sidebar-icon {
-  font-size: 1rem;
+  font-size: 0.95rem;
   width: 1.25rem;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .sidebar-soon {
   margin-left: auto;
   font-size: 0.6rem;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.05em;
+  background: var(--surface-3);
+  color: var(--text-muted);
   padding: 2px 5px;
   border-radius: 4px;
 }
@@ -191,10 +212,10 @@
 }
 
 .sidebar-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.02em;
+  font-size: var(--text-lg);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -208,51 +229,52 @@
 
 .sidebar-client-btn {
   flex: 1;
-  padding: 0.38rem 0;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 5px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: 0.4rem 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: all 0.12s;
+  transition: all var(--transition);
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
 
 .sidebar-client-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .sidebar-client-btn.active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--blue-weak);
+  color: var(--blue);
+  border-color: var(--blue-border);
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 
 .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .sidebar-signout {
   width: 100%;
-  padding: 0.5rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.8rem;
+  padding: 0.55rem;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: all 0.12s;
+  transition: all var(--transition);
 }
 
 .sidebar-signout:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
 }
