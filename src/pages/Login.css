@@ -3,109 +3,138 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f0;
+  padding: var(--space-5);
+  background:
+    radial-gradient(1100px 600px at 50% -10%, #ffffff 0%, rgba(255,255,255,0) 60%),
+    var(--bg);
 }
 
 .login-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-7) var(--space-7);
   width: 100%;
-  max-width: 380px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-  border-top: 5px solid #1a2b5e;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Thin brand accent along the top edge */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--brand);
 }
 
 .login-logo {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .login-logo-icon {
   display: flex;
   justify-content: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-4);
 }
 
-.login-vitasoy-logo {
-  width: 160px;
-  height: auto;
-  background: #CC0000;
-  border-radius: 12px;
-  padding: 14px 20px;
+.login-vb-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .login-logo h1 {
-  margin: 0.25rem 0 0.25rem;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .login-logo p {
   margin: 0;
-  font-size: 0.85rem;
-  color: #888;
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-2);
 }
 
 .field label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #444;
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .field input {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-md);
+  color: var(--text);
+  background: var(--surface);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
+.field input::placeholder { color: var(--text-faint); }
+
 .field input:focus {
-  border-color: #CC0000;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-weak);
 }
 
 .login-error {
-  font-size: 0.85rem;
-  color: #c0392b;
+  font-size: var(--text-sm);
+  color: var(--danger-text);
   margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: #fdecea;
-  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  background: var(--danger-weak);
+  border: 1px solid #f6cfcf;
+  border-radius: var(--radius-sm);
 }
 
 .login-btn {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   padding: 0.75rem;
-  background: #CC0000;
-  color: white;
+  background: var(--brand);
+  color: var(--brand-contrast);
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-md);
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: background 0.15s;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition), box-shadow var(--transition);
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #a30000;
+  background: var(--brand-hover);
+  box-shadow: var(--shadow-md);
 }
+
+.login-btn:active:not(:disabled) { background: var(--brand-active); }
 
 .login-btn:disabled {
   opacity: 0.6;

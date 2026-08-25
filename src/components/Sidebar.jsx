@@ -83,7 +83,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
                 return (
                   <div key={item.group}>
                     <button
-                      className={`sidebar-link sidebar-group-header ${hasActiveChild ? 'active' : ''}`}
+                      className={`sidebar-link sidebar-group-header ${isGroupOpen ? 'open' : ''} ${hasActiveChild ? 'active' : ''}`}
                       onClick={() => toggleGroup(item.group)}
                     >
                       <span className="sidebar-icon">{item.icon}</span>
@@ -98,7 +98,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
                             return (
                               <div key={child.group}>
                                 <button
-                                  className="sidebar-link sidebar-child sidebar-group-header"
+                                  className={`sidebar-link sidebar-child sidebar-group-header ${isSubOpen ? 'open' : ''}`}
                                   onClick={() => setOpenSubMenu(prev => prev === child.group ? null : child.group)}
                                 >
                                   <span className="sidebar-icon">{child.icon}</span>
@@ -189,7 +189,7 @@ export default function Sidebar({ active, onNavigate, isOpen, onToggle }) {
               return (
                 <div>
                   <button
-                    className={`sidebar-link sidebar-group-header ${hasActiveChild ? 'active' : ''}`}
+                    className={`sidebar-link sidebar-group-header ${isGroupOpen ? 'open' : ''} ${hasActiveChild ? 'active' : ''}`}
                     onClick={() => toggleGroup(ADMIN_GROUP.group)}
                   >
                     <span className="sidebar-icon">{ADMIN_GROUP.icon}</span>

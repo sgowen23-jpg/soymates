@@ -1,0 +1,25 @@
+{
+  "name": "Team VB — Field Sales Portal",
+  "short_name": "Team VB",
+  "description": "Vitasoy field sales portal for the Team VB reps.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0032A1",
+  "theme_color": "#0032A1",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
+    }
+  ]
+}

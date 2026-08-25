@@ -14,11 +14,13 @@ const STATES          = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
 const REPS            = ['All', 'David Kerr', 'Dipen Surani', 'Melissa Robbie', 'Sam Gowen', 'Shane Vandewardt']
 const CLASSIFICATIONS = ['All', 'Metro', 'Regional', 'Remote']
 
-export default function Distribution() {
+export default function Distribution({ initialRep = null }) {
   const [view, setView]               = useState('store')
   const [selectedStore, setSelectedStore] = useState(null)
   const [state, setState]             = useState('All')
-  const [rep, setRep]                 = useState('All')
+  const [rep, setRep]                 = useState(
+    initialRep && REPS.includes(initialRep) ? initialRep : 'All'
+  )
   const [classification, setClassification] = useState('All')
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
