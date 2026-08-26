@@ -52,7 +52,7 @@ const BNB_COLS = [
   { srcs: ['Store ID'],                                  dest: 'store_id',                parse: toInt,   required: true },
   { srcs: ['MSO'],                                       dest: 'mso',                     parse: toStr,   required: true },
   { srcs: ['Item Name'],                                 dest: 'item_name',               parse: toStr,   required: true },
-  { srcs: ['Item ID'],                                   dest: 'item_id',                 parse: toInt,   required: true },
+  { srcs: ['Item ID', 'METCASH CODE'],                   dest: 'item_id',                 parse: toInt,   required: true },
   { srcs: ['POG Category'],                              dest: 'pog_category',            parse: toStr,   required: true },
   { srcs: ['Count of Ranging', 'COUNT RANGING'],         dest: 'count_of_ranging',        parse: toInt,   required: true },
   { srcs: ['Sum of Ranging', 'SUM RANGING'],             dest: 'sum_of_ranging',          parse: toInt,   required: true },
