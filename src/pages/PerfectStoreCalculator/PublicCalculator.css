@@ -1,0 +1,34 @@
+.pubcalc-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.pubcalc-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 56px;
+  padding: 0 var(--space-4);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.pubcalc-logo { border-radius: 9px; display: block; }
+
+.pubcalc-title {
+  font-size: var(--text-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.pubcalc-main {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
