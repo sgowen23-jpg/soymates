@@ -19,6 +19,7 @@ const Promotions      = lazy(() => import('./Promotions'))
 const StoreContacts   = lazy(() => import('./StoreContacts'))
 const PerfectStore    = lazy(() => import('./PerfectStore'))
 const Coverage        = lazy(() => import('./Coverage'))
+const PerfectStoreCalculator = lazy(() => import('./PerfectStoreCalculator'))
 
 function PageSpinner() {
   return (
@@ -36,6 +37,7 @@ const OVERFLOW = [
   {
     group: 'Data & reports',
     items: [
+      { label: 'Perfect Store Calculator', icon: '🧮' },
       { label: 'MSO Pipeline',  icon: '📋' },
       { label: 'Coverage',      icon: '📍' },
       { label: 'GSV',           icon: '💰' },
@@ -142,6 +144,7 @@ export default function Dashboard() {
             {activePage === 'Promotions'    && <Promotions />}
             {activePage === 'Perfect Store' && <PerfectStore />}
             {activePage === 'Coverage'     && <Coverage />}
+            {activePage === 'Perfect Store Calculator' && <PerfectStoreCalculator />}
             {PLACEHOLDER_PAGES.includes(activePage) && (
               <div className="placeholder-page">
                 <h2>{activePage}</h2>

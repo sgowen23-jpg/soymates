@@ -14,6 +14,7 @@ const CYCLE_WEEKS = 12
 const QUICK_ACTIONS = [
   { label: 'Promotions',     icon: '🏷️' },
   { label: 'Perfect Store',  icon: '🎯' },
+  { label: 'Perfect Store Calculator', icon: '🧮' },
   { label: 'Leave Calendar', icon: '📅' },
 ]
 
