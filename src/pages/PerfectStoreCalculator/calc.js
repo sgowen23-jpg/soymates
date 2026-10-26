@@ -11,7 +11,43 @@ export const FIELDS = [
 
 export const EMPTY_INPUTS = Object.fromEntries(FIELDS.map(f => [f.key, '']))
 
+export const FACINGS_PER_SHELF = 9
+
 const MAX_DIGITS = 4
+const MAX_SHELF_CHARS = 24
+
+// Shelves box: digits, one decimal point per number, and + to add bays (e.g. "7+6+8").
+export function sanitiseShelves(raw) {
+  return String(raw ?? '')
+    .replace(/[^\d.+]/g, '')
+    .replace(/\+{2,}/g, '+')
+    .split('+')
+    .map(part => part.replace(/(\..*)\./g, '$1'))
+    .join('+')
+    .slice(0, MAX_SHELF_CHARS)
+}
+
+// "7+6+8" -> 21, "2.5" -> 2.5, "7+" (mid-typing) -> 7, "" -> null
+export function parseShelves(str) {
+  const parts = String(str ?? '').split('+').filter(p => p !== '' && p !== '.')
+  if (!parts.length) return null
+  const total = parts.reduce((sum, p) => sum + Number(p), 0)
+  return Number.isFinite(total) ? total : null
+}
+
+// Shelves string -> facings string ('' when nothing usable entered)
+export function shelvesToFacings(str) {
+  const shelves = parseShelves(str)
+  if (shelves == null) return ''
+  return String(Math.min(9999, Math.round(shelves * FACINGS_PER_SHELF)))
+}
+
+// Facings string -> shelves string for display: 27 -> "3", 31 -> "3.4"
+export function facingsToShelves(str) {
+  if (str === '' || str == null) return ''
+  const s = Number(str) / FACINGS_PER_SHELF
+  return Number.isInteger(s) ? String(s) : s.toFixed(1)
+}
 
 // Keep digits only: blocks minus signs, decimals, spaces and pasted junk.
 export function sanitise(raw) {

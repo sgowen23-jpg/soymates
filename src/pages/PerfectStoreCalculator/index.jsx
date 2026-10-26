@@ -1,13 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
-import { FIELDS, EMPTY_INPUTS, sanitise, calculate, formatResults } from './calc'
+import {
+  FIELDS, EMPTY_INPUTS, sanitise, sanitiseShelves, parseShelves,
+  shelvesToFacings, facingsToShelves, calculate, formatResults,
+} from './calc'
 import './PerfectStoreCalculator.css'
 
-const GROUPS = [
-  { title: 'UHT shelf',                  keys: ['totalUht', 'plantUht', 'vitasoyUht'] },
-  { title: 'Oat milk (excl. barista)',   keys: ['oatUht', 'vitasoyOat'] },
-]
-const FIELD_BY_KEY = Object.fromEntries(FIELDS.map(f => [f.key, f]))
-const ORDER = FIELDS.map(f => f.key)
+// Tab order: shelves then facings for each row
+const ORDER = FIELDS.flatMap(f => [`s_${f.key}`, `f_${f.key}`])
 
 async function copyText(text) {
   try {
@@ -32,28 +31,45 @@ async function copyText(text) {
   }
 }
 
+function roundShelves(n) {
+  return Math.round(n * 10) / 10
+}
+
 export default function PerfectStoreCalculator() {
-  const [inputs, setInputs] = useState(EMPTY_INPUTS)
+  // Facings drive every calculation; shelves is the companion box.
+  // Shelves use the phone keypad (inputMode tel) because it has a + key on Samsung.
+  const [facings, setFacings] = useState(EMPTY_INPUTS)
+  const [shelves, setShelves] = useState(EMPTY_INPUTS)
   const [copyState, setCopyState] = useState('idle') // idle | copied | failed
   const refs = useRef({})
 
-  const result = useMemo(() => calculate(inputs), [inputs])
+  const result = useMemo(() => calculate(facings), [facings])
   const { errors, kpis } = result
-  const hasAny = Object.values(inputs).some(v => v !== '')
+  const hasAny = Object.values(facings).some(v => v !== '') || Object.values(shelves).some(v => v !== '')
 
-  function update(key, raw) {
-    setInputs(prev => ({ ...prev, [key]: sanitise(raw) }))
+  function onShelves(key, raw) {
+    const s = sanitiseShelves(raw)
+    setShelves(prev => ({ ...prev, [key]: s }))
+    setFacings(prev => ({ ...prev, [key]: shelvesToFacings(s) }))
     setCopyState('idle')
   }
 
-  function focusNext(key) {
-    const next = ORDER[ORDER.indexOf(key) + 1]
+  function onFacings(key, raw) {
+    const f = sanitise(raw)
+    setFacings(prev => ({ ...prev, [key]: f }))
+    setShelves(prev => ({ ...prev, [key]: facingsToShelves(f) }))
+    setCopyState('idle')
+  }
+
+  function focusNext(id) {
+    const next = ORDER[ORDER.indexOf(id) + 1]
     if (next) refs.current[next]?.focus()
-    else refs.current[key]?.blur()
+    else refs.current[id]?.blur()
   }
 
   function reset() {
-    setInputs(EMPTY_INPUTS)
+    setFacings(EMPTY_INPUTS)
+    setShelves(EMPTY_INPUTS)
     setCopyState('idle')
     refs.current[ORDER[0]]?.focus()
   }
@@ -64,43 +80,66 @@ export default function PerfectStoreCalculator() {
     if (ok) setTimeout(() => setCopyState('idle'), 2000)
   }
 
+  function inputProps(id) {
+    return {
+      ref: el => { refs.current[id] = el },
+      type: 'text',
+      autoComplete: 'off',
+      enterKeyHint: id === ORDER[ORDER.length - 1] ? 'done' : 'next',
+      onKeyDown: e => { if (e.key === 'Enter') { e.preventDefault(); focusNext(id) } },
+      onFocus: e => e.target.select(),
+    }
+  }
+
   return (
     <div className="psc-page">
       <div className="psc-wrap">
-        <form className="psc-inputs" onSubmit={e => e.preventDefault()} noValidate>
-          {GROUPS.map(g => (
-            <fieldset key={g.title} className="psc-group">
-              <legend className="psc-legend">{g.title}</legend>
-              <div className={`psc-grid psc-grid--${g.keys.length}`}>
-                {g.keys.map(key => {
-                  const f = FIELD_BY_KEY[key]
-                  const err = errors[key]
-                  return (
-                    <label key={key} className={`psc-field${err ? ' has-error' : ''}`}>
-                      <span className="psc-label">{f.label}</span>
-                      <span className="psc-hint">{f.hint}</span>
-                      <input
-                        ref={el => { refs.current[key] = el }}
-                        className="psc-input"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        autoComplete="off"
-                        enterKeyHint={key === ORDER[ORDER.length - 1] ? 'done' : 'next'}
-                        placeholder="0"
-                        value={inputs[key]}
-                        aria-invalid={!!err}
-                        onChange={e => update(key, e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); focusNext(key) } }}
-                        onFocus={e => e.target.select()}
-                      />
-                      {err && <span className="psc-error" role="alert">{err}</span>}
-                    </label>
-                  )
-                })}
+        <form className="psc-table" onSubmit={e => e.preventDefault()} noValidate>
+          <div className="psc-row psc-row--head" aria-hidden="true">
+            <span />
+            <span className="psc-col">Shelves</span>
+            <span />
+            <span className="psc-col">Facings</span>
+          </div>
+
+          {FIELDS.map(f => {
+            const err = errors[f.key]
+            const s = shelves[f.key]
+            const sum = s.includes('+') ? parseShelves(s) : null
+            return (
+              <div key={f.key} className={`psc-row${err ? ' has-error' : ''}${f.key === 'totalUht' ? ' psc-row--total' : ''}`}>
+                <div className="psc-name">
+                  <span className="psc-label">{f.label}</span>
+                  <span className="psc-hint">{f.hint}</span>
+                </div>
+                <input
+                  {...inputProps(`s_${f.key}`)}
+                  className="psc-input psc-input--shelves"
+                  inputMode="tel"
+                  placeholder="0"
+                  aria-label={`${f.label} shelves`}
+                  value={s}
+                  onChange={e => onShelves(f.key, e.target.value)}
+                />
+                <span className="psc-eq" aria-hidden="true">=</span>
+                <input
+                  {...inputProps(`f_${f.key}`)}
+                  className="psc-input"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="0"
+                  aria-label={`${f.label} facings`}
+                  aria-invalid={!!err}
+                  value={facings[f.key]}
+                  onChange={e => onFacings(f.key, e.target.value)}
+                />
+                {sum != null && <span className="psc-sum">= {roundShelves(sum)} shelves</span>}
+                {err && <span className="psc-error" role="alert">{err}</span>}
               </div>
-            </fieldset>
-          ))}
+            )
+          })}
+
+          <p className="psc-note">1 shelf = 9 facings. Use + to add bays, e.g. 7+6+8</p>
         </form>
 
         <section className="psc-results" aria-live="polite">
