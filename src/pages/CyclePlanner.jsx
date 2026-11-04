@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import XLSX from 'xlsx-js-style'
 import { supabase } from '../lib/supabase'
 import { STORES } from '../data/stores'
+import { CYCLE_STARTS } from '../constants'
 import './CyclePlanner.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -12,12 +13,6 @@ const REPS = [
   'Sam Gowen',
   'Dipen Surani',
 ]
-
-const CYCLE_STARTS = {
-  1: '2026-03-30',
-  2: '2026-06-22',
-  3: '2026-09-14',
-}
 
 // Which states each rep covers — must match exact DB values
 const REP_STATES = {
@@ -1217,9 +1212,9 @@ export default function CyclePlanner() {
   const weeks    = useMemo(() => getCycleDates(cycle), [cycle])
   const allDates = useMemo(() => weeks.flat(), [weeks])
 
-  // Make main-content scrollable while mounted
+  // Make the page content area scrollable while mounted
   useEffect(() => {
-    const mc = document.querySelector('.main-content')
+    const mc = document.querySelector('main.content')
     if (mc) mc.style.overflowY = 'auto'
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
@@ -1606,7 +1601,7 @@ export default function CyclePlanner() {
           <div className="cp-field">
             <label className="cp-field-lbl">Cycle</label>
             <select className="cp-sel" value={cycle} onChange={e => setCycle(+e.target.value)}>
-              {[1,2,3].map(c => <option key={c} value={c}>Cycle {c} — {CYCLE_STARTS[c]}</option>)}
+              {Object.keys(CYCLE_STARTS).map(Number).map(c => <option key={c} value={c}>Cycle {c} — {CYCLE_STARTS[c]}</option>)}
             </select>
           </div>
           <div className="cp-field">

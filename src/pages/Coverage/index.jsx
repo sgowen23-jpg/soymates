@@ -441,7 +441,7 @@ export default function Coverage() {
 
   // Make page scrollable (same pattern as CyclePlanner)
   useEffect(() => {
-    const mc = document.querySelector('.main-content')
+    const mc = document.querySelector('main.content')
     if (mc) mc.style.overflowY = 'auto'
     return () => { if (mc) mc.style.overflowY = '' }
   }, [])
