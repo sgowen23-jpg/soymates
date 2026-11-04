@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import XLSX from 'xlsx-js-style'
 import { supabase } from '../lib/supabase'
-import { STORES } from '../data/stores'
+import { STORES as STATIC_STORES } from '../data/stores'
+import { fetchAllRows } from '../utils/fetchAll'
 import { CYCLE_STARTS } from '../constants'
 import './CyclePlanner.css'
 
@@ -67,12 +68,51 @@ function psPriority(score) {
   return 'red'
 }
 
+// ─── Store list ───────────────────────────────────────────────────────────────
+// Starts as the static list (existing plans reference some stores only found
+// there), then adds every other store from the `stores` table — including the
+// Unassigned Metcash stores — once loaded. Read via the live STORES binding.
+let STORES = STATIC_STORES
+let storesLoad = null
+function loadAllStores() {
+  if (!storesLoad) {
+    storesLoad = fetchAllRows(() => supabase.from('stores')
+      .select('store_id, store_name, state, rep_name, banner, mso, suburb, address')
+      .order('store_id'))
+      .then(rows => {
+        const have  = new Set(STATIC_STORES.map(s => s.id))
+        const extra = rows
+          .filter(r => !have.has(String(r.store_id)))
+          .map(r => ({
+            id:      String(r.store_id),
+            name:    r.store_name,
+            rep:     r.rep_name,
+            state:   r.state,
+            chain:   r.banner || r.mso || '',
+            suburb:  r.suburb || '',
+            address: r.address || null,
+          }))
+        STORES = STATIC_STORES.concat(extra)
+        return STORES
+      })
+      .catch(() => { storesLoad = null; return STORES })
+  }
+  return storesLoad
+}
+
 // ─── Searchable Store Picker ──────────────────────────────────────────────────
 function StoreSelect({ psScores, value, onChange }) {
   const [open, setOpen] = useState(false)
   const [q, setQ]       = useState('')
+  const [storesVer, setStoresVer] = useState(0)
   const wrapRef  = useRef(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    let live = true
+    loadAllStores().then(() => { if (live) setStoresVer(v => v + 1) })
+    return () => { live = false }
+  }, [])
 
   const selected = value ? STORES.find(s => s.id === value) : null
 
@@ -95,7 +135,7 @@ function StoreSelect({ psScores, value, onChange }) {
         )
       : STORES
     return list.slice(0, 60)
-  }, [q])
+  }, [q, storesVer])
 
   const ps       = value ? psScores[value] : null
   const priority = ps ? psPriority(ps.total_ranging) : null
@@ -131,7 +171,7 @@ function StoreSelect({ psScores, value, onChange }) {
                 <div key={s.id} className={`cp-ss-opt ${s.id === value ? 'active' : ''}`} onClick={() => pick(s)}>
                   {spri && <span className={`cp-dot ${spri}`} />}
                   <span className="cp-ss-opt-name">{s.name}</span>
-                  <span className="cp-ss-opt-sub">{s.suburb || s.state}</span>
+                  <span className="cp-ss-opt-sub">{s.suburb || s.state}{s.rep === 'Unassigned' ? ' · Unassigned' : ''}</span>
                   {sps && <span className={`cp-ss-opt-score ${spri || ''}`}>{sps.total_ranging ?? '?'}/28</span>}
                 </div>
               )
@@ -1211,6 +1251,10 @@ export default function CyclePlanner() {
 
   const weeks    = useMemo(() => getCycleDates(cycle), [cycle])
   const allDates = useMemo(() => weeks.flat(), [weeks])
+
+  // Load the full store list (adds DB stores to the static list), then re-render
+  const [, setStoresVer] = useState(0)
+  useEffect(() => { loadAllStores().then(() => setStoresVer(v => v + 1)) }, [])
 
   // Make the page content area scrollable while mounted
   useEffect(() => {

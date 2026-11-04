@@ -3,6 +3,7 @@ import { GoogleMap, useJsApiLoader } from '@react-google-maps/api'
 import { supabase } from '../../lib/supabase'
 import { BNB_DATA } from '../../data/bnbData'
 import { chainColor } from './chainColors'
+import { fetchAllRows } from '../../utils/fetchAll'
 
 const MAP_LIBRARIES = ['marker']
 const MAP_CENTER = { lat: -33.8688, lng: 151.2093 }
@@ -39,10 +40,14 @@ export default function MapView({ onStoreClick, filters, search }) {
   // the component (and StoreProfile) already expects.
   useEffect(() => {
     async function fetchStores() {
-      const { data, error } = await supabase
+      // Paged (over 1,000 stores). Stores without coordinates can't be pinned.
+      const data = await fetchAllRows(() => supabase
         .from('stores')
         .select('store_id, store_name, state, store_region, rep_name, mso, banner, latitude, longitude, address, suburb')
-      if (!error && data) {
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('store_id')).catch(() => null)
+      if (data) {
         storesRef.current = data.map(s => ({
           id:      s.store_id,
           name:    s.store_name,

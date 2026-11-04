@@ -11,7 +11,7 @@ import { useDataFreshness } from '../hooks/useDataFreshness'
 import './Distribution.css'
 
 const STATES          = ['All', 'NSW', 'QLD', 'SA', 'VIC', 'WA']
-const REPS            = ['All', 'David Kerr', 'Dipen Surani', 'Melissa Robbie', 'Sam Gowen', 'Shane Vandewardt']
+const REPS            = ['All', 'David Kerr', 'Dipen Surani', 'Melissa Robbie', 'Sam Gowen', 'Shane Vandewardt', 'Unassigned']
 const CLASSIFICATIONS = ['All', 'Metro', 'Regional', 'Remote']
 
 export default function Distribution({ initialRep = null }) {
@@ -24,6 +24,7 @@ export default function Distribution({ initialRep = null }) {
   const [classification, setClassification] = useState('All')
   const [search, setSearch]           = useState('')
   const [bnbPeriod, setBnbPeriod]     = useState('dis')
+  const [universe, setUniverse]       = useState('core')   // 'core' | 'all' Metcash stores
   const freshness                     = useDataFreshness()
   const { client, setClient }         = useClient()
 
@@ -32,7 +33,7 @@ export default function Distribution({ initialRep = null }) {
     if (client === 'beiersdorf') setBnbPeriod('26wk')
   }, [client])
 
-  const filters = { state, rep, classification, search }
+  const filters = { state, rep, classification, search, universe }
 
   const activeDate = bnbPeriod === '26wk' ? freshness.bnb26 : bnbPeriod === '13wk' ? freshness.bnb13 : freshness.dis
 
@@ -90,6 +91,16 @@ export default function Distribution({ initialRep = null }) {
                 className={`bnb-btn ${bnbPeriod === '26wk' ? 'active' : ''}`}
                 onClick={() => setBnbPeriod('26wk')}
               >26 Wk</button>
+            </div>
+            <div className="bnb-toggle" title="Core = your current store universe. All Metcash = every Metcash store in the B&B report.">
+              <button
+                className={`bnb-btn ${universe === 'core' ? 'active' : ''}`}
+                onClick={() => setUniverse('core')}
+              >Core</button>
+              <button
+                className={`bnb-btn ${universe === 'all' ? 'active' : ''}`}
+                onClick={() => setUniverse('all')}
+              >All Metcash</button>
             </div>
             {activeDate && <span className="data-freshness">Data: {activeDate}</span>}
           </>

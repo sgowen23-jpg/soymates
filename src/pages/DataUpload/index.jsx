@@ -222,7 +222,9 @@ export default function DataUpload() {
 
     // ── Step 1: Team Target / Store Key upsert ────────────────────────────────
     for (let i = 0; i < total; i += CHUNK) {
+      // Stores in the Master Store Key are core-universe stores
       const chunk = records.slice(i, i + CHUNK)
+        .map(r => table === 'stores' ? { ...r, in_universe: true } : r)
       const { error } = await supabase.from(table).upsert(chunk, { onConflict: 'store_id' })
       if (error) errors.push(error.message)
       setProgress(Math.round((Math.min(i + CHUNK, total) / total) * (masterRecords?.length ? 60 : 100)))

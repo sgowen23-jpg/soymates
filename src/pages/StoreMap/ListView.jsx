@@ -6,6 +6,7 @@ import { getRules, isProductValidForStore } from '../../utils/rangingRules'
 import { parseBdfPrefix } from '../../utils/bdfPrefix'
 import { chainColor } from './chainColors'
 import StoreSearchInput from '../../components/StoreSearchInput'
+import { fetchAllRows, fetchAllRowsIn } from '../../utils/fetchAll'
 import './ListView.css'
 
 const BDF_CATS = ['All', 'Sea Salt', 'Must Have']
@@ -41,11 +42,13 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
   const ALL_CHAINS = useMemo(() => [...new Set(stores.map(s => s.chain))].filter(Boolean).sort(), [stores])
 
-  // Fetch store list from Supabase once on mount
+  // Fetch store list from Supabase once on mount (paged — over 1,000 stores)
   useEffect(() => {
-    supabase.from('stores')
-      .select('store_id, store_name, state, store_region, rep_name, mso, suburb, banner, classification')
-      .then(({ data }) => {
+    fetchAllRows(() => supabase.from('stores')
+      .select('store_id, store_name, state, store_region, rep_name, mso, suburb, banner, classification, in_universe')
+      .order('store_id'))
+      .catch(() => [])
+      .then(data => {
         setStores((data || []).map(s => ({
           id:             s.store_id,
           name:           s.store_name,
@@ -56,6 +59,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
           banner:         s.banner || '',
           suburb:         s.suburb || '',
           classification: s.classification || '',
+          inUniverse:     s.in_universe !== false,
         })))
       })
   }, [])
@@ -69,7 +73,8 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
         const matchState          = !filters?.state          || filters.state          === 'All' || s.state          === filters.state
         const matchRep            = !filters?.rep            || filters.rep            === 'All' || s.rep            === filters.rep
         const matchClassification = !filters?.classification || filters.classification === 'All' || s.classification === filters.classification
-        return matchState && matchRep && matchClassification
+        const matchUniverse       = filters?.universe === 'all' || s.inUniverse
+        return matchState && matchRep && matchClassification && matchUniverse
       }
 
       const visibleIds = stores.filter(matchesFilters).map(s => s.id)
@@ -90,19 +95,11 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
         const storeIdByName = {}
         stores.forEach(s => { storeIdByName[s.name] = String(s.id) })
 
-        let all = [], from = 0
-        while (true) {
-          const { data: batch } = await supabase
-            .from('bnb_26wk')
-            .select('store_name, item_name, pog_category, ranging_gap, uploaded_at')
-            .eq('client', 'beiersdorf')
-            .in('store_name', visibleNames)
-            .range(from, from + 999)
-          if (!batch || batch.length === 0) break
-          all = [...all, ...batch]
-          if (batch.length < 1000) break
-          from += 1000
-        }
+        const all = await fetchAllRowsIn(visibleNames, chunk => supabase
+          .from('bnb_26wk')
+          .select('store_name, item_name, pog_category, ranging_gap, uploaded_at')
+          .eq('client', 'beiersdorf')
+          .in('store_name', chunk), 100).catch(() => [])
 
         if (all.length) {
           const maxUploaded = all.reduce((m, r) => r.uploaded_at > m ? r.uploaded_at : m, '')
@@ -131,21 +128,10 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
 
       if (bnbPeriod === 'dis' || !bnbPeriod) {
         const [distData, pogRows, rules] = await Promise.all([
-          (async () => {
-            let all = [], from = 0
-            while (true) {
-              const { data: batch } = await supabase
-                .from('store_distribution')
-                .select('location_id, item_name, item_code, latest_distribution')
-                .in('location_id', visibleIds)
-                .range(from, from + 999)
-              if (!batch || batch.length === 0) break
-              all = [...all, ...batch]
-              if (batch.length < 1000) break
-              from += 1000
-            }
-            return all
-          })(),
+          fetchAllRowsIn(visibleIds, chunk => supabase
+            .from('store_distribution')
+            .select('location_id, item_name, item_code, latest_distribution')
+            .in('location_id', chunk)).catch(() => []),
           (async () => {
             let all = [], from = 0
             while (true) {
@@ -191,22 +177,11 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
         // 13wk or 26wk — BNB tables carry item_name and pog_category directly
         const table = bnbPeriod === '13wk' ? 'bnb_13wk' : 'bnb_26wk'
         const [bnbData, rules] = await Promise.all([
-          (async () => {
-            let all = [], from = 0
-            while (true) {
-              const { data: batch } = await supabase
-                .from(table)
-                .select('store_id, item_id, item_name, pog_category, sum_of_ranging')
-                .eq('client', 'vitasoy')
-                .in('store_id', visibleIds)
-                .range(from, from + 999)
-              if (!batch || batch.length === 0) break
-              all = [...all, ...batch]
-              if (batch.length < 1000) break
-              from += 1000
-            }
-            return all
-          })(),
+          fetchAllRowsIn(visibleIds, chunk => supabase
+            .from(table)
+            .select('store_id, item_id, item_name, pog_category, sum_of_ranging')
+            .eq('client', 'vitasoy')
+            .in('store_id', chunk)).catch(() => []),
           getRules(),
           loadProductMaster(),
         ])
@@ -227,7 +202,7 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       setLoading(false)
     }
     fetchGaps()
-  }, [stores, filters?.state, filters?.rep, filters?.classification, bnbPeriod, client])
+  }, [stores, filters?.state, filters?.rep, filters?.classification, filters?.universe, bnbPeriod, client])
 
 
   useEffect(() => {
@@ -260,9 +235,10 @@ export default function ListView({ onStoreClick, filters, hideSearch, bnbPeriod 
       const matchState          = !filters?.state          || filters.state          === 'All' || s.state          === filters.state
       const matchRep            = !filters?.rep            || filters.rep            === 'All' || s.rep            === filters.rep
       const matchClassification = !filters?.classification || filters.classification === 'All' || s.classification === filters.classification
-      return matchSearch && matchChain && matchState && matchRep && matchClassification
+      const matchUniverse       = filters?.universe === 'all' || s.inUniverse
+      return matchSearch && matchChain && matchState && matchRep && matchClassification && matchUniverse
     })
-  }, [search, chainFilter, filters])
+  }, [stores, search, chainFilter, filters])
 
   const activeGapMap = bdfCat === 'Sea Salt' ? ssGapMap : bdfCat === 'Must Have' ? mhGapMap : gapMap
 
