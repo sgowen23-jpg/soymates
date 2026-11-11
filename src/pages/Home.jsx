@@ -15,8 +15,8 @@ const QUICK_ACTIONS = [
   { label: 'Promotions',     icon: '🏷️' },
   { label: 'Perfect Store',  icon: '🎯' },
   { label: 'Perfect Store Calculator', icon: '🧮' },
-  // Shared report page (Claude artifact) — update the page there, this link stays the same.
-  { label: 'UHT Gaps & Orders', icon: '🥛', href: 'https://claude.ai/artifact/9ETRGkJ7Vrsqq9mVXLyha9' },
+  // Static report page in public/ — opens without login.
+  { label: 'UHT Gaps & Orders', icon: '🥛', href: '/uht-gaps-orders.html' },
 ]
 
 // Where a rep tile drills into. `page` navigates in-app; `href` opens externally.
