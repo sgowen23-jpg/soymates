@@ -46,6 +46,12 @@ const OVERFLOW = [
     ],
   },
   {
+    group: 'Team',
+    items: [
+      { label: 'Leave Calendar', icon: '📅' },
+    ],
+  },
+  {
     group: 'Admin',
     items: [
       { label: 'Data Upload',   icon: '📤' },
