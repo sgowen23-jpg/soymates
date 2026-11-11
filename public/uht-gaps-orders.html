@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>UHT Gaps & Orders</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: dark top bar, report header with heavy rule, KPI cards, then filter bar and one table per view.
+   Theme: warm paper, ink, amber labels, blue data. */
+:root{
+  --bg:#f3f0ea; --surface:#fbfaf7; --fg:#1c1c1b; --muted:#6f6a62; --line:#e3ded5;
+  --ink:#22272b; --ink-fg:#f3f0ea; --amber:#a5641c; --amber-soft:#f5e9d8;
+  --accent:#22272b; --accent-soft:#f0ebe2; --chip:#efeae2; --hi:#a5641c; --hi-soft:#f5e9d8;
+  --info:#0c74bf; --info-soft:#e2edf7; --shadow:0 1px 2px rgba(40,30,15,.06),0 2px 8px rgba(40,30,15,.04);
+  --display:"Inter Tight","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141516; --surface:#1c1e20; --fg:#ece8e1; --muted:#a39d93; --line:#2f3134;
+  --ink:#0d0e0f; --ink-fg:#ece8e1; --amber:#e3a65e; --amber-soft:#3a2c1b;
+  --accent:#ece8e1; --accent-soft:#25282b; --chip:#2a2c2f; --hi:#e3a65e; --hi-soft:#3a2c1b;
+  --info:#5eacea; --info-soft:#1a2b3a; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141516; --surface:#1c1e20; --fg:#ece8e1; --muted:#a39d93; --line:#2f3134;
+  --ink:#0d0e0f; --ink-fg:#ece8e1; --amber:#e3a65e; --amber-soft:#3a2c1b;
+  --accent:#ece8e1; --accent-soft:#25282b; --chip:#2a2c2f; --hi:#e3a65e; --hi-soft:#3a2c1b;
+  --info:#5eacea; --info-soft:#1a2b3a; --shadow:none; color-scheme:dark}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-size:1.75rem;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tabs{display:flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px}
+.tabs button{font:inherit;font-weight:500;border:0;background:none;color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+input,select{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+#q{flex:1 1 220px;min-width:0}
+button:focus-visible,input:focus-visible,select:focus-visible,th:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{color:var(--muted);font-size:.85rem;margin-left:auto}
+.info{background:var(--info-soft);color:var(--info);border-radius:8px;padding:10px 12px;font-size:.85rem}
+.tbl{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;background:var(--surface)}
+th[aria-sort="ascending"]::after{content:" ▲"} th[aria-sort="descending"]::after{content:" ▼"}
+th.nosort{cursor:default}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank{color:var(--muted);font-variant-numeric:tabular-nums}
+.state{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.store{font-weight:500}
+.tag{display:inline-block;font-size:.72rem;font-weight:500;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap;vertical-align:1px}
+.tag.ord{background:var(--info-soft);color:var(--info)}
+.tag.gap{background:var(--hi-soft);color:var(--hi)}
+.gaps{display:inline-block;min-width:26px;text-align:center;font-weight:600;padding:2px 6px;border-radius:6px;background:var(--chip)}
+.gaps.big{background:var(--hi-soft);color:var(--hi)}
+.prods{display:flex;flex-wrap:wrap;gap:4px}
+.p{font-size:.76rem;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.each{color:var(--muted);font-size:.76rem;margin-top:3px}
+.zero{color:var(--line)}
+summary{cursor:pointer;color:var(--accent);font-weight:500;white-space:nowrap}
+.slist{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.s{font-size:.76rem;padding:2px 8px;border-radius:999px;background:var(--chip);white-space:nowrap}
+.s em{font-style:normal;color:var(--muted);font-weight:600;margin-right:4px}
+.last{white-space:nowrap;font-variant-numeric:tabular-nums}
+.age{display:inline-block;font-size:.72rem;font-weight:500;padding:1px 7px;border-radius:999px;margin-left:6px}
+.age.recent{background:var(--accent-soft);color:var(--accent)}
+.age.slow{background:var(--chip);color:var(--muted)}
+.age.lapsed{background:var(--hi-soft);color:var(--hi)}
+.note{color:var(--muted);font-size:.8rem;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.kpi{font:inherit;text-align:left;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.kpi[data-kpi="gaps"]{--k:var(--hi);--k-soft:var(--hi-soft)}
+.kpi[data-kpi="orders"]{--k:var(--info);--k-soft:var(--info-soft)}
+.kpi:hover{border-top-color:var(--k)}
+.kpi[aria-pressed="true"]{border-color:var(--k);border-top-color:var(--k);background:var(--k-soft)}
+.kpi:focus-visible{outline:2px solid var(--k);outline-offset:2px}
+.kpi-eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--k);font-weight:600}
+.kpi-title{font-family:var(--display);font-size:1.3rem;font-weight:600}
+.kpi-desc{color:var(--muted)}
+.kpi-num{font-variant-numeric:tabular-nums;font-weight:600;margin-top:6px}
+.panel-head{border-top:1px solid var(--line);padding-top:20px}
+h2{font-family:var(--display);font-size:1.25rem;font-weight:600;margin:0}
+
+/* ---- Report theme ---- */
+.topbar{background:var(--ink);color:var(--ink-fg);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar-in{max-width:1180px;margin:0 auto;padding-block:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:800;font-size:1.15rem;letter-spacing:-.02em}
+.brand i{font-style:normal;color:var(--amber)}
+.pill{font-size:.82rem;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:5px 10px;opacity:.9}
+.eyebrow{font-family:var(--body);font-size:.74rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);margin:0 0 10px}
+header{border-bottom:3px solid var(--fg);padding-bottom:16px}
+h1{font-size:clamp(2.1rem,6vw,3.2rem);font-weight:800;letter-spacing:-.035em;line-height:1}
+h1 .dot{color:var(--amber)}
+header .sub{margin-top:12px}
+h2{font-size:1.45rem;font-weight:700;letter-spacing:-.02em}
+.panel-head{border-top:0;padding-top:4px}
+.stat,.kpi,.tbl{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:10px}
+.stats{gap:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.stats .stat{border:0;border-radius:0;box-shadow:none;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;padding:16px 18px}
+.stat span{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--muted)}
+.stat b{font-family:var(--display);font-weight:700;font-size:1.65rem;letter-spacing:-.02em;margin-bottom:2px}
+.stat b.money{color:var(--amber)}
+.kpi{border-top:1px solid var(--line);padding:18px 20px}
+.kpi[data-kpi="gaps"]{--k:var(--amber);--k-soft:var(--amber-soft)}
+.kpi[data-kpi="orders"]{--k:var(--info);--k-soft:var(--info-soft)}
+.kpi[aria-pressed="true"]{background:var(--surface);border-color:var(--k);box-shadow:inset 0 3px 0 var(--k),var(--shadow)}
+.kpi:hover{border-color:var(--k)}
+.kpi-eyebrow{letter-spacing:.22em;font-size:.7rem}
+.kpi-title{font-size:1.45rem;font-weight:700;letter-spacing:-.02em}
+.kpi-num{font-family:var(--mono);font-weight:500;font-size:.85rem;color:var(--fg)}
+.tabs{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--ink-fg)}
+:root[data-theme="dark"] .tabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}}
+input,select{background:var(--surface);border-color:var(--line)}
+.count{font-family:var(--mono);font-size:.78rem}
+.info{background:var(--surface);color:var(--muted);border:1px solid var(--line);border-left:3px solid var(--info);border-radius:8px}
+.gapinfo{border-left-color:var(--amber)}
+th{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;font-weight:500;background:var(--surface)}
+.state{font-family:var(--mono);background:var(--chip);color:var(--muted)}
+.rank{font-family:var(--mono);font-size:.85rem}
+.num{font-family:var(--mono);font-size:.88rem}
+.p{background:var(--info-soft);color:var(--info)}
+.gaps{font-family:var(--mono)}
+.each,.note{font-family:var(--mono);font-size:.72rem}
+summary{color:var(--info)}
+.age{font-family:var(--mono)}
+.age.recent{background:var(--info-soft);color:var(--info)}
+.age.lapsed{background:var(--amber-soft);color:var(--amber)}
+
+/* ---- Phone: stacked boxes that open on tap, instead of wide tables ---- */
+.cards{display:none}
+@media (max-width:700px){
+  .tbl{display:none}
+  .cards{display:flex;flex-direction:column;gap:8px}
+  .count{margin-left:0;width:100%}
+  .tabs{width:100%}
+  .tabs button{flex:1;padding:7px 6px}
+  #prod{width:100%}
+}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.card[open]{border-color:var(--muted)}
+.card-sum{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;color:var(--fg);font-weight:400;white-space:normal}
+.card-sum::-webkit-details-marker{display:none}
+.card-sum::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 2px 0 0;flex:none;transition:transform .15s}
+.card[open] .card-sum::after{transform:rotate(-135deg);margin-top:4px}
+.card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.card-meta{display:flex;gap:6px;align-items:center}
+.card-title{font-weight:600;line-height:1.3}
+.card-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.card-side .age{margin-left:0}
+.card-val{font-family:var(--mono);font-size:.85rem}
+.card-qty{font-family:var(--display);font-weight:700;font-size:1.05rem}
+.card-qty small{font-family:var(--mono);font-weight:400;font-size:.68rem;color:var(--muted)}
+.card-body{border-top:1px solid var(--line);padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.card-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.kv{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted)}
+.kv b{font-family:var(--mono);font-weight:500;color:var(--fg)}
+.cards .empty{margin:0}
+@media (prefers-reduced-motion:reduce){.card-sum::after{transition:none}}
+</style>
+
+<div class="topbar"><div class="topbar-in">
+  <span class="brand">Team<i>·</i>VB</span>
+  <span class="pill">AU · Vitasoy</span>
+</div></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Vitasoy · Core UHT 1L report</p>
+    <h1>UHT Gaps &amp; Orders<span class="dot">.</span></h1>
+    <p class="sub">Two KPIs for core Vitasoy UHT 1L. Pick one to see its stores.</p>
+  </header>
+
+  <nav class="kpis" aria-label="KPI">
+    <button type="button" class="kpi" data-kpi="gaps" aria-pressed="true">
+      <span class="kpi-eyebrow">Distribution</span>
+      <span class="kpi-title">Fill the gaps</span>
+      <span class="kpi-desc">Stores missing core lines (26-week BNB). Get each missing line ranged.</span>
+      <span class="kpi-num" id="kpiGaps"></span>
+    </button>
+    <button type="button" class="kpi" data-kpi="orders" aria-pressed="false">
+      <span class="kpi-eyebrow">Sales</span>
+      <span class="kpi-title">Grow orders</span>
+      <span class="kpi-desc">The highest-volume stores. Keep them ordering and push for more.</span>
+      <span class="kpi-num" id="kpiOrders"></span>
+    </button>
+  </nav>
+
+  <div class="panel-head">
+    <h2 id="panelTitle"></h2>
+    <p class="sub" id="sub"></p>
+  </div>
+
+  <section class="stats" id="stats"></section>
+
+  <div class="bar">
+    <div class="tabs" id="gapTabs" role="group" aria-label="Gap view">
+      <button type="button" data-v="store" aria-pressed="true">By store</button>
+      <button type="button" data-v="product" aria-pressed="false">By product</button>
+    </div>
+    <div class="tabs" id="stateTabs" role="group" aria-label="State">
+      <button type="button" data-s="ALL" aria-pressed="true">All</button>
+      <button type="button" data-s="NSW" aria-pressed="false">NSW</button>
+      <button type="button" data-s="VIC" aria-pressed="false">VIC</button>
+      <button type="button" data-s="QLD" aria-pressed="false">QLD</button>
+      <button type="button" data-s="SA" aria-pressed="false">SA</button>
+      <button type="button" data-s="WA" aria-pressed="false">WA</button>
+    </div>
+    <input id="q" type="search" placeholder="Search store or product…" aria-label="Search store or product">
+    <select id="prod" aria-label="Filter by missing product"><option value="">All products</option></select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <p class="info gapinfo" id="gapInfo">Source: 26-week BNB (buy / not buy) data. A gap is a core UHT 1L line the store hasn't bought in the last 26 weeks. Value is the per-store list price of each missing line.</p>
+
+  <p class="info" id="ordInfo" hidden>Core UHT 1L orders, 13 Nov 2025 to 10 Nov 2026. Qty is units as recorded (not cartons) and includes HOLD lines; error and cancelled lines are excluded. Top 25 per state, VIC shows all 17. "Last order" age is measured from 10 Nov 2026.</p>
+
+  <div class="tbl" id="storeView">
+    <table>
+      <thead><tr>
+        <th data-k="state" tabindex="0">State</th>
+        <th data-k="rn" tabindex="0" class="num">Rank</th>
+        <th data-k="store" tabindex="0">Store</th>
+        <th data-k="gaps" tabindex="0" class="num">Gaps</th>
+        <th data-k="val" tabindex="0" class="num" aria-sort="descending">Value</th>
+        <th class="nosort">Missing products</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="cards" id="storeCards"></div>
+
+  <div class="tbl" id="prodView" hidden>
+    <table>
+      <thead><tr>
+        <th class="nosort">Product</th>
+        <th class="nosort num">Stores missing</th>
+        <th class="nosort num">Value</th>
+        <th class="nosort num">NSW</th>
+        <th class="nosort num">VIC</th>
+        <th class="nosort num">QLD</th>
+        <th class="nosort num">SA</th>
+        <th class="nosort num">WA</th>
+        <th class="nosort">Stores</th>
+      </tr></thead>
+      <tbody id="prodRows"></tbody>
+    </table>
+  </div>
+  <div class="cards" id="prodCards" hidden></div>
+
+  <div class="tbl" id="ordView" hidden>
+    <table>
+      <thead><tr>
+        <th data-o="state" tabindex="0">State</th>
+        <th data-o="rn" tabindex="0" class="num">Rank</th>
+        <th data-o="store" tabindex="0">Store</th>
+        <th data-o="qty" tabindex="0" class="num" aria-sort="descending">Qty</th>
+        <th class="nosort num">Orders</th>
+        <th data-o="last" tabindex="0">Last order</th>
+      </tr></thead>
+      <tbody id="ordRows"></tbody>
+    </table>
+  </div>
+  <div class="cards" id="ordCards" hidden></div>
+
+  <p class="note" id="foot"></p>
+</div>
+
+<script>
+const RAW = `NSW|1|IGA LOCAL GROCER NORTH WYONG|7|199.99|ALM MILK U/SW;ALMOND MILKY;CALCI-PLUS;OAT MILK U/SW;OAT MILKY;RICE MILK;SOY MILKY LITE
+NSW|2|IGA M BOOROWA|5|142.34|ALM MILK U/SW;CALCI-PLUS;OAT MILK U/SW;OAT MILKY;SOY MILKY LITE
+NSW|3|IGA CRANEBROOK PLUS LIQUOR|3|89.62|ALM MILK U/SW;CALCI-PLUS;RICE MILK
+NSW|4|IGA M LUDDENHAM PLUS LIQUOR|3|89.62|CALCI-PLUS;OAT MILK U/SW;RICE MILK
+NSW|5|IGA M COOTAMUNDRA (MAWHOOD'S)|3|88.93|ALM MILK U/SW;ALMOND MILKY;RICE MILK
+NSW|6|IGA L TAMWORTH (CARLO'S)|3|82.98|CALCI-PLUS;OAT MILK U/SW;SOY MILKY LITE
+NSW|7|IGA L PICTON (KHAN'S )|3|80.58|ALMOND MILKY;RICE MILK;SOY MILKY LITE
+NSW|8|SUPABARN EXPRESS FLOREY|2|59.36|ALM MILK U/SW;OAT MILKY
+NSW|9|IGA M GULGONG|2|58.34|CALCI-PLUS;RICE MILK
+NSW|10|IGA M ROOTY HILL NORTH|2|58.34|CALCI-PLUS;RICE MILK
+NSW|11|IGA M ROUSE HILL (CHRISS)|2|58.34|CALCI-PLUS;RICE MILK
+NSW|12|IGA M TREGEAR|2|58.34|CALCI-PLUS;RICE MILK
+NSW|13|IGA M JUNEE|2|57.65|ALMOND MILKY;RICE MILK
+NSW|14|IGA M LOCALI BY ROMEOS - WYNYARD|2|57.65|OAT MILKY;RICE MILK
+NSW|15|IGA M CREMORNE|2|56.85|ALMOND MILKY;CALCI-PLUS
+NSW|16|IGA M WALCHA PLUS LIQUOR (CARLO'S)|2|56.85|ALMOND MILKY;CALCI-PLUS
+NSW|17|IGA M PENNANT HILLS|2|56.16|ALMOND MILKY;OAT MILKY
+NSW|18|SUPABARN KARABAR|2|56.16|ALMOND MILKY;OAT MILKY
+NSW|19|IGA L CONDOBOLIN|2|54.21|OAT MILK U/SW;SOY MILKY LITE
+NSW|20|IGA L BARGO|2|52.5|RICE MILK;SOY MILKY LITE
+NSW|21|IGA M WEST HOXTON|2|52.5|RICE MILK;SOY MILKY LITE
+NSW|22|IGA M WAGGA ON BOURKE ST|2|51.7|CALCI-PLUS;SOY MILKY LITE
+NSW|23|IGA L YASS|1|31.28|OAT MILK U/SW
+NSW|24|IGA L YOUNG PLUS LIQUOR|1|31.28|OAT MILK U/SW
+NSW|25|POWERS IGA MORUYA PLUS LIQUOR|1|31.28|OAT MILK U/SW
+QLD|1|IGA LOCAL GROCER COOMERA COLLECTIVE (ZENELDIN)|6|168.71|ALM MILK U/SW;ALMOND MILKY;CALCI-PLUS;OAT MILKY;RICE MILK;SOY MILKY REG
+QLD|2|FOODWORKS WOODRIDGE|3|89.62|ALM MILK U/SW;CALCI-PLUS;RICE MILK
+QLD|3|IGA M NEWPORT (RANA)|3|80.58|ALMOND MILKY;RICE MILK;SOY MILKY LITE
+QLD|4|FOODWORKS LEARMONTH'S BUNDABERG|3|79.09|ALMOND MILKY;OAT MILKY;SOY MILKY REG
+QLD|5|IGA M CANUNGRA|2|57.65|OAT MILKY;RICE MILK
+QLD|6|IGA M SANDSTONE POINT|2|56.85|ALMOND MILKY;CALCI-PLUS
+QLD|7|SHORTS FWKS WOREE|2|52.5|RICE MILK;SOY MILKY LITE
+QLD|8|FRESH & SAVE EAGLEBY|1|31.28|ALM MILK U/SW
+QLD|9|IGA M MT COOLUM (WHITES)|1|31.28|ALM MILK U/SW
+QLD|10|IGA L ATHERTON|1|29.57|RICE MILK
+QLD|11|IGA M BUNDAMBA|1|29.57|RICE MILK
+QLD|12|IGA M PITTSWORTH|1|29.57|RICE MILK
+QLD|13|DRAKES SAMFORD|1|28.77|CALCI-PLUS
+QLD|14|IGA M COOMERA WATERS|1|28.77|CALCI-PLUS
+QLD|15|IGA M TOOGOOLAWAH COOP|1|28.77|CALCI-PLUS
+QLD|16|IGA M WALLOON|1|28.77|CALCI-PLUS
+QLD|17|IGA M WELLINGTON POINT (JONES)|1|28.77|CALCI-PLUS
+QLD|18|IGA M BELLVISTA|1|28.08|ALMOND MILKY
+QLD|19|IGA M FRASER SHORES (HERVEY BAY)|1|28.08|ALMOND MILKY
+QLD|20|IGA M GUMDALE (PATEL)|1|28.08|ALMOND MILKY
+QLD|21|IGA M LOGANHOLME|1|28.08|ALMOND MILKY
+QLD|22|IGA M SPRINGFIELD LAKES|1|28.08|ALMOND MILKY
+QLD|23|IGA M TIN CAN BAY (O'CONNELL)|1|28.08|ALMOND MILKY
+QLD|24|IGA M WURTULLA|1|28.08|ALMOND MILKY
+QLD|25|IGA M BEACHMERE|1|22.93|SOY MILKY LITE
+SA|1|STREAKY BAY (REDDINGS)|4|110.37|ALMOND MILKY;OAT MILK U/SW;OAT MILKY;SOY MILKY REG
+SA|2|TAILEM BEND|3|81.27|CALCI-PLUS;RICE MILK;SOY MILKY LITE
+SA|3|BARMERA|2|52.5|RICE MILK;SOY MILKY LITE
+SA|4|RENMARK|1|31.28|OAT MILK U/SW
+SA|5|PETERBOROUGH|1|31.28|ALM MILK U/SW
+SA|6|YORKETOWN|1|29.57|RICE MILK
+SA|7|EUDUNDA|1|29.57|RICE MILK
+SA|8|ROSEWATER|1|29.57|RICE MILK
+SA|9|MAGILL|1|29.57|RICE MILK
+SA|10|PARAFIELD GARDENS|1|29.57|RICE MILK
+SA|11|KEITH|1|28.77|CALCI-PLUS
+SA|12|FREELING|1|28.77|CALCI-PLUS
+SA|13|SALISBURY EAST|1|28.77|CALCI-PLUS
+SA|14|FLAGSTAFF HILL|1|28.77|CALCI-PLUS
+SA|15|MAITLAND|1|28.08|OAT MILKY
+SA|16|PENOLA|1|28.08|OAT MILKY
+SA|17|WAIKERIE|1|28.08|OAT MILKY
+SA|18|LOXTON|1|28.08|ALMOND MILKY
+SA|19|PORT BROUGHTON|1|28.08|ALMOND MILKY
+SA|20|PORT AUGUSTA (WESTSIDE)|1|22.93|SOY MILKY LITE
+WA|1|IGA L BALLAJURA CITY|8|222.92|ALM MILK U/SW;ALMOND MILKY;CALCI-PLUS;OAT MILK U/SW;OAT MILKY;RICE MILK;SOY MILKY LITE;SOY MILKY REG
+WA|2|IGA M BULLSBROOK|4|112.55|ALM MILK U/SW;CALCI-PLUS;RICE MILK;SOY MILKY LITE
+WA|3|FOODWORKS KENWICK|3|80.58|ALMOND MILKY;RICE MILK;SOY MILKY REG
+WA|4|IGA LG BUSSELTON FRESH|2|59.36|ALM MILK U/SW;ALMOND MILKY
+WA|5|IGA M WINTHROP GARDENS|1|31.28|ALM MILK U/SW
+WA|6|MIRRABOOKA VILLAGE|1|29.57|RICE MILK
+WA|7|CAPEL FRESH|1|29.57|RICE MILK
+WA|8|MEDINA|1|29.57|RICE MILK
+WA|9|RIVER FRESH|1|29.57|RICE MILK
+WA|10|TAYLOR RD|1|29.57|RICE MILK
+WA|11|LAKESIDE FRESH BYFORD|1|29.57|RICE MILK
+WA|12|HAMBLEYS|1|29.57|RICE MILK
+WA|13|WAIKIKI|1|29.57|RICE MILK
+WA|14|THE GOOD GROCER DOUBLEVIEW|1|29.57|RICE MILK
+WA|15|RIVERVALE|1|29.57|RICE MILK
+WA|16|MAIDA VALE|1|28.77|CALCI-PLUS
+WA|17|ELLENBROOK|1|28.77|CALCI-PLUS
+WA|18|WAROONA + CBN|1|28.77|CALCI-PLUS
+WA|19|MIDLAND|1|28.77|CALCI-PLUS
+WA|20|IGA M MARMION|1|28.08|ALMOND MILKY
+VIC|1|IGA LG NEERIM SOUTH + LIQ|4|108.66|ALMOND MILKY;OAT MILKY;RICE MILK;SOY MILKY LITE
+VIC|2|IGA M HEYFIELD PLUS LIQUOR|3|86.42|ALMOND MILKY;CALCI-PLUS;RICE MILK
+VIC|3|IGA M TJS NATHALIA PLUS LIQUOR|2|60.05|ALM MILK U/SW;CALCI-PLUS
+VIC|4|FOODWORKS LAKE ALBERT WAGGA|2|59.36|ALM MILK U/SW;OAT MILKY
+VIC|5|IGA M WINCHELSEA PLUS LIQUOR|2|59.36|OAT MILK U/SW;OAT MILKY
+VIC|6|IGA M LOCKHART PLUS LIQUOR|2|51.7|CALCI-PLUS;SOY MILKY LITE
+VIC|7|FOODWORKS GRIFFITH|1|29.57|RICE MILK
+VIC|8|IGA L BACCHUS MARSH (CHAMPIONS)|1|29.57|RICE MILK
+VIC|9|IGA L FAIRLEYS SHEPPARTON|1|29.57|RICE MILK
+VIC|10|IGA L FRESH DALYS KOROIT PLUS LIQUOR|1|29.57|RICE MILK
+VIC|11|IGA L WEST FOOTSCRAY PLUS LIQUOR|1|29.57|RICE MILK
+VIC|12|IGA M + LIQUOR ST ARNAUD (WEIRS)|1|29.57|RICE MILK
+VIC|13|IGA M DALLAS|1|29.57|RICE MILK
+VIC|14|IGA M DALYS HEYWOOD PLUS LIQUOR|1|29.57|RICE MILK
+VIC|15|IGA M FINLEY PLUS LIQUOR|1|29.57|RICE MILK
+VIC|16|IGA M RITCHIES SEAFORD|1|29.57|RICE MILK
+VIC|17|IGA M RYANS BEAUFORT PLUS LIQUOR|1|29.57|RICE MILK
+VIC|18|IGA L MEADOW HEIGHTS SHOPPING CENTRE|1|28.77|CALCI-PLUS
+VIC|19|IGA M HOWLONG PLUS LIQUOR|1|28.77|CALCI-PLUS
+VIC|20|BALLAN COUNTRY GROCERS (FWKS)|1|28.08|ALMOND MILKY
+VIC|21|FOODWORKS PLUS LIQUOR ORBOST|1|28.08|OAT MILKY
+VIC|22|FWKS ESTELLA|1|28.08|ALMOND MILKY
+VIC|23|IGA L GLENGALA|1|28.08|ALMOND MILKY
+VIC|24|IGA L RYANS BALLARAT EAST PLUS LIQUOR|1|28.08|ALMOND MILKY
+VIC|25|IGA M FOSTER|1|28.08|ALMOND MILKY
+VIC|26|SUPA VALU DELAHEY|1|28.08|OAT MILKY
+VIC|27|IGA M STATION ST FAIRFIELD|1|22.93|SOY MILKY LITE`;
+
+// state|rank|store|qty|orders|last order (blank = not given)
+const RAW_ORD = `WA|1|IGA M The Downs|387|7|2026-07-09
+WA|2|IGA M Carine|295|2|2026-07-31
+WA|3|IGA L Shoalwater|253|4|2026-10-21
+WA|4|IGA M Broadway|250|3|2026-08-21
+WA|5|Farmer Jacks Girrawheen|231|4|2026-11-10
+WA|6|IGA M The Park Hive|226|9|2026-07-29
+WA|7|IGA M Alkimos Fresh|224|5|2026-09-07
+WA|8|IGA M Morris Fresh|220|3|2026-08-21
+WA|9|IGA L Kinross|203|5|2026-11-03
+WA|10|IGA M Lynwood|200|6|2026-11-04
+WA|11|IGA M Marmion|195|4|2026-07-31
+WA|12|IGA M Atwell Fresh|162|2|2026-07-31
+WA|13|IGA M Baldivis|155|3|2026-07-14
+WA|14|IGA M Fremantle|154|3|2026-07-20
+WA|15|IGA M Rossmoyne|154|2|2026-08-12
+WA|16|IGA M Duncraig Fresh|145|3|2026-07-31
+WA|17|IGA M Foodies Market Claremont|135|2|2026-07-10
+WA|18|IGA M Piara Waters|120|1|2026-08-03
+WA|19|IGA Langley Park Foodies Mkt|115|2|2026-07-14
+WA|20|IGA M Hamilton Hill|72|5|2026-10-16
+WA|21|IGA M Riverton Fresh Foods|70|4|2026-07-16
+WA|22|Swan View M IGA|50|3|2026-04-23
+WA|23|IGA M Beach Rock|48|4|2026-10-21
+WA|24|IGA M Helena Valley|45|2|2026-10-22
+WA|25|Farmer Jacks Subiaco|39|2|2026-05-01
+QLD|1|IGA M Chriss Carina|475|3|2026-07-10
+QLD|2|IGA M East Brisbane (Seasons)|412|9|2026-11-06
+QLD|3|IGA M Caloundra (Seasons)|398|10|2026-08-20
+QLD|4|IGA L Nanango (Peries)|287|3|2026-08-17
+QLD|5|IGA L Gatton (Spano)|269|1|2026-03-16
+QLD|6|Fresh & Save Deagon|240|4|2026-02-24
+QLD|7|IGA M Cooroy (Seasons)|198|5|2026-07-16
+QLD|8|IGA M Russell Island (Jones)|180|7|2026-06-30
+QLD|9|IGA L Atherton|178|3|2026-07-31
+QLD|10|IGA M St Lucia|160|6|2026-11-09
+QLD|11|IGA M on Bloomfield (Jones)|108|4|2026-06-22
+QLD|12|IGA M Cooroy Garnet St (Seasons)|101|4|2026-07-16
+QLD|13|IGA M Hatton Vale|98|5|2026-06-30
+QLD|14|IGA L Edmonton (Peries)|95|1|2026-08-17
+QLD|15|IGA L Burpengary (Seasons)|93|4|2026-10-07
+QLD|16|IGA M Wises Road (Seasons)|81|4|2026-07-17
+QLD|17|IGA L Noosa (Seasons)|78|4|2026-07-16
+QLD|18|IGA M Yandina (Seasons)|78|3|2026-04-21
+QLD|19|IGA M Cleveland (Jones)|69|5|2026-08-11
+QLD|20|IGA L Mt Cotton (Jones)|53|2|2026-07-02
+QLD|21|IGA M Bli Bli (Whites)|40|2|2026-03-20
+QLD|22|IGA M Pomona|37|2|2026-07-17
+QLD|23|IGA L Kingaroy (Peries)|36|1|2026-08-17
+QLD|24|IGA L Queen St Village Southport (Jones)|30|1|2026-08-19
+QLD|25|IGA M Maleny (Seasons)|30|1|2026-02-23
+SA|1|Seacliff Pk Foodland IGA|224|3|2026-08-11
+SA|2|Foodland IGA Mitcham (Romeo)|219|8|2026-11-06
+SA|3|Happy Valley Foodland IGA|200|3|2026-03-18
+SA|4|Pasadena Foodland IGA|185|6|2026-10-28
+SA|5|Fland IGA Saints Road|180|2|2026-07-09
+SA|6|Fland IGA Kilkenny|173|4|2026-04-30
+SA|7|Brighton Foodland IGA|145|8|2026-10-28
+SA|8|Mt Barker Foodland IGA|140|6|2026-11-05
+SA|9|Lobethal Foodland IGA|90|4|2026-08-07
+SA|10|Sefton Pk Foodland IGA|89|3|2026-10-26
+SA|11|Henley Square Foodland IGA|87|2|2026-11-04
+SA|12|Woodside Foodland IGA|80|4|2026-11-05
+SA|13|Fland IGA Kapunda|60|2|2026-04-23
+SA|14|Munno Para Foodland IGA|60|1|2026-07-16
+SA|15|Littlehampton Foodland|46|4|2026-03-18
+SA|16|West Lakes Foodland IGA|44|3|2026-10-22
+SA|17|IGA Local Grocer Franklin St|42|9|2026-10-30
+SA|18|Yorketown Foodland IGA|36|3|2026-02-06
+SA|19|Birdwood Foodland IGA|34|3|2026-05-01
+SA|20|IGA M Mannum|30|1|2025-11-21
+SA|21|Fland Freeling|26|3|2026-04-30
+SA|22|Stirling Foodland IGA|25|2|2026-01-21
+SA|23|Nth Bordertown Fland IGA|25|1|2026-11-09
+SA|24|Flagstaff Hill Foodland|23|3|2026-11-06
+SA|25|Kingston Foodland IGA|13|1|2026-11-10
+VIC|1|IGA L Piedimontes North Fitzroy|263|7|2026-10-19
+VIC|2|IGA M Mt Evelyn Plus Liquor|246|8|2026-08-24
+VIC|3|IGA M North Melbourne|139|2|2026-07-01
+VIC|4|Foodworks Bacchus Marsh|131|4|2026-10-28
+VIC|5|Foodworks Plus Liquor Gisborne|94|2|2026-07-06
+VIC|6|IGA L Stonemans Village Plus Liquor|71|2|2026-06-16
+VIC|7|IGA M Cockatoo Plus Liquor|70|1|2025-11-12
+VIC|8|Supa Valu Delahey|45|2|2025-11-24
+VIC|9|Foodworks Plus Liquor Inverloch|30|1|2026-07-10
+VIC|10|IGA M Bunyip Plus Liquor|30|1|2026-06-03
+VIC|11|IGA M Anglesea Plus Liquor|24|1|2026-07-22
+VIC|12|IGA M San Remo|24|1|2026-07-14
+VIC|13|IGA M Marcos Narre Warren Plus Liquor|20|1|2026-05-05
+VIC|14|IGA M Station St Fairfield|20|1|2025-11-12
+VIC|15|IGA M Trafalgar|11|2|2026-07-03
+VIC|16|IGA L Maryborough|1|1|2026-08-24
+VIC|17|Fwk Country Grcrs Yackandandah|1|1|2026-04-29
+NSW|1|IGA M Dulwich Hill|200|8|2026-08-18
+NSW|2|IGA L Bungendore|122|2|2026-02-19
+NSW|3|IGA L Summer Hill (Romeo)|110|2|2026-08-07
+NSW|4|IGA L Blaxland Karellas|92|2|2026-03-30
+NSW|5|IGA M Breakfast Point Lqr|68|3|2026-08-06
+NSW|6|IGA M Greenfield Park|53|2|2026-02-10
+NSW|7|IGA M West Hoxton|33|5|2026-03-23
+NSW|8|IGA L Georges Hall|30|1|2026-05-26
+NSW|9|IGA L Gerringong (Khan's)|23|1|2025-12-03
+NSW|10|IGA M Loveys Dungog|20|1|2026-09-22
+NSW|11|Rosebery|15|1–2|2026-11-04
+NSW|12|Newtown|15|1–2|
+NSW|13|Bradbury|15|1–2|
+NSW|14|Oberon Plus Liquor|15|1–2|
+NSW|15|Rooty Hill North|15|1–2|
+NSW|16|Merrylands|10|1|
+NSW|17|Abbotsford|10|1|
+NSW|18|Supabarn Sans Souci|10|1|
+NSW|19|Moss Vale Plus Liquor|10|1|
+NSW|20|Berry Plus Liquor|10|1|
+NSW|21|Botany|10|1|2026-11-03
+NSW|22|IGA M Condell Park|8|1|2026-08-05
+NSW|23|IGA M Tregear|6|1|2025-11-18
+NSW|24|Turramurra Plaza (Corp)|5|1|2026-08-04
+NSW|25|IGA L Wakeley|4|2|2026-02-18`;
+
+// All ordering stores per state (not just the top 25 listed)
+const ORD_TOTALS = { WA:[53,4547], QLD:[38,3992], SA:[29,2280], VIC:[17,1220], NSW:[33,920] };
+const DATA_END = new Date('2026-11-10');
+
+// Each product has a fixed value per store; work it out from the rows
+const UNIT = {};
+for (let changed = true; changed;) {
+  changed = false;
+  for (const l of RAW.split('\n')) {
+    const f = l.split('|'), prods = f[5].split(';'), unk = prods.filter(p => !(p in UNIT));
+    if (unk.length === 1) { UNIT[unk[0]] = Math.round((+f[4] - prods.reduce((s,p) => s + (UNIT[p] || 0), 0)) * 100) / 100; changed = true; }
+  }
+}
+
+const titleCase = s => s.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase())
+  .replace(/\b(Iga|Fwks|U\/Sw|Lg|Cbn)\b/g, m => m.toUpperCase());
+const pretty = p => titleCase(p).replace('Alm Milk','Almond Milk').replace('U/SW','Unsweetened');
+
+// Match the same store across the two lists by its place name
+const STOP = new Set('iga m l lg local grocer foodland fland foodworks fwks fwk plus liquor lqr fresh supabarn express the'.split(' '));
+const core = s => s.toLowerCase().replace(/\(.*?\)/g,' ').replace(/[^a-z ]/g,' ').split(/\s+/).filter(w => w && !STOP.has(w)).join(' ');
+
+const DATA = RAW.split('\n').map(l => {
+  const [state, rn, store, gaps, val, prods] = l.split('|');
+  return { state, rn:+rn, store, gaps:+gaps, val:+val, prods: prods.split(';') };
+});
+const ORD = RAW_ORD.split('\n').map(l => {
+  const [state, rn, store, qty, orders, last] = l.split('|');
+  const days = last ? Math.round((DATA_END - new Date(last)) / 864e5) : null;
+  return { state, rn:+rn, store, qty:+qty, orders, last, days };
+});
+const gapIdx = new Map(DATA.map(d => [d.state + '|' + core(d.store), d]));
+const ordIdx = new Map(ORD.map(o => [o.state + '|' + core(o.store), o]));
+DATA.forEach(d => d.ord = ordIdx.get(d.state + '|' + core(d.store)));
+ORD.forEach(o => o.gap = gapIdx.get(o.state + '|' + core(o.store)));
+
+const PRODUCTS = [...new Set(DATA.flatMap(d => d.prods))].sort();
+const $ = id => document.getElementById(id);
+const money = n => '$' + n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const int = n => n.toLocaleString('en-AU');
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = s => new Date(s).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'});
+
+PRODUCTS.forEach(p => $('prod').insertAdjacentHTML('beforeend', `<option value="${esc(p)}">${esc(pretty(p))}</option>`));
+
+// Which page this is: 'gaps' (ranging gaps) or 'orders' (top ordering stores)
+const MODE = 'both';
+let state = 'ALL', view = MODE === 'orders' ? 'orders' : 'store', lastGap = 'store', sortKey = 'val', sortDir = -1, oKey = 'qty', oDir = -1;
+
+function gapRows(){
+  const q = $('q').value.trim().toLowerCase(), prod = $('prod').value;
+  return DATA.filter(d =>
+    (state === 'ALL' || d.state === state) &&
+    (!prod || d.prods.includes(prod)) &&
+    (!q || d.store.toLowerCase().includes(q) || d.prods.some(p => pretty(p).toLowerCase().includes(q)))
+  );
+}
+
+function render(){
+  const kpi = view === 'orders' ? 'orders' : 'gaps';
+  document.querySelectorAll('.kpi').forEach(b => b.setAttribute('aria-pressed', b.dataset.kpi === kpi));
+  $('panelTitle').textContent = kpi === 'orders' ? 'Grow orders' : 'Fill the gaps';
+  // Headline on each KPI card, for the selected state
+  const g = DATA.filter(d => state === 'ALL' || d.state === state);
+  $('kpiGaps').textContent = g.length
+    ? `${g.reduce((s,d) => s + d.gaps, 0)} gaps · $${Math.round(g.reduce((s,d) => s + d.val, 0)).toLocaleString('en-AU')} · ${g.length} stores`
+    : 'No gap data for this state';
+  const ks = state === 'ALL' ? Object.keys(ORD_TOTALS) : [state];
+  $('kpiOrders').textContent = `${int(ks.reduce((s,k) => s + ORD_TOTALS[k][1], 0))} qty · ${ks.reduce((s,k) => s + ORD_TOTALS[k][0], 0)} ordering stores`;
+  $('gapTabs').hidden = kpi !== 'gaps';
+  $('storeView').hidden = view !== 'store';
+  $('prodView').hidden = view !== 'product';
+  $('ordView').hidden = view !== 'orders';
+  $('storeCards').hidden = view !== 'store';
+  $('prodCards').hidden = view !== 'product';
+  $('ordCards').hidden = view !== 'orders';
+  $('ordInfo').hidden = view !== 'orders';
+  $('gapInfo').hidden = kpi !== 'gaps';
+  $('prod').hidden = kpi === 'orders';
+  $('q').placeholder = kpi === 'orders' ? 'Search store…' : 'Search store or product…';
+  $('sub').textContent = kpi === 'orders'
+    ? 'Highest-volume stores per state for core Vitasoy UHT 1L over the last 12 months. Keep them ordering, call the big buyers that have gone quiet, and push for more volume.'
+    : 'Stores missing core Vitasoy UHT 1L lines in NSW, VIC, QLD, SA and WA, from 26-week BNB data. Each gap is a line to get ranged on the next visit.';
+  $('foot').textContent = view === 'product' ? 'Product names shortened from "VITASOY … UHT 1L".' : 'Click a column heading to sort.';
+
+  if (kpi === 'orders') return renderOrders();
+
+  const rows = gapRows();
+  const noData = state === 'VIC' ? 'No gap data for VIC yet. Switch to Orders to see VIC stores.' : 'No stores match. Clear the search or product filter.';
+  if (view === 'store') {
+    rows.sort((a,b) => {
+      const x = a[sortKey], y = b[sortKey];
+      const c = typeof x === 'number' ? x - y : x.localeCompare(y);
+      return (c || a.state.localeCompare(b.state) || a.rn - b.rn) * (c ? sortDir : 1);
+    });
+    $('rows').innerHTML = rows.length ? rows.map(d => `<tr>
+      <td><span class="state">${d.state}</span></td>
+      <td class="num rank">${d.rn}</td>
+      <td class="store">${esc(titleCase(d.store))}</td>
+      <td class="num"><span class="gaps${d.gaps >= 3 ? ' big' : ''}">${d.gaps}</span></td>
+      <td class="num">${money(d.val)}</td>
+      <td><div class="prods">${d.prods.map(p => `<span class="p" title="VITASOY ${esc(p)} UHT 1L">${esc(pretty(p))}</span>`).join('')}</div></td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty">${noData}</td></tr>`;
+    $('storeCards').innerHTML = rows.length ? rows.map(d => `<details class="card">
+      <summary class="card-sum">
+        <span class="card-main"><span class="card-meta"><span class="state">${d.state}</span><span class="rank">#${d.rn}</span></span><span class="card-title">${esc(titleCase(d.store))}</span></span>
+        <span class="card-side"><span class="gaps${d.gaps >= 3 ? ' big' : ''}">${d.gaps} gap${d.gaps > 1 ? 's' : ''}</span><span class="card-val">${money(d.val)}</span></span>
+      </summary>
+      <div class="card-body"><span class="card-label">Missing products</span><div class="prods">${d.prods.map(p => `<span class="p">${esc(pretty(p))}</span>`).join('')}</div></div>
+    </details>`).join('') : `<p class="empty card">${noData}</p>`;
+  }
+
+  const totGaps = rows.reduce((s,d) => s + d.gaps, 0), totVal = rows.reduce((s,d) => s + d.val, 0);
+  const counts = {}; rows.forEach(d => d.prods.forEach(p => counts[p] = (counts[p]||0) + 1));
+  const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+  $('stats').innerHTML = `
+    <div class="stat"><b>${rows.length}</b><span>Stores with gaps</span></div>
+    <div class="stat"><b>${totGaps}</b><span>Total gaps</span></div>
+    <div class="stat"><b class="money">${money(totVal)}</b><span>Total value</span></div>
+    <div class="stat"><b>${top ? esc(pretty(top[0])) : '–'}</b><span>Most missed${top ? ` · ${top[1]} stores` : ''}</span></div>`;
+
+  if (view === 'product') {
+    const n = renderProducts(rows, noData);
+    $('count').textContent = `${n} products · ${rows.length} stores`;
+  } else {
+    $('count').textContent = `${rows.length} of ${DATA.length} stores`;
+  }
+}
+
+function renderProducts(rows, noData){
+  const by = {};
+  rows.forEach(d => d.prods.forEach(p => {
+    const x = by[p] ||= { p, stores: [], st: {} };
+    x.stores.push(d); x.st[d.state] = (x.st[d.state] || 0) + 1;
+  }));
+  const prod = $('prod').value;
+  const list = Object.values(by).filter(x => !prod || x.p === prod)
+    .map(x => ({ ...x, val: x.stores.length * (UNIT[x.p] || 0) }))
+    .sort((a,b) => b.val - a.val || b.stores.length - a.stores.length);
+  const n = c => c ? c : '<span class="zero">0</span>';
+  $('prodRows').innerHTML = list.length ? list.map(x => `<tr>
+    <td><span class="p" title="VITASOY ${esc(x.p)} UHT 1L">${esc(pretty(x.p))}</span><div class="each">${money(UNIT[x.p] || 0)} per store</div></td>
+    <td class="num"><span class="gaps${x.stores.length >= 10 ? ' big' : ''}">${x.stores.length}</span></td>
+    <td class="num">${money(x.val)}</td>
+    <td class="num">${n(x.st.NSW)}</td><td class="num">${n(x.st.VIC)}</td><td class="num">${n(x.st.QLD)}</td><td class="num">${n(x.st.SA)}</td><td class="num">${n(x.st.WA)}</td>
+    <td><details><summary>Show ${x.stores.length} store${x.stores.length > 1 ? 's' : ''}</summary><div class="slist">${
+      x.stores.slice().sort((a,b) => a.state.localeCompare(b.state) || a.rn - b.rn)
+        .map(d => `<span class="s"><em>${d.state}</em>${esc(titleCase(d.store))}</span>`).join('')
+    }</div></details></td>
+  </tr>`).join('') : `<tr><td colspan="9" class="empty">${noData}</td></tr>`;
+  $('prodCards').innerHTML = list.length ? list.map(x => `<details class="card">
+    <summary class="card-sum">
+      <span class="card-main"><span class="card-title">${esc(pretty(x.p))}</span><span class="each">${money(UNIT[x.p] || 0)} per store</span></span>
+      <span class="card-side"><span class="gaps${x.stores.length >= 10 ? ' big' : ''}">${x.stores.length} store${x.stores.length > 1 ? 's' : ''}</span><span class="card-val">${money(x.val)}</span></span>
+    </summary>
+    <div class="card-body">
+      <div class="kv">${['NSW','VIC','QLD','SA','WA'].map(s => `<span>${s} <b>${x.st[s] || 0}</b></span>`).join('')}</div>
+      <span class="card-label">Stores missing it</span>
+      <div class="slist">${x.stores.slice().sort((a,b) => a.state.localeCompare(b.state) || a.rn - b.rn)
+        .map(d => `<span class="s"><em>${d.state}</em>${esc(titleCase(d.store))}</span>`).join('')}</div>
+    </div>
+  </details>`).join('') : `<p class="empty card">${noData}</p>`;
+  return list.length;
+}
+
+function renderOrders(){
+  const q = $('q').value.trim().toLowerCase();
+  const rows = ORD.filter(o => (state === 'ALL' || o.state === state) && (!q || o.store.toLowerCase().includes(q)));
+  rows.sort((a,b) => {
+    let c;
+    if (oKey === 'last') c = (a.last || '0000') .localeCompare(b.last || '0000');
+    else { const x = a[oKey], y = b[oKey]; c = typeof x === 'number' ? x - y : x.localeCompare(y); }
+    return (c || a.state.localeCompare(b.state) || a.rn - b.rn) * (c ? oDir : 1);
+  });
+  const age = d => d == null ? '' : d <= 30 ? `<span class="age recent">${d}d</span>` : d <= 90 ? `<span class="age slow">${d}d</span>` : `<span class="age lapsed">${d}d</span>`;
+  $('ordRows').innerHTML = rows.length ? rows.map(o => `<tr>
+    <td><span class="state">${o.state}</span></td>
+    <td class="num rank">${o.rn}</td>
+    <td class="store">${esc(o.store)}</td>
+    <td class="num">${int(o.qty)}</td>
+    <td class="num">${esc(o.orders)}</td>
+    <td class="last">${o.last ? fmtDate(o.last) + age(o.days) : '<span class="rank">Not given</span>'}</td>
+  </tr>`).join('') : `<tr><td colspan="6" class="empty">No stores match. Clear the search.</td></tr>`;
+  $('ordCards').innerHTML = rows.length ? rows.map(o => `<details class="card">
+    <summary class="card-sum">
+      <span class="card-main"><span class="card-meta"><span class="state">${o.state}</span><span class="rank">#${o.rn}</span></span><span class="card-title">${esc(o.store)}</span></span>
+      <span class="card-side"><span class="card-qty">${int(o.qty)} <small>qty</small></span>${age(o.days)}</span>
+    </summary>
+    <div class="card-body"><div class="kv">
+      <span>Orders <b>${esc(o.orders)}</b></span>
+      <span>Last order <b>${o.last ? fmtDate(o.last) : 'Not given'}</b></span>
+      ${o.days != null ? `<span>Days since <b>${o.days}</b></span>` : ''}
+    </div></div>
+  </details>`).join('') : `<p class="empty card">No stores match. Clear the search.</p>`;
+
+  const states = state === 'ALL' ? Object.keys(ORD_TOTALS) : [state];
+  const stores = states.reduce((s,k) => s + ORD_TOTALS[k][0], 0), qty = states.reduce((s,k) => s + ORD_TOTALS[k][1], 0);
+  const lapsed = rows.filter(o => o.days != null && o.days > 90).length;
+  const recent = rows.filter(o => o.days != null && o.days <= 30).length;
+  $('stats').innerHTML = `
+    <div class="stat"><b>${stores}</b><span>Ordering stores</span></div>
+    <div class="stat"><b>${int(qty)}</b><span>Total qty</span></div>
+    <div class="stat"><b>${recent}</b><span>Listed, ordered in last 30 days</span></div>
+    <div class="stat"><b>${lapsed}</b><span>Listed, no order 90+ days</span></div>`;
+  $('count').textContent = `${rows.length} stores listed`;
+}
+
+function bindTabs(id, key, set){
+  document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener('click', () => {
+    set(b.dataset[key]);
+    document.querySelectorAll(`#${id} button`).forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  }));
+}
+bindTabs('stateTabs', 's', v => state = v);
+function setView(v){
+  view = v;
+  if (v !== 'orders') lastGap = v;
+  document.querySelectorAll('#gapTabs button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === lastGap));
+  try { history.replaceState(null, '', '#' + HASH[v]); } catch (e) {}
+  render();
+}
+document.querySelectorAll('#gapTabs button').forEach(b => b.addEventListener('click', () => setView(b.dataset.v)));
+document.querySelectorAll('.kpi').forEach(b => b.addEventListener('click', () => setView(b.dataset.kpi === 'orders' ? 'orders' : lastGap)));
+
+// Direct links: #gaps, #by-product, #orders
+const HASH = { store: 'gaps', product: 'by-product', orders: 'orders' };
+function fromHash(){
+  if (MODE === 'orders') return;
+  const v = Object.keys(HASH).find(k => '#' + HASH[k] === location.hash);
+  if (!v || (v === 'orders' && MODE !== 'both')) return;
+  view = v;
+  if (v !== 'orders') lastGap = v;
+  document.querySelectorAll('#gapTabs button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === lastGap));
+  render();
+}
+addEventListener('hashchange', fromHash);
+
+function bindSort(attr, get, set){
+  document.querySelectorAll(`th[${attr}]`).forEach(th => {
+    const go = () => {
+      const k = th.getAttribute(attr), [cur, dir] = get();
+      const nd = cur === k ? -dir : (['gaps','val','qty','last'].includes(k) ? -1 : 1);
+      set(k, nd);
+      document.querySelectorAll(`th[${attr}]`).forEach(x => x.removeAttribute('aria-sort'));
+      th.setAttribute('aria-sort', nd > 0 ? 'ascending' : 'descending');
+      render();
+    };
+    th.addEventListener('click', go);
+    th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+}
+bindSort('data-k', () => [sortKey, sortDir], (k,d) => { sortKey = k; sortDir = d; });
+bindSort('data-o', () => [oKey, oDir], (k,d) => { oKey = k; oDir = d; });
+
+$('q').addEventListener('input', render);
+$('prod').addEventListener('change', render);
+if (MODE === 'gaps') document.querySelector('#stateTabs [data-s="VIC"]').hidden = true; // no VIC gap data
+render();
+fromHash();
+</script>
+</html>
