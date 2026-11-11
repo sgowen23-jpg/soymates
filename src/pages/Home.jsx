@@ -10,12 +10,13 @@ import './Home.css'
 const CYCLE_START = new Date('2026-03-30')
 const CYCLE_WEEKS = 12
 
-// Quick-action tiles across the top — real tab names.
+// Quick-action tiles across the top — real tab names. `href` opens externally.
 const QUICK_ACTIONS = [
   { label: 'Promotions',     icon: '🏷️' },
   { label: 'Perfect Store',  icon: '🎯' },
   { label: 'Perfect Store Calculator', icon: '🧮' },
-  { label: 'Leave Calendar', icon: '📅' },
+  // Shared report page (Claude artifact) — update the page there, this link stays the same.
+  { label: 'UHT Gaps & Orders', icon: '🥛', href: 'https://claude.ai/artifact/9ETRGkJ7Vrsqq9mVXLyha9' },
 ]
 
 // Where a rep tile drills into. `page` navigates in-app; `href` opens externally.
@@ -201,9 +202,13 @@ export default function Home({ onNavigate }) {
       {/* Quick actions */}
       <section>
         <h2 className="lc-label">Quick actions</h2>
-        <div className="lc-grid3">
+        <div className="lc-grid3 lc-grid4">
           {QUICK_ACTIONS.map(a => (
-            <button key={a.label} className="qa-tile" onClick={() => onNavigate(a.label)}>
+            <button
+              key={a.label}
+              className="qa-tile"
+              onClick={() => a.href ? window.open(a.href, '_blank', 'noopener,noreferrer') : onNavigate(a.label)}
+            >
               <span className="qa-icon">{a.icon}</span>
               <span className="qa-title">{a.label}</span>
             </button>
